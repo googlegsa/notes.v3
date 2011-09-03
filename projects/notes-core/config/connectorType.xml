@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE beans PUBLIC "-//SPRING//DTD BEAN//EN" "http://www.springframework.org/dtd/spring-beans.dtd">
+<beans>
+  <bean id="notes-connector"
+    class="com.google.enterprise.connector.notes.NotesConnectorType">
+      <property name="configKeys">
+      <list>
+        <value>IDPassword</value>
+        <value>Database</value>
+        <value>Server</value>
+       </list>
+    </property>
+  </bean>
+</beans>

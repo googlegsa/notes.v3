@@ -1,0 +1,105 @@
+<project name="NotesConnector" default="dist" basedir=".">
+
+  <property file="${user.home}/google-enterprise-connector-notes.properties"/>
+
+  <!-- set global properties for this bin -->
+  <property name="src" location="source/java"/>
+  <property name="test" location="source/javatests"/>
+  <property name="junitReports" location="reports/junit-xml"/>
+  <property name="testbin"  location="build/tests"/>
+  <property name="config"  location="config"/>
+  <property name="bin" location="build/classes"/>
+  <property name="dist"  location="dist/jar"/>
+
+  <property name="install"  location="/tomcat/webapps/connector-manager/WEB-INF/lib"/>
+
+  <property name="connector-manager-projects.dir"
+            location="${build.connector.manager.home}/projects" />
+  <property name="connector-manager.dir"
+            location="${connector-manager-projects.dir}/connector-manager" />
+  <property name="thirdparty.jar.dir"
+            location="${connector-manager-projects.dir}/connector-manager/third-party" />
+  <property name="spi.jar.dir" value="${connector-manager.dir}/dist/jarfile" />
+  <property name="spi.jarfile" value="${spi.jar.dir}/connector-spi.jar" />
+
+  <property name="notes.jarfile" location="${build.notes.jar}"/>
+
+  <target name="init">
+    <!-- Create the time stamp -->
+    <tstamp/>
+    <!-- Create the bin directory structure used by compile -->
+    <mkdir dir="${bin}"/>
+  </target>
+
+  <target name="compile" depends="init"
+        description="compile the source " >
+    <!-- Compile the java code from ${src} into ${bin} -->
+    <javac includeantruntime="false" srcdir="${src}" destdir="${bin}" debug="true" debuglevel="lines,vars,source">
+            <classpath>
+                <pathelement location="${spi.jarfile}"/>
+                <pathelement location="${notes.jarfile}"/>
+                <pathelement location="${bin}"/>
+            </classpath>
+	</javac>
+  </target>
+
+  <target name="compile_test" depends="compile" description="compile the junit tests " >
+    <mkdir dir="${testbin}"/>
+    <!-- Compile the java code from ${src} into ${bin} -->
+    <javac includeantruntime="false" srcdir="${test}" destdir="${testbin}" debug="true" debuglevel="lines,vars,source">
+            <classpath>
+                <pathelement location="${spi.jarfile}"/>
+                <pathelement location="${thirdparty.jar.dir}/tests/junit.jar"/>
+                <pathelement location="${bin}"/>
+            </classpath>
+	</javac>
+
+  </target>
+
+  <target name="test" depends="compile_test">
+    <mkdir dir="${junitReports}"/>
+    <junit printsummary="yes" haltonfailure="no" showoutput="yes" >
+        <classpath>
+                <pathelement location="${notes.jarfile}"/>
+                <pathelement location="${spi.jarfile}"/>
+                <pathelement location="${thirdparty.jar.dir}/tests/junit.jar"/>
+                <pathelement location="${bin}"/>
+                <pathelement location="${testbin}"/>
+        </classpath>                   
+
+        <batchtest fork="yes" todir="${junitReports}">
+                <formatter type="xml"/>
+                <fileset dir="${testbin}">
+                        <include name="**/NotesConnectorTest.class"/>
+                </fileset>
+        </batchtest>
+    </junit> 
+  </target>
+
+  <target name="dist" depends="compile_test"
+        description="generate the distribution" >
+    <!-- Put everything in ${bin} into the NotesConnector-${DSTAMP}.jar file -->
+    <jar jarfile="${dist}/NotesConnector-${DSTAMP}.jar">
+		<fileset dir="." includes="config/*"/>
+		<fileset dir="${bin}"/>
+		<fileset dir="${src}"/>
+	</jar>
+  </target>
+
+  <target name="install" depends="dist"
+        description="Install to tomcat" >
+    <!-- Put everything in ${bin} into the NotesConnector-${DSTAMP}.jar file -->
+    <copy file="${dist}/NotesConnector-${DSTAMP}.jar" tofile="${install}/NotesConnector.jar"/>
+  </target>
+
+  <target name="clean"
+        description="clean up" >
+    <!-- Delete the ${bin} and ${dist} directory trees -->
+    <!-- TODO: update properties to point to build and dist directories -->
+    <delete dir="build"/>
+    <delete dir="dist"/>
+  </target>
+
+
+</project>
+

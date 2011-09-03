@@ -1,0 +1,15 @@
+## 
+# These properties are specific to the individual's development and
+# test environment. This properties file should be located in your
+# home directory, e.g.: ~/google-enterprise-connector-notes.properties
+#
+
+
+## 
+# Build Properties
+
+# The location of notes.jar.
+build.notes.jar = ${user.home}/Notes.jar
+
+# The root of the google-enterprise-connector-manager tree.
+build.connector.manager.home = ${user.home}/gsa/google-enterprise-connector-manager
