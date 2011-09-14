@@ -5,7 +5,7 @@
     class="com.google.enterprise.connector.notes.NotesConnectorType">
       <property name="configKeys">
       <list>
-        <value>IDPassword</value>
+        <value>IdPassword</value>
         <value>Database</value>
         <value>Server</value>
        </list>
