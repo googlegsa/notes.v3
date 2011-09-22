@@ -22,14 +22,14 @@ public class NotesPollerNotifier {
   private static final Logger LOGGER = Logger.getLogger(CLASS_NAME);
   private  NotesConnector nc;
   int NumThreads = 1;
-	
+
   public NotesPollerNotifier(NotesConnector connector) {
     final String METHOD="NotesPollerNotifier";
     LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD,
         "NotesPollerNotifier being created.");
     nc = connector;
   }
-	
+
   synchronized void waitForWork(long timeout) {
     final String METHOD = "waitForWork";
     try {
@@ -47,13 +47,13 @@ public class NotesPollerNotifier {
       LOGGER.log(Level.SEVERE, CLASS_NAME, e);
     }
   }
-	
+
   synchronized void waitForWork() {
     final String METHOD = "waitForWork";
     try {
       // If we are shutting down, don't wait
       if (nc.getShutdown()) {
-        LOGGER.logp(Level.INFO, CLASS_NAME, METHOD, 
+        LOGGER.logp(Level.INFO, CLASS_NAME, METHOD,
             "Connector is shutting down.");
         return;
       }
@@ -68,7 +68,7 @@ public class NotesPollerNotifier {
   synchronized void setNumThreads(int i) {
     NumThreads = i;
   }
-	
+
   synchronized void wakeWorkers() {
     final String METHOD="wakeWorkers";
     LOGGER.logp(Level.FINE, CLASS_NAME, METHOD, "Waking worker threads.");

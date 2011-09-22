@@ -14,8 +14,8 @@
 
 package com.google.enterprise.connector.notes;
 
-import lotus.domino.ACL; 
-import lotus.domino.ACLEntry; 
+import lotus.domino.ACL;
+import lotus.domino.ACLEntry;
 import lotus.domino.Database;
 import lotus.domino.DateTime;
 import lotus.domino.DocumentCollection;
@@ -30,7 +30,7 @@ import java.util.logging.Logger;
 public class NotesDatabasePoller {
   private static final String CLASS_NAME = NotesDatabasePoller.class.getName();
   private static final Logger LOGGER = Logger.getLogger(CLASS_NAME);
-	
+
   DateTime pollTime = null; // Configuration database
   View templateView = null;
   View unidView = null;
@@ -41,13 +41,13 @@ public class NotesDatabasePoller {
   public static void resetCrawlQueue(NotesConnectorSession ncs) {
     final String METHOD = "resetCrawlQueue";
     lotus.domino.Session ns = null;
-		
+
     LOGGER.entering(CLASS_NAME, METHOD);
     try {
       ns = ncs.createNotesSession();
       Database cdb = ns.getDatabase(
           ncs.getServer(), ncs.getDatabase());
-			
+
       // Reset the last update date for each configured database
       View incrawlView = cdb.getView(NCCONST.VIEWINCRAWL);
       incrawlView.refresh();
@@ -58,7 +58,7 @@ public class NotesDatabasePoller {
             "in INCRAWL state " + srcDoc.getUniversalID());
         srcDoc.replaceItemValue(NCCONST.NCITM_STATE, NCCONST.STATENEW);
         lotus.domino.Document prevDoc = srcDoc;
-        srcDoc = incrawlView.getNextDocument(prevDoc);  
+        srcDoc = incrawlView.getNextDocument(prevDoc);
 
         // Don't save this until we have the next doc in the view.
         // Otherwise an exception will result
@@ -67,7 +67,7 @@ public class NotesDatabasePoller {
       }
       incrawlView.recycle();
     } catch (Exception e) {
-      LOGGER.logp(Level.SEVERE, CLASS_NAME, METHOD, 
+      LOGGER.logp(Level.SEVERE, CLASS_NAME, METHOD,
           "Error resetting crawl document.", e);
     } finally {
       ncs.closeNotesSession(ns);
@@ -83,7 +83,7 @@ public class NotesDatabasePoller {
       ns = ncs.createNotesSession();
       Database cdb = ns.getDatabase(
           ncs.getServer(), ncs.getDatabase());
-			
+
       // Reset the last update date for each configured database
       View srcdbView = cdb.getView(NCCONST.VIEWDATABASES);
       srcdbView.refresh();
@@ -108,7 +108,7 @@ public class NotesDatabasePoller {
     }
   }
 
-  public void pollDatabases(lotus.domino.Session ns, Database cdb, 
+  public void pollDatabases(lotus.domino.Session ns, Database cdb,
       int maxDepth) {
     final String METHOD = "pollDatabases";
     LOGGER.entering(CLASS_NAME, METHOD);
@@ -121,7 +121,7 @@ public class NotesDatabasePoller {
       srcdbView.refresh();
       View vwSubmitQ = cdb.getView(NCCONST.VIEWSUBMITQ);
       View vwCrawlQ = cdb.getView(NCCONST.VIEWCRAWLQ);
-			
+
       // TODO: Make this loop shutdown aware
 
       lotus.domino.Document srcdbDoc = srcdbView.getFirstDocument();
@@ -132,14 +132,14 @@ public class NotesDatabasePoller {
         LOGGER.logp(Level.FINER, CLASS_NAME, METHOD,
             "Total documents in crawl and submit queues is: " + qDepth);
         if (vwSubmitQ.getEntryCount() + vwCrawlQ.getEntryCount() > maxDepth) {
-          LOGGER.logp(Level.FINE, CLASS_NAME, METHOD, 
+          LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
               "Queue threshold reached.  Suspending polling. size/max=" +
               qDepth + "/" + maxDepth);
           srcdbDoc.recycle();
           break;
         }
-        LOGGER.logp(Level.FINER, CLASS_NAME, METHOD, 
-            "Source Database Config Document " + 
+        LOGGER.logp(Level.FINER, CLASS_NAME, METHOD,
+            "Source Database Config Document " +
             srcdbDoc.getItemValue(NCCONST.DITM_DBNAME));
         pollSourceDatabase(ns, cdb, srcdbDoc);
         lotus.domino.Document prevDoc = srcdbDoc;
@@ -152,7 +152,7 @@ public class NotesDatabasePoller {
       templateView.recycle();
       srcdbView.recycle();
     } catch (Exception e) {
-      LOGGER.log(Level.SEVERE, CLASS_NAME, e); 
+      LOGGER.log(Level.SEVERE, CLASS_NAME, e);
     } finally {
       LOGGER.exiting(CLASS_NAME, METHOD);
     }
@@ -162,7 +162,7 @@ public class NotesDatabasePoller {
       throws NotesException {
     final String METHOD = "processRoles";
     LOGGER.entering(CLASS_NAME, METHOD);
-    Vector<String> ExpandedRoleGroups = new Vector<String>();		
+    Vector<String> ExpandedRoleGroups = new Vector<String>();
     Vector<?> Roles = acl.getRoles();
     LOGGER.logp(Level.FINER, CLASS_NAME, METHOD,
         "Roles are " + Roles.toString());
@@ -174,7 +174,7 @@ public class NotesDatabasePoller {
       while (null != ae) {
         int RoleType = ae.getUserType();
         if ((RoleType != ACLEntry.TYPE_SERVER) &&
-            (RoleType != ACLEntry.TYPE_SERVER_GROUP)) { 
+            (RoleType != ACLEntry.TYPE_SERVER_GROUP)) {
           if (ae.isRoleEnabled(Roles.elementAt(i).toString())) {
             RoleGroups.append("~~");
             RoleGroups.append(ae.getName().toLowerCase());
@@ -183,7 +183,7 @@ public class NotesDatabasePoller {
         }
         ACLEntry prevae = ae;
         ae = acl.getNextEntry(prevae);
-        prevae.recycle();				
+        prevae.recycle();
       }
       // Skip roles with no groups or users assigned
       if (RoleGroups.charAt(RoleGroups.length() - 1) != ']') {
@@ -195,7 +195,7 @@ public class NotesDatabasePoller {
         "Roles are " + Roles.toString());
     LOGGER.exiting(CLASS_NAME, METHOD);
   }
-	
+
   public boolean processACL(Database srcdb, lotus.domino.Document dbdoc) {
     final String METHOD = "processACL";
     LOGGER.entering(CLASS_NAME, METHOD);
@@ -205,23 +205,23 @@ public class NotesDatabasePoller {
           .firstElement().toString();
       if (aclActivityText.contentEquals(
               dbdoc.getItemValueString(NCCONST.DITM_ACLTEXT))) {
-        LOGGER.logp(Level.FINER, CLASS_NAME, METHOD, 
+        LOGGER.logp(Level.FINER, CLASS_NAME, METHOD,
             "ACL has not changed.  Skipping ACL processing. ");
         return false;
       }
       LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD,
           "New ACL Text is. " + aclActivityText);
-      dbdoc.replaceItemValue(NCCONST.DITM_ACLTEXT, aclActivityText);		
-      ACL acl = srcdb.getACL();			
+      dbdoc.replaceItemValue(NCCONST.DITM_ACLTEXT, aclActivityText);
+      ACL acl = srcdb.getACL();
 
       // TODO: If we make this a static method and allow the
       // authorization manager to call it we need to consider how
       // the last update will be handled.
- 
+
       Item noAccessUsers = dbdoc.replaceItemValue(
           NCCONST.NCITM_DBNOACCESSUSERS, null);
-      // None of these need to be appear in views.  
-      noAccessUsers.setSummary(false);  
+      // None of these need to be appear in views.
+      noAccessUsers.setSummary(false);
       Item PermitUsers = dbdoc.replaceItemValue(
           NCCONST.NCITM_DBPERMITUSERS, null);
       PermitUsers.setSummary(false);
@@ -263,7 +263,7 @@ public class NotesDatabasePoller {
             PermitGroups.appendToTextList(ae.getName().toLowerCase());
           }
         }
-				
+
         // Now check which roles this ACL entry has
         ACLEntry prevae = ae;
         ae = acl.getNextEntry(prevae);
@@ -295,18 +295,18 @@ public class NotesDatabasePoller {
     DateTime lastUpdated = null;
     Vector<?> lastUpdatedV = null;
     LOGGER.entering(CLASS_NAME, METHOD);
-		
+
     try {
       // There are configuration options to stop and disable databases
       // In either of these states, we skip processing the database
       if (1 != srcdbDoc.getItemValueInteger(NCCONST.DITM_CRAWLENABLED)) {
         LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
-            "Skipping database - Database is DISABLED."); 
+            "Skipping database - Database is DISABLED.");
         return;
       }
       if (1 == srcdbDoc.getItemValueInteger(NCCONST.DITM_STOPPED)) {
-        LOGGER.logp(Level.FINE, CLASS_NAME, METHOD, 
-            "Skipping database - Database is STOPPED."); 
+        LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
+            "Skipping database - Database is STOPPED.");
         return;
       }
 
@@ -321,7 +321,7 @@ public class NotesDatabasePoller {
         LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
             "Database has never been processed.");
       }
-			
+
       // What's our poll interval?
       double pollInterval = srcdbDoc.getItemValueInteger(
           NCCONST.DITM_UPDATEFREQUENCY);
@@ -332,7 +332,7 @@ public class NotesDatabasePoller {
       // Check poll interval
       if (pollInterval > elapsedMinutes) {
         LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
-            "Skipping database - Poll interval has not yet elapsed."); 
+            "Skipping database - Poll interval has not yet elapsed.");
         lastUpdated.recycle();
         ns.recycle(lastUpdatedV);
         return;
@@ -355,7 +355,7 @@ public class NotesDatabasePoller {
           lastUpdated = ns.createDateTime("1/1/1980");
         }
       }
-			
+
       // From the template, we get the search string to determine
       // which documents should be processed
       lotus.domino.Document templateDoc = templateView.getDocumentByKey(
@@ -364,35 +364,35 @@ public class NotesDatabasePoller {
           NCCONST.TITM_SEARCHSTRING);
       // We append the last processed date as a modifier
       searchString += " & @Modified > [" + lastUpdated + "]";
-      LOGGER.logp(Level.FINE, CLASS_NAME, METHOD, 
-          "Search string is: " + searchString); 
+      LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
+          "Search string is: " + searchString);
 
       //getDBReaderGroups(srcdb);
 
       DocumentCollection dc = srcdb.search(searchString, null, 0);
       LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
           srcdb.getFilePath() + " Number of documents to be processed: " +
-          dc.getCount()); 
+          dc.getCount());
       lotus.domino.Document curDoc = dc.getFirstDocument();
-      while (null != curDoc) { 
+      while (null != curDoc) {
         String NotesURL = curDoc.getNotesURL();
         LOGGER.logp(Level.FINER, CLASS_NAME, METHOD,
-            "Processing document " + NotesURL); 
+            "Processing document " + NotesURL);
         if (curDoc.hasItem(NCCONST.NCITM_CONFLICT)) {
           LOGGER.logp(Level.FINER, CLASS_NAME, METHOD,
-              "Skipping conflict document " + NotesURL); 
+              "Skipping conflict document " + NotesURL);
           lotus.domino.Document prevDoc = curDoc;
           curDoc = dc.getNextDocument(prevDoc);
           prevDoc.recycle();
           continue;
         }
-				
+
         // Create a new crawl request
         lotus.domino.Document crawlRequestDoc = cdb.createDocument();
         crawlRequestDoc.appendItemValue(NCCONST.NCITM_STATE, NCCONST.STATENEW);
-        crawlRequestDoc.appendItemValue(NCCONST.ITM_MIMETYPE, 
+        crawlRequestDoc.appendItemValue(NCCONST.ITM_MIMETYPE,
             NCCONST.DEFAULT_DOCMIMETYPE);
-				
+
         // Create the fields necessary to crawl the document
         crawlRequestDoc.appendItemValue(NCCONST.ITMFORM,
             NCCONST.FORMCRAWLREQUEST);
@@ -400,20 +400,20 @@ public class NotesDatabasePoller {
             curDoc.getUniversalID());
         crawlRequestDoc.appendItemValue(NCCONST.NCITM_REPLICAID,
             srcdbDoc.getItemValueString(NCCONST.DITM_REPLICAID));
-        crawlRequestDoc.appendItemValue(NCCONST.NCITM_SERVER, 
-            srcdbDoc.getItemValueString(NCCONST.DITM_SERVER)); 
+        crawlRequestDoc.appendItemValue(NCCONST.NCITM_SERVER,
+            srcdbDoc.getItemValueString(NCCONST.DITM_SERVER));
         crawlRequestDoc.appendItemValue(NCCONST.NCITM_TEMPLATE,
             srcdbDoc.getItemValueString(NCCONST.DITM_TEMPLATE));
-        crawlRequestDoc.appendItemValue(NCCONST.NCITM_DOMAIN, 
+        crawlRequestDoc.appendItemValue(NCCONST.NCITM_DOMAIN,
             srcdbDoc.getItemValueString(NCCONST.DITM_DOMAIN));
         crawlRequestDoc.appendItemValue(NCCONST.NCITM_AUTHTYPE,
             srcdbDoc.getItemValueString(NCCONST.DITM_AUTHTYPE));
-				
+
         // Map the lock field directly across
-        crawlRequestDoc.appendItemValue(NCCONST.ITM_LOCK, 
+        crawlRequestDoc.appendItemValue(NCCONST.ITM_LOCK,
             srcdbDoc.getItemValueString(NCCONST.DITM_LOCKATTRIBUTE)
             .toLowerCase());
-				
+
         // Add any database level meta data to the document
         crawlRequestDoc.appendItemValue(NCCONST.ITM_GMETAREPLICASERVERS,
             srcdbDoc.getItemValue(NCCONST.DITM_REPLICASERVERS));
@@ -447,7 +447,7 @@ public class NotesDatabasePoller {
       lastUpdated.recycle();
       ns.recycle(lastUpdatedV);
     } catch (Exception e) {
-      LOGGER.log(Level.SEVERE, CLASS_NAME, e); 
+      LOGGER.log(Level.SEVERE, CLASS_NAME, e);
     } finally {
       LOGGER.exiting(CLASS_NAME, METHOD);
     }

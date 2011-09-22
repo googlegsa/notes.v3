@@ -38,7 +38,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class NotesConnectorDocument implements Document {
-  private static final String CLASS_NAME = 
+  private static final String CLASS_NAME =
       NotesConnectorDocument.class.getName();
   private static final Logger LOGGER = Logger.getLogger(CLASS_NAME);
   private HashMap<String, List<Value>> docProps;
@@ -60,11 +60,11 @@ public class NotesConnectorDocument implements Document {
       }
       fin = null;
     } catch (Exception e) {
-      // Changed log level to WARNING. 
+      // Changed log level to WARNING.
       LOGGER.log(Level.WARNING, CLASS_NAME, e);
     }
   }
-        
+
   public void setCrawlDoc(String unid, lotus.domino.Document backenddoc) {
     final String METHOD = "setcrawlDoc";
     LOGGER.entering(CLASS_NAME, METHOD);
@@ -86,11 +86,11 @@ public class NotesConnectorDocument implements Document {
       LOGGER.exiting(CLASS_NAME, METHOD);
     }
   }
-  
+
   public void deleteDocument() {
     final String METHOD = "deleteDocument";
     LOGGER.entering(CLASS_NAME, METHOD);
-    
+
     try {
       docProps = new HashMap<String, List<Value>>();
       docid = crawlDoc.getItemValueString(NCCONST.ITM_DOCID);
@@ -104,7 +104,7 @@ public class NotesConnectorDocument implements Document {
       LOGGER.exiting(CLASS_NAME, METHOD);
     }
   }
-  
+
   public void addDocument() {
     final String METHOD = "addDocument";
     LOGGER.entering(CLASS_NAME, METHOD);
@@ -113,13 +113,13 @@ public class NotesConnectorDocument implements Document {
       docid = crawlDoc.getItemValueString(NCCONST.ITM_DOCID);
       LOGGER.logp(Level.FINER, CLASS_NAME, METHOD,
           "Loading document properties for " + docid);
-        
+
       // Load the Connector Manager SPI Properties first
       putTextItem(SpiConstants.PROPNAME_DOCID, NCCONST.ITM_DOCID, null);
       putTextItem(SpiConstants.PROPNAME_TITLE, NCCONST.ITM_TITLE, null);
       setDateProperties();
       setContentProperty();
-        
+
       // PROPNAME_CONTENTURL
       // PROPNAME_FEEDTYPE
       // PROPNAME_FEEDID
@@ -138,8 +138,8 @@ public class NotesConnectorDocument implements Document {
       // TODO: FIX THIS UPGRADE TO NEW SPI
       //putBooleanItem("google:lock", NCCONST.ITM_LOCK, "true");
       putBooleanItem(SpiConstants.PROPNAME_LOCK, NCCONST.ITM_LOCK, "true");
-      
-      // PROPNAME_PAGERANK                    
+
+      // PROPNAME_PAGERANK
       // PERSISTABLE_ATTRIBUTES
       // PROPNAME_MANAGER_SHOULD_PERSIST
       // PROPNAME_CONNECTOR_INSTANCE - Reserved for CM
@@ -151,17 +151,17 @@ public class NotesConnectorDocument implements Document {
       // PROPNAME_CONTAINER
       // PROPNAME_PERSISTED_CUSTOMDATA_1
       // PROPNAME_PERSISTED_CUSTOMDATA_2
-      
-      putTextItem(NCCONST.PROPNAME_DESCRIPTION, 
+
+      putTextItem(NCCONST.PROPNAME_DESCRIPTION,
           NCCONST.ITM_GMETADESCRIPTION, null);
       putTextItem(NCCONST.PROPNAME_NCDATABASE, NCCONST.ITM_GMETADATABASE, null);
-      putTextListItem(NCCONST.PROPNAME_NCCATEGORIES, 
+      putTextListItem(NCCONST.PROPNAME_NCCATEGORIES,
           NCCONST.ITM_GMETACATEGORIES, null);
-      putTextListItem(NCCONST.PROPNAME_NCREPLICASERVERS, 
+      putTextListItem(NCCONST.PROPNAME_NCREPLICASERVERS,
           NCCONST.ITM_GMETAREPLICASERVERS, null);
       putTextItem(NCCONST.PROPNAME_NCNOTESLINK,
           NCCONST.ITM_GMETANOTESLINK, null);
-      putTextListItem(NCCONST.PROPNAME_NCATTACHMENTS, 
+      putTextListItem(NCCONST.PROPNAME_NCATTACHMENTS,
           NCCONST.ITM_GMETAATTACHMENTS, null);
       putTextListItem(NCCONST.PROPNAME_NCALLATTACHMENTS,
           NCCONST.ITM_GMETAALLATTACHMENTS, null);
@@ -181,7 +181,7 @@ public class NotesConnectorDocument implements Document {
     // TODO: Set Custom properties
   }
 
-  protected void setContentProperty() 
+  protected void setContentProperty()
       throws NotesException, FileNotFoundException {
     boolean isAttachment = docid.contains("/$File/");
     if (isAttachment) {
@@ -198,14 +198,14 @@ public class NotesConnectorDocument implements Document {
       }
       //fin.close();
     } else {
-      putTextItem(SpiConstants.PROPNAME_CONTENT, 
+      putTextItem(SpiConstants.PROPNAME_CONTENT,
           NCCONST.ITM_CONTENT, "Document content");
     }
   }
 
   protected void setDateProperties() throws NotesException {
     final String METHOD = "setDateProperties";
-    
+
     DateTime dt = (DateTime) crawlDoc
         .getItemValueDateTimeArray(NCCONST.ITM_GMETALASTUPDATE).elementAt(0);
     Calendar tmpCal = Calendar.getInstance();
@@ -220,15 +220,15 @@ public class NotesConnectorDocument implements Document {
     docProps.put(NCCONST.PROPNAME_NCLASTUPDATE,
         asList(Value.getStringValue(nclastupdate)));
     dt.recycle();
-                
+
     DateTime createdate = (DateTime) crawlDoc
         .getItemValueDateTimeArray(NCCONST.ITM_GMETACREATEDATE).elementAt(0);
     String nccreatedate = sdf.format(createdate.toJavaDate());
-    docProps.put(NCCONST.PROPNAME_CREATEDATE, 
+    docProps.put(NCCONST.PROPNAME_CREATEDATE,
         asList(Value.getStringValue(nccreatedate)));
     createdate.recycle();
   }
-        
+
   protected void putTextListItem(String PropName, String ItemName,
       String DefaultText) throws NotesException {
     final String METHOD = "putTextItem";
@@ -262,7 +262,7 @@ public class NotesConnectorDocument implements Document {
     final String METHOD = "putTextItem";
     String text = null;
     Item itm = crawlDoc.getFirstItem(ItemName);
-                
+
     // Does the item exist?
     if (null == itm) {
       if (null != DefaultText) {
@@ -270,11 +270,11 @@ public class NotesConnectorDocument implements Document {
       }
       return;
     }
-                
+
     // Get the text of the item
     text = itm.getText(1024 * 1024 * 2);  // Maximum of 2mb of text
     if ((null == text) || (0 == text.length())) { // Does this field exist?
-      LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD, 
+      LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD,
           "Using default value document. " + PropName + " in " + docid);
       if (null != DefaultText) {
         text = DefaultText;

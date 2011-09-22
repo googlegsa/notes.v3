@@ -36,10 +36,10 @@ public class NotesConnector implements Connector, ConnectorShutdownAware  {
   private NotesCrawlerThread crawlerThread = null;
   NotesPollerNotifier npn = null;
   Vector<NotesCrawlerThread> vecCrawlerThreads = null;
-        
+
   NotesConnector() {
     final String METHOD = "NotesConnector";
-    LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD, 
+    LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD,
         "NotesConnector being created.");
   }
 
@@ -49,14 +49,14 @@ public class NotesConnector implements Connector, ConnectorShutdownAware  {
     final String METHOD = "login";
 
     // We always want to return ok here
-                
+
     // If we are all ready logged in, return the existing session
     // The Notes libraries take care of creating actual
     // connections to the server using RPCs
     if (null != ncs) {
       return ncs;
     }
-                
+
     if (null == npn) {
       npn = new NotesPollerNotifier(this);
     }
@@ -66,7 +66,7 @@ public class NotesConnector implements Connector, ConnectorShutdownAware  {
 
     // Start a crawler thread
     // Reset any documents before we start crawling
-    
+
     if (null == maintThread) {
       maintThread = new NotesMaintenanceThread(this, ncs);
       maintThread.start();
@@ -80,13 +80,13 @@ public class NotesConnector implements Connector, ConnectorShutdownAware  {
       }
     */
     if (null == vecCrawlerThreads) {
-      vecCrawlerThreads = 
+      vecCrawlerThreads =
           new Vector<NotesCrawlerThread>(ncs.getNumCrawlerThreads());
       for (int i = 0; i < ncs.getNumCrawlerThreads(); i++) {
         vecCrawlerThreads.add(new NotesCrawlerThread(this, ncs));
         NotesCrawlerThread tmpThread = vecCrawlerThreads.elementAt(i);
         tmpThread.setName(NotesCrawlerThread.class.getSimpleName() + i);
-        LOGGER.logp(Level.INFO, CLASS_NAME, METHOD, 
+        LOGGER.logp(Level.INFO, CLASS_NAME, METHOD,
             "Starting crawler thread " + tmpThread.getName());
         tmpThread.start();
       }
@@ -94,11 +94,11 @@ public class NotesConnector implements Connector, ConnectorShutdownAware  {
     npn.setNumThreads(ncs.getNumCrawlerThreads() + 1);
     return ncs;
   }
-        
+
   // The following setters are necessary for Spring to pass configuration to us
   public void setIdPassword(String idPassword) {
     final String METHOD = "setIdPassword";
-    LOGGER.logp(Level.CONFIG, CLASS_NAME, METHOD, 
+    LOGGER.logp(Level.CONFIG, CLASS_NAME, METHOD,
         "Connector config Password being set");
     password = idPassword;
   }
@@ -116,10 +116,10 @@ public class NotesConnector implements Connector, ConnectorShutdownAware  {
         "Connector config Database=" + database);
     this.database = database;
   }
-        
+
   public void setGoogleConnectorWorkDir(String googleConnectorWorkDir) {
     final String METHOD = "setGoogleConnectorWorkDir";
-    LOGGER.logp(Level.CONFIG, CLASS_NAME, METHOD, 
+    LOGGER.logp(Level.CONFIG, CLASS_NAME, METHOD,
         "Connector config GoogleConnectorWorkDir=" + googleConnectorWorkDir);
     workingDir = googleConnectorWorkDir;
   }
@@ -153,7 +153,7 @@ public class NotesConnector implements Connector, ConnectorShutdownAware  {
     LOGGER.entering(CLASS_NAME, METHOD);
     return deleted;
   }
-        
+
   /* @Override */
   public void shutdown() {
     final String METHOD = "shutdown";

@@ -22,7 +22,7 @@ import lotus.domino.View;
 import lotus.domino.ViewNavigator;
 import lotus.domino.ViewEntry;
 
-import java.util.ArrayList; 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -33,11 +33,11 @@ public class NotesTraversalManager implements TraversalManager {
   private static final String CLASS_NAME = NotesTraversalManager.class.getName();
   private static final Logger LOGGER = Logger.getLogger(CLASS_NAME);
   private NotesConnectorSession ncs = null;
-	
+
   public NotesTraversalManager(NotesConnectorSession session) {
     ncs = session;
   }
-	
+
   /* @Override */
   public void setBatchHint(int hint) {
     final String METHOD = "setBatchHint";
@@ -47,12 +47,12 @@ public class NotesTraversalManager implements TraversalManager {
 
   /* @Override */
   public DocumentList startTraversal() {
-    LOGGER.info("Start traversal"); 
-    // This will reset the start date on all connector		
+    LOGGER.info("Start traversal");
+    // This will reset the start date on all connector
     NotesDatabasePoller.resetDatabases(ncs);
     return traverse("0");
   }
- 
+
   /* @Override */
   public DocumentList resumeTraversal(String checkpoint) {
     return traverse(checkpoint);
@@ -61,7 +61,7 @@ public class NotesTraversalManager implements TraversalManager {
   /**
    * Utility method to produce a {@code DocumentList} containing the next
    * batch of {@code Document} from the checkpoint.
-   * 
+   *
    * @param checkpoint
    *            a String representing the last document number processed.
    */
@@ -78,20 +78,20 @@ public class NotesTraversalManager implements TraversalManager {
 
       ns = ncs.createNotesSession();
       Database cdb = ns.getDatabase(ncs.getServer(), ncs.getDatabase());
-			
+
       // Poll for changes
       // TODO:  Consider moving this to the housekeeping thread
       // Since it takes two polling cycles to get documents into the GSA
       // if the system is idle
-			
+
       NotesDatabasePoller dbpoller = new NotesDatabasePoller();
       dbpoller.pollDatabases(ns, cdb, ncs.getMaxCrawlQDepth());
       NotesPollerNotifier npn = ncs.getNotifier();
       npn.wakeWorkers();
 
       // Give the worker threads a chance to pre-fetch documents
-      Thread.sleep(2000);  
-			
+      Thread.sleep(2000);
+
       // Get list of pre-fetched documents and put these in the doclist
       View submitQ = cdb.getView(NCCONST.VIEWSUBMITQ);
       ViewNavigator submitQNav = submitQ.createViewNav();
@@ -106,7 +106,7 @@ public class NotesTraversalManager implements TraversalManager {
         ViewEntry prevVe = ve;
         ve = submitQNav.getNext(prevVe);
         prevVe.recycle();
-      }		
+      }
       submitQNav.recycle();
       submitQ.recycle();
     } catch (Exception e) {

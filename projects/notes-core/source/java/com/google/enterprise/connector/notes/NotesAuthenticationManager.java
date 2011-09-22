@@ -29,7 +29,7 @@ import java.util.logging.Logger;
 
 
 class NotesAuthenticationManager implements AuthenticationManager {
-  private static final String CLASS_NAME = 
+  private static final String CLASS_NAME =
       NotesAuthenticationManager.class.getName();
   private static final Logger LOGGER = Logger.getLogger(CLASS_NAME);
 
@@ -41,15 +41,15 @@ class NotesAuthenticationManager implements AuthenticationManager {
   View peopleVw = null;
   Document authDoc = null;
   Document personDoc = null;
-        
+
   public NotesAuthenticationManager(NotesConnectorSession session) {
     final String METHOD = "NotesAuthenticationManager";
-    LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD, 
+    LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD,
         "NotesAuthenticationManager being created.");
 
     ncs = session;
   }
-        
+
   public void recycleDominoObjects() {
     try {
       if (null != personDoc) {
@@ -82,20 +82,20 @@ class NotesAuthenticationManager implements AuthenticationManager {
   /* @Override */
   public AuthenticationResponse authenticate(AuthenticationIdentity id) {
     final String METHOD = "authenticate";
-                
+
     try {
       String pvi = id.getUsername();
-      LOGGER.logp(Level.FINE, CLASS_NAME, METHOD, 
+      LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
           "Authenticating user " + pvi);
       NotesThread.sinitThread();
-      
+
       nSession = NotesFactory.createSessionWithFullAccess(ncs.getPassword());
 
       // TODO: Check what we need to support here
-      namesDb = nSession.getDatabase(ncs.getServer(), "names.nsf");  
+      namesDb = nSession.getDatabase(ncs.getServer(), "names.nsf");
 
       acDb = nSession.getDatabase(null, null);
-      LOGGER.logp(Level.FINER, CLASS_NAME, METHOD, "Opening ACL database " + 
+      LOGGER.logp(Level.FINER, CLASS_NAME, METHOD, "Opening ACL database " +
           ncs.getServer() + " : " + ncs.getACLDbReplicaId());
       acDb.openByReplicaID(ncs.getServer(), ncs.getACLDbReplicaId());
 
@@ -104,7 +104,7 @@ class NotesAuthenticationManager implements AuthenticationManager {
       // Resolve the PVI to their Notes names and groups
       personDoc = peopleVw.getDocumentByKey(pvi, true);
       if (null == personDoc) {
-        LOGGER.logp(Level.FINE, CLASS_NAME, METHOD, 
+        LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
             "Person not found in ACL database " + pvi);
         return new AuthenticationResponse(false, null);
       }
@@ -113,7 +113,7 @@ class NotesAuthenticationManager implements AuthenticationManager {
       LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
           "Authentication user using Notes name " + NotesName);
       usersVw = namesDb.getView("($Users)");
-      
+
       // Resolve the PVI to their Notes names and groups
       authDoc = usersVw.getDocumentByKey(NotesName, true);
       if (null == authDoc) {
@@ -121,7 +121,7 @@ class NotesAuthenticationManager implements AuthenticationManager {
       }
       String hashedPassword = authDoc.getItemValueString("HTTPPassword");
       if (nSession.verifyPassword(id.getPassword(), hashedPassword)) {
-        LOGGER.logp(Level.FINE, CLASS_NAME, METHOD, 
+        LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
             "User succesfully authenticated " + NotesName);
         return new AuthenticationResponse(true, null);
       }

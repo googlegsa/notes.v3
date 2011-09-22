@@ -35,26 +35,26 @@ import java.util.Collection;
 
 public class NotesAuthorizationManagerTest extends TestCase {
 
-  private String server; 
-  private String database; 
-  private String idpassword; 
-  private NotesConnector connector; 
+  private String server;
+  private String database;
+  private String idpassword;
+  private NotesConnector connector;
 
   public NotesAuthorizationManagerTest() {
   }
-  
+
   private String getProperty(String key) {
     String value = System.getProperty(key);
     assertNotNull(key, value);
-    return value; 
+    return value;
   }
 
   @Override
   protected void setUp() throws Exception {
-    super.setUp(); 
-    server = getProperty("javatest.server"); 
-    database = getProperty("javatest.database"); 
-    idpassword = getProperty("javatest.idpassword"); 
+    super.setUp();
+    server = getProperty("javatest.server");
+    database = getProperty("javatest.database");
+    idpassword = getProperty("javatest.idpassword");
     connector = new NotesConnector();
     connector.setServer(server);
     connector.setDatabase(database);
@@ -68,7 +68,7 @@ public class NotesAuthorizationManagerTest extends TestCase {
   }
 
   /**
-   * Tests reading the repository id. 
+   * Tests reading the repository id.
    *
    * @throws RepositoryException
    */
@@ -78,11 +78,11 @@ public class NotesAuthorizationManagerTest extends TestCase {
         (NotesAuthorizationManager) session.getAuthorizationManager();
     String docId =
         "http://NewYork/852578CE004AF5F8/0/E54902C71C28594F852578CE004B223B";
-    assertEquals("852578CE004AF5F8", manager.getRepIdFromDocId(docId)); 
+    assertEquals("852578CE004AF5F8", manager.getRepIdFromDocId(docId));
   }
 
   /**
-   * Tests reading the UNID. 
+   * Tests reading the UNID.
    *
    * @throws RepositoryException
    */
@@ -92,12 +92,12 @@ public class NotesAuthorizationManagerTest extends TestCase {
         (NotesAuthorizationManager) session.getAuthorizationManager();
     String docId =
         "http://NewYork/852578CE004AF5F8/0/E54902C71C28594F852578CE004B223B";
-    assertEquals("E54902C71C28594F852578CE004B223B", 
-        manager.getUNIDFromDocId(docId)); 
+    assertEquals("E54902C71C28594F852578CE004B223B",
+        manager.getUNIDFromDocId(docId));
   }
 
   /**
-   * Tests the authorize response for an invalid user. 
+   * Tests the authorize response for an invalid user.
    *
    * @throws RepositoryException
    */
@@ -107,7 +107,7 @@ public class NotesAuthorizationManagerTest extends TestCase {
         (NotesAuthorizationManager) session.getAuthorizationManager();
     Collection<String> docIdList = new ArrayList<String>(5);
     docIdList.add(
-        "http://NewYork/852578CE004AF5F8/0/A882F2482DCAC783852578CE004B0346"); 
+        "http://NewYork/852578CE004AF5F8/0/A882F2482DCAC783852578CE004B0346");
     docIdList.add(
         "http://NewYork/852578CE004AF5F8/0/D2DB3C67F6263353852578CE004B1955");
     docIdList.add(
@@ -117,10 +117,10 @@ public class NotesAuthorizationManagerTest extends TestCase {
     docIdList.add(
         "http://NewYork/852578CE004AF5F8/0/E54902C71C28594F852578CE004B223B");
     Collection<AuthorizationResponse> responseList = manager.authorizeDocids(
-        docIdList, new SimpleAuthenticationIdentity("not a valid user")); 
+        docIdList, new SimpleAuthenticationIdentity("not a valid user"));
 
-    assertTrue("Too many elements in response list", 
-        responseList.size() <= docIdList.size()); 
+    assertTrue("Too many elements in response list",
+        responseList.size() <= docIdList.size());
     for (AuthorizationResponse response : responseList) {
       assertFalse(response.getDocid(), response.isValid());
     }

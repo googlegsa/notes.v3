@@ -28,33 +28,33 @@ import com.google.enterprise.connector.spi.TraversalManager;
 
 import junit.framework.TestCase;
 
-import java.util.ArrayList; 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
 public class NotesTraversalManagerTest extends TestCase {
 
-  private String server; 
-  private String database; 
-  private String idpassword; 
-  private NotesConnector connector; 
+  private String server;
+  private String database;
+  private String idpassword;
+  private NotesConnector connector;
 
   public NotesTraversalManagerTest() {
   }
-  
+
   private String getProperty(String key) {
     String value = System.getProperty(key);
     assertNotNull(key, value);
-    return value; 
+    return value;
   }
 
   @Override
   protected void setUp() throws Exception {
-    super.setUp(); 
-    server = getProperty("javatest.server"); 
-    database = getProperty("javatest.database"); 
-    idpassword = getProperty("javatest.idpassword"); 
+    super.setUp();
+    server = getProperty("javatest.server");
+    database = getProperty("javatest.database");
+    idpassword = getProperty("javatest.idpassword");
     connector = new NotesConnector();
     connector.setServer(server);
     connector.setDatabase(database);
@@ -82,32 +82,32 @@ public class NotesTraversalManagerTest extends TestCase {
     assertNotNull(tm);
     assertTrue(tm instanceof NotesTraversalManager);
 
-    // Get the first set of documents. 
-    tm.setBatchHint(5); 
+    // Get the first set of documents.
+    tm.setBatchHint(5);
     DocumentList docList = tm.startTraversal();
     Document doc;
-    String checkpoint = null; 
-    List<String> docIdList = new ArrayList<String>(10); 
-    assertNotNull("startTraversal returned a null document list", docList); 
+    String checkpoint = null;
+    List<String> docIdList = new ArrayList<String>(10);
+    assertNotNull("startTraversal returned a null document list", docList);
     while (null != (doc = docList.nextDocument())) {
       String docId = doc.findProperty(SpiConstants.PROPNAME_DOCID)
           .nextValue().toString();
-      assertNotNull("Missing doc id", docId); 
-      docIdList.add(docId); 
+      assertNotNull("Missing doc id", docId);
+      docIdList.add(docId);
     }
     checkpoint = docList.checkpoint();
-    assertNotNull("Checkpoint was null", checkpoint); 
-    assertTrue("No docs found", docIdList.size() > 0); 
+    assertNotNull("Checkpoint was null", checkpoint);
+    assertTrue("No docs found", docIdList.size() > 0);
 
     // Resume traversal.
-    tm.setBatchHint(5); 
+    tm.setBatchHint(5);
     docList = tm.resumeTraversal(checkpoint);
     while (null != (doc = docList.nextDocument())) {
       String docId = doc.findProperty(SpiConstants.PROPNAME_DOCID).
           nextValue().toString();
-      assertNotNull("Missing doc id", docId); 
-      assertFalse("Found same docid in new doc list: " + docId, 
-          docIdList.contains(docId)); 
+      assertNotNull("Missing doc id", docId);
+      assertFalse("Found same docid in new doc list: " + docId,
+          docIdList.contains(docId));
     }
   }
 
@@ -129,25 +129,25 @@ public class NotesTraversalManagerTest extends TestCase {
     Session session = connector.login();
     TraversalManager tm = session.getTraversalManager();
 
-    Set<String> docIdListFirstTraversal = new HashSet<String>(100); 
-    List<String> duplicatesFirstTraversal = new ArrayList<String>(100); 
-    // Get the first set of documents. 
-    tm.setBatchHint(20); 
+    Set<String> docIdListFirstTraversal = new HashSet<String>(100);
+    List<String> duplicatesFirstTraversal = new ArrayList<String>(100);
+    // Get the first set of documents.
+    tm.setBatchHint(20);
     DocumentList docList = tm.startTraversal();
     while (docList != null) {
-      Document doc = null; 
+      Document doc = null;
       while (null != (doc = docList.nextDocument())) {
         String docId = doc.findProperty(SpiConstants.PROPNAME_DOCID).
-            nextValue().toString(); 
+            nextValue().toString();
         if (!docIdListFirstTraversal.add(docId)) {
           duplicatesFirstTraversal.add(docId);
         }
       }
       String checkpoint = docList.checkpoint();
-      assertNotNull("Checkpoint was null", checkpoint); 
+      assertNotNull("Checkpoint was null", checkpoint);
 
       // Resume traversal.
-      tm.setBatchHint(20); 
+      tm.setBatchHint(20);
       docList = tm.resumeTraversal(checkpoint);
     }
     assertTrue("No documents traversed", docIdListFirstTraversal.size() > 0);
@@ -157,32 +157,32 @@ public class NotesTraversalManagerTest extends TestCase {
     //      duplicatesFirstTraversal.size());
     //}
 
-    Set<String> docIdListSecondTraversal = new HashSet<String>(100); 
-    List<String> duplicatesSecondTraversal = new ArrayList<String>(100); 
-    // Get the second set of documents. 
-    tm.setBatchHint(20); 
+    Set<String> docIdListSecondTraversal = new HashSet<String>(100);
+    List<String> duplicatesSecondTraversal = new ArrayList<String>(100);
+    // Get the second set of documents.
+    tm.setBatchHint(20);
     docList = tm.startTraversal();
     while (docList != null) {
-      Document doc = null; 
+      Document doc = null;
       while (null != (doc = docList.nextDocument())) {
         String docId = doc.findProperty(SpiConstants.PROPNAME_DOCID).
-            nextValue().toString(); 
+            nextValue().toString();
         if (!docIdListSecondTraversal.add(docId)) {
           duplicatesSecondTraversal.add(docId);
         }
       }
       String checkpoint = docList.checkpoint();
-      assertNotNull("Checkpoint was null", checkpoint); 
+      assertNotNull("Checkpoint was null", checkpoint);
 
       // Resume traversal.
-      tm.setBatchHint(20); 
+      tm.setBatchHint(20);
       docList = tm.resumeTraversal(checkpoint);
     }
     assertTrue("No documents traversed on second traversal",
         docIdListSecondTraversal.size() > 0);
 
     assertEquals("Set of documents in first and second traversals differ",
-        docIdListFirstTraversal, docIdListSecondTraversal); 
+        docIdListFirstTraversal, docIdListSecondTraversal);
 
     // TODO: do we want to investigate the presence of duplicates?
     //if (duplicatesSecondTraversal.size() > 0) {

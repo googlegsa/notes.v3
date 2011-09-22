@@ -78,9 +78,9 @@
   <target name="compile" depends="init"
           description="Compile the source">
     <!-- Compile the java code -->
-    <javac srcdir="${src}" 
+    <javac srcdir="${src}"
            destdir="${classes}"
-           debug="${COMPILE_DEBUG_FLAG}" 
+           debug="${COMPILE_DEBUG_FLAG}"
            debuglevel="${COMPILE_DEBUG_LEVEL}"
            target="${COMPILE_TARGET}" source="${COMPILE_TARGET}"
            includeAntRuntime="false">
@@ -110,11 +110,11 @@
 
   <target name="compile_tests" depends="init,jar">
     <!-- compile java source files for tests -->
-    <javac srcdir="${tests.src}" destdir="${tests.classes}" 
-           debug="${COMPILE_DEBUG_FLAG}" 
+    <javac srcdir="${tests.src}" destdir="${tests.classes}"
+           debug="${COMPILE_DEBUG_FLAG}"
            debuglevel="${COMPILE_DEBUG_LEVEL}"
            target="${COMPILE_TARGET}" source="${COMPILE_TARGET}"
-           includeAntRuntime="false"> 
+           includeAntRuntime="false">
       <compilerarg line="-Xlint -Xlint:-serial -Xlint:-path" />
       <bootclasspath path="${COMPILE_BOOTCLASSPATH}" />
       <classpath refid="compile_tests_path" />
@@ -156,7 +156,7 @@
       <syspropertyset refid="javatest.properties" />
       <sysproperty key="java.util.logging.config.file"
                    value="${tests.logging.properties}" />
-      <jvmarg value="-d32" /> <!-- For Notes shared libraries --> 
+      <jvmarg value="-d32" /> <!-- For Notes shared libraries -->
 
       <classpath refid="${tests.classpath}" />
       <formatter type="brief" usefile="no" />
@@ -183,7 +183,7 @@
     <tstamp />
     <jar jarfile="${jarfile}">
       <fileset dir="${classes}" />
-      <fileset dir="${build}" includes="config/*.*" 
+      <fileset dir="${build}" includes="config/*.*"
                excludes="**/logging.properties" />
       <zipfileset file="${build}/config/logging.properties" prefix="" />
       <manifest>
