@@ -5,6 +5,10 @@
   <property file="../version.properties" />
   <property file="${user.home}/google-enterprise-connector-notes.properties" />
 
+  <propertyset id="javatest.properties">
+    <propertyref prefix="javatest."/>
+  </propertyset>
+
   <property name="COMPILE_DEBUG_FLAG" value="true" />
   <property name="COMPILE_DEBUG_LEVEL" value="source,lines,vars" />
   <property name="COMPILE_TARGET" value="1.5" />
@@ -39,6 +43,7 @@
   <property name="tests.jarfile" value="${spi.jar.dir}/connector-tests.jar" />
 
   <property name="notes.jarfile" location="${build.notes.jar}" />
+  <property name="notes.librarydir" location="${build.notes.librarydir}" />
 
   <!-- All reports go into this directory. -->
   <property name="reports.dir" value="reports" />
@@ -130,9 +135,9 @@
 
   <target name="run_tests" depends="compile_tests,jar">
     <property name="test.suite" value="*" />
-    <!--
-    <property name="logging.file" location="${tests.todir}/test.log" />
-    <copy file="${core.dir}/source/javatests/tests.logging.properties"
+    <unix-path propertyname="logging.file" dir="${tests.todir}"
+               filename="test.log"/>
+    <copy file="${tests.src}/tests.logging.properties"
           tofile="${tests.logging.properties}"
           overwrite="yes">
       <filterset>
@@ -140,12 +145,19 @@
                 value="${logging.file}"/>
       </filterset>
     </copy>
-    <replace file="${tests.logging.properties}"
-             token="\" value="\\" />
-    <delete file="${logging.file}"/>
-    -->
     <junit>
       <assertions><enable/></assertions>
+
+      <!-- TODO: add library path info for other platforms -->
+      <env key="DYLD_LIBRARY_PATH" path="${notes.librarydir}" />
+      <sysproperty key="java.library.path"
+                   path="${notes.librarydir}:${java.library.path}" />
+
+      <syspropertyset refid="javatest.properties" />
+      <sysproperty key="java.util.logging.config.file"
+                   value="${tests.logging.properties}" />
+      <jvmarg value="-d32" /> <!-- For Notes shared libraries --> 
+
       <classpath refid="${tests.classpath}" />
       <formatter type="brief" usefile="no" />
       <formatter type="plain" />
@@ -194,5 +206,16 @@
     <delete dir="${build}" />
     <delete dir="${dist}" />
   </target>
+
+  <macrodef name="unix-path">
+    <attribute name="propertyname" />
+    <attribute name="dir" />
+    <attribute name="filename" />
+    <sequential>
+      <pathconvert property="@{propertyname}" targetos="unix">
+        <path> <filelist dir="@{dir}" files="@{filename}" /> </path>
+      </pathconvert>
+    </sequential>
+  </macrodef>
 </project>
 

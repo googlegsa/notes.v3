@@ -118,9 +118,9 @@ public class NotesTraversalManager implements TraversalManager {
 
     LOGGER.exiting(CLASS_NAME, METHOD);
 
-    // TODO: In NotesTraversalManager, we incorrectly return an
-    // empty document list instead of null when there are no
-    // documents to process.
+    if (unidList.size() == 0) {
+      return null;
+    }
     return new NotesConnectorDocumentList(ncs, unidList);
   }
 }

@@ -14,6 +14,7 @@
 
 package com.google.enterprise.connector.notes;
 
+import com.google.enterprise.connector.spi.RepositoryException;
 import com.google.enterprise.connector.spi.SpiConstants.ActionType;
 import lotus.domino.Database;
 import lotus.domino.Document;
@@ -599,7 +600,7 @@ public class NotesCrawlerThread extends Thread {
     return FilePath;
   }
 	
-  public void connectQueue() throws NotesException {
+  public void connectQueue() throws NotesException, RepositoryException {
     if (null == ns) {
       ns = ncs.createNotesSession();
     }

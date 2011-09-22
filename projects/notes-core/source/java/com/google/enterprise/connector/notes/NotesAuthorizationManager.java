@@ -54,7 +54,8 @@ class NotesAuthorizationManager implements AuthorizationManager {
    * format here. Plus constants (preferably generated
    * ones). Also, what happens if the docid uses HTTPS?
    *
-   * Consider using java.net.URL and String.split to get the pieces.
+   * Consider using java.net.URL and String.split to get the
+   * pieces. Attachment docid values can be longer.
    */
   protected String getRepIdFromDocId(String docId) {
     int start = docId.indexOf('/', 7);  // Find the first slash after http://
@@ -192,12 +193,24 @@ class NotesAuthorizationManager implements AuthorizationManager {
         authorized.add(new AuthorizationResponse(allow, docId));
       }
 
-      personDoc.recycle();
-      securityView.recycle();
-      people.recycle();
-      cdb.recycle();
-      acdb.recycle();
-      ns.recycle();
+      if (null != personDoc) {
+        personDoc.recycle();
+      }
+      if (null != securityView) {
+        securityView.recycle();
+      }
+      if (null != people) {
+        people.recycle();
+      }
+      if (null != cdb) {
+        cdb.recycle();
+      }
+      if (null != acdb) {
+        acdb.recycle();
+      }
+      if (null != ns) {
+        ns.recycle();
+      }
     } catch (Exception e) {
       // TODO: what Notes exceptions can be caught here? Should
       // we be catching exceptions within the method on a

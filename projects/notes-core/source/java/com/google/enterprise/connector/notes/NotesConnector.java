@@ -164,18 +164,21 @@ public class NotesConnector implements Connector, ConnectorShutdownAware  {
     LOGGER.logp(Level.INFO, CLASS_NAME, METHOD,
         "Connector is shutting down. Waking all threads!!!");
     shutdown = true;
-    for (int i = 0; i < vecCrawlerThreads.size() + 1; i++)  {
-      // Notify each CrawlerThread and the MaintenanceThread
+    if (null != vecCrawlerThreads) {
+      for (int i = 0; i < vecCrawlerThreads.size() + 1; i++)  {
+        // Notify each CrawlerThread and the MaintenanceThread
+        npn.wakeWorkers();
+      }
+      try {
+        java.lang.Thread.sleep(5000);
+      } catch (Exception e) {
+        LOGGER.log(Level.SEVERE, CLASS_NAME, e);
+      }
       npn.wakeWorkers();
     }
-    try {
-      java.lang.Thread.sleep(5000);
-    } catch (Exception e) {
-      LOGGER.log(Level.SEVERE, CLASS_NAME, e);
-    }
-    npn.wakeWorkers();
   }
 
+  // TODO: consider renaming to isShutdown.
   public boolean getShutdown() {
     return shutdown;
   }

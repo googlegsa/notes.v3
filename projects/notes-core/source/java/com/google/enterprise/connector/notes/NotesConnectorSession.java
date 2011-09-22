@@ -149,7 +149,7 @@ public class NotesConnectorSession implements Session {
           systemDoc.getItemValue(NCCONST.SITM_EXCLUDEDEXTENSIONS);
       for (int i = 0; i < ExcludedExtns.size(); i++ ) {
         LOGGER.logp(Level.CONFIG, CLASS_NAME, METHOD,
-            "The following file extensions will be exluded " + 
+            "The following file extensions will be excluded " + 
             ExcludedExtns.elementAt(i).toString());
         if (ExcludedExtns.elementAt(i).equals(".")) {
           ExcludedExtns.set(i, "");
@@ -290,23 +290,23 @@ public class NotesConnectorSession implements Session {
     return true;
   }
 	
-  public int getMaxCrawlQDepth(){
+  public int getMaxCrawlQDepth() {
     return maxCrawlQDepth;
   }
 
-  public int getDeletionBatchSize(){
+  public int getDeletionBatchSize() {
     return deletionBatchSize;
   }
 	
-  public int getNumCrawlerThreads(){
+  public int getNumCrawlerThreads() {
     return numCrawlerThreads;
   }
 	
-  public NotesPollerNotifier getNotifier(){
+  public NotesPollerNotifier getNotifier() {
     return npn;
   }
 	
-  public String getSpoolDir(){
+  public String getSpoolDir() {
     return SpoolDir;
   }
 	
@@ -370,7 +370,7 @@ public class NotesConnectorSession implements Session {
     return new NotesTraversalManager(this);
   }
 	
-  public boolean isExcludedExtension(String extension ) {
+  public boolean isExcludedExtension(String extension) {
     boolean excluded = false;
 
     // Trim leading . character
@@ -381,7 +381,7 @@ public class NotesConnectorSession implements Session {
     return excluded;
   }
 	
-  public lotus.domino.Session createNotesSession() {
+  public lotus.domino.Session createNotesSession() throws RepositoryException {
     final String METHOD = "createNotesSession";
     LOGGER.entering(CLASS_NAME, METHOD);
     lotus.domino.Session ns = null;
@@ -392,6 +392,7 @@ public class NotesConnectorSession implements Session {
       ns = NotesFactory.createSessionWithFullAccess(password);
     } catch (Exception e) {
       LOGGER.log(Level.SEVERE, CLASS_NAME, e);
+      throw new RepositoryException("Failed to create Notes Session", e); 
     } finally {
       LOGGER.exiting(CLASS_NAME, METHOD);
     }
@@ -412,7 +413,13 @@ public class NotesConnectorSession implements Session {
       // failure?
       LOGGER.log(Level.SEVERE, CLASS_NAME, e);
     } finally {
-      NotesThread.stermThread();
+      try {
+        NotesThread.stermThread();
+      } catch (Throwable t) {
+        LOGGER.logp(Level.WARNING, CLASS_NAME, METHOD, 
+            "Error closing session", t); 
+      }
+              
       LOGGER.exiting(CLASS_NAME, METHOD);
     }
   }
