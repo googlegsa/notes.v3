@@ -1,113 +1,126 @@
+// Copyright 2011 Google Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package com.google.enterprise.connector.notes;
 
-import java.util.ArrayList; //import java.util.Calendar;
+import com.google.enterprise.connector.notes.NotesConnectorDocumentList;
+import com.google.enterprise.connector.spi.DocumentList;
+import com.google.enterprise.connector.spi.TraversalManager;
+import lotus.domino.Database;
+import lotus.domino.View;
+import lotus.domino.ViewNavigator;
+import lotus.domino.ViewEntry;
+
+import java.util.ArrayList; 
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import lotus.domino.*;
-
-//import java.io.FileInputStream;
-//import java.io.FileOutputStream;
-//import java.io.ObjectInputStream;
-//import java.io.ObjectOutputStream;
-
-import com.google.enterprise.connector.notes.NotesConnectorDocumentList;
-//import com.google.enterprise.connector.spi.Document;
-import com.google.enterprise.connector.spi.DocumentList;
-import com.google.enterprise.connector.spi.TraversalManager;
 
 public class NotesTraversalManager implements TraversalManager {
-	//private static final int MAX_DOCID = 1000;
-	private int batchHint = 10;
-	private static final String CLASS_NAME = NotesTraversalManager.class.getName();
-	private static final Logger _logger = Logger.getLogger(CLASS_NAME);
-	private NotesConnectorSession ncs = null;
+  //private static final int MAX_DOCID = 1000;
+  private int batchHint = 10;
+  private static final String CLASS_NAME = NotesTraversalManager.class.getName();
+  private static final Logger LOGGER = Logger.getLogger(CLASS_NAME);
+  private NotesConnectorSession ncs = null;
 	
-	public NotesTraversalManager(NotesConnectorSession session){
-		ncs = session;
-	}
-
+  public NotesTraversalManager(NotesConnectorSession session) {
+    ncs = session;
+  }
 	
-	
-	public void setBatchHint(int hint) {
-		final String METHOD = "setBatchHint";
-		_logger.logp(Level.FINEST, CLASS_NAME, METHOD, "batchHint set to : " + hint);
-		batchHint = hint;
-	}
+  /* @Override */
+  public void setBatchHint(int hint) {
+    final String METHOD = "setBatchHint";
+    LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD, "batchHint set to : " + hint);
+    batchHint = hint;
+  }
 
-	public DocumentList startTraversal() {
-		final String METHOD = "startTraversal";
-		_logger.entering(CLASS_NAME, METHOD);
-
-		// This will reset the start date on all connector		
-		NotesDatabasePoller.resetDatabases(ncs);
-		return traverse("0");
-		
-	}
+  /* @Override */
+  public DocumentList startTraversal() {
+    LOGGER.info("Start traversal"); 
+    // This will reset the start date on all connector		
+    NotesDatabasePoller.resetDatabases(ncs);
+    return traverse("0");
+  }
  
-	public DocumentList resumeTraversal(String checkpoint) {
-		return traverse(checkpoint);
-	}
+  /* @Override */
+  public DocumentList resumeTraversal(String checkpoint) {
+    return traverse(checkpoint);
+  }
 
-	/**
-	 * Utility method to produce a {@code DocumentList} containing the next
-	 * batch of {@code Document} from the checkpoint.
-	 * 
-	 * @param checkpoint
-	 *            a String representing the last document number processed.
-	 */
-	private DocumentList traverse(String checkpoint) {
-		final String METHOD = "traverse";
-		List<String> unidList = new ArrayList<String>(batchHint);
-		Session ns = null;
+  /**
+   * Utility method to produce a {@code DocumentList} containing the next
+   * batch of {@code Document} from the checkpoint.
+   * 
+   * @param checkpoint
+   *            a String representing the last document number processed.
+   */
+  private DocumentList traverse(String checkpoint) {
+    final String METHOD = "traverse";
+    List<String> unidList = new ArrayList<String>(batchHint);
+    lotus.domino.Session ns = null;
 
-		try {
-			_logger.entering(CLASS_NAME, METHOD);
+    try {
+      LOGGER.entering(CLASS_NAME, METHOD);
 
-			_logger.logp(Level.FINE, CLASS_NAME, METHOD, "Resuming from checkpoint: " + checkpoint);
+      LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
+          "Resuming from checkpoint: " + checkpoint);
 
-
-			ns = ncs.createNotesSession();
-			Database cdb = ns.getDatabase(ncs.getServer(), ncs.getDatabase());
+      ns = ncs.createNotesSession();
+      Database cdb = ns.getDatabase(ncs.getServer(), ncs.getDatabase());
 			
-			// Poll for changes
-			// TODO:  Consider moving this to the housekeeping thread
-			// Since it takes two polling cycles to get documents into the GSA
-			// if the system is idle
+      // Poll for changes
+      // TODO:  Consider moving this to the housekeeping thread
+      // Since it takes two polling cycles to get documents into the GSA
+      // if the system is idle
 			
-			NotesDatabasePoller dbpoller = new NotesDatabasePoller();
-			dbpoller.pollDatabases(ns, cdb, ncs.getMaxCrawlQDepth());
-			NotesPollerNotifier npn = ncs.getNotifier();
-			npn.wakeWorkers();
-			Thread.sleep(2000);  // Give the worker threads a chance to pre-fetch documents
+      NotesDatabasePoller dbpoller = new NotesDatabasePoller();
+      dbpoller.pollDatabases(ns, cdb, ncs.getMaxCrawlQDepth());
+      NotesPollerNotifier npn = ncs.getNotifier();
+      npn.wakeWorkers();
+
+      // Give the worker threads a chance to pre-fetch documents
+      Thread.sleep(2000);  
 			
-			// Get list of pre-fetched documents and put these in the doclist
-			View submitQ = cdb.getView(NCCONST.VIEWSUBMITQ);
-			lotus.domino.ViewNavigator submitQNav = submitQ.createViewNav();
-			lotus.domino.ViewEntry ve = submitQNav.getFirst();
-			int batchSize = 0;
-			while (( ve != null) && (batchSize < batchHint)) {
-				batchSize++;
-				String unid = ve.getColumnValues().elementAt(1).toString();
-				_logger.logp(Level.FINEST, CLASS_NAME, METHOD, "Adding document to list" + unid);
-				unidList.add(unid);
-				lotus.domino.ViewEntry prevVe = ve;
-				ve = submitQNav.getNext(prevVe);
-				prevVe.recycle();
-			}		
-			submitQNav.recycle();
-			submitQ.recycle();
-						 
-		} catch (Exception e) {
-			e.printStackTrace();
-		} finally {
-			ncs.closeNotesSession(ns);
-			ns = null;
-		}
+      // Get list of pre-fetched documents and put these in the doclist
+      View submitQ = cdb.getView(NCCONST.VIEWSUBMITQ);
+      ViewNavigator submitQNav = submitQ.createViewNav();
+      ViewEntry ve = submitQNav.getFirst();
+      int batchSize = 0;
+      while (( ve != null) && (batchSize < batchHint)) {
+        batchSize++;
+        String unid = ve.getColumnValues().elementAt(1).toString();
+        LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD,
+            "Adding document to list" + unid);
+        unidList.add(unid);
+        ViewEntry prevVe = ve;
+        ve = submitQNav.getNext(prevVe);
+        prevVe.recycle();
+      }		
+      submitQNav.recycle();
+      submitQ.recycle();
+    } catch (Exception e) {
+      e.printStackTrace();
+    } finally {
+      ncs.closeNotesSession(ns);
+      ns = null;
+    }
 
-		_logger.exiting(CLASS_NAME, METHOD);
-		return new NotesConnectorDocumentList(ncs, unidList);
-		
-	}
+    LOGGER.exiting(CLASS_NAME, METHOD);
 
+    if (unidList.size() == 0) {
+      return null;
+    }
+    return new NotesConnectorDocumentList(ncs, unidList);
+  }
 }

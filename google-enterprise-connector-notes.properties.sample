@@ -11,5 +11,20 @@
 # The location of notes.jar.
 build.notes.jar = ${user.home}/Notes.jar
 
+# The directory containing the Notes client libraries. 
+build.notes.librarydir = /Applications/Notes.app/Contents/MacOS
+
 # The root of the google-enterprise-connector-manager tree.
 build.connector.manager.home = ${user.home}/gsa/google-enterprise-connector-manager
+
+# JDK 1.5 bootclasspath.
+build.bootclasspath = /System/Library/Frameworks/JavaVM.framework/Versions/1.5.0/Classes/classes.jar:/System/Library/Frameworks/JavaVM.framework/Versions/1.5.0/Classes/jsse.jar
+
+
+## Test framework properties
+
+javatest.server = 
+javatest.database = gsaconfig.nsf
+javatest.idpassword = password
+javatest.authentication.username = User Name
+javatest.authentication.password = password

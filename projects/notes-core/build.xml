@@ -1,17 +1,35 @@
-<project name="NotesConnector" default="dist" basedir=".">
+<?xml version="1.0" encoding="UTF-8"?>
 
-  <property file="${user.home}/google-enterprise-connector-notes.properties"/>
+<project name="notes-core" default="build" basedir=".">
 
-  <!-- set global properties for this bin -->
-  <property name="src" location="source/java"/>
-  <property name="test" location="source/javatests"/>
-  <property name="junitReports" location="reports/junit-xml"/>
-  <property name="testbin"  location="build/tests"/>
-  <property name="config"  location="config"/>
-  <property name="bin" location="build/classes"/>
-  <property name="dist"  location="dist/jar"/>
+  <property file="../version.properties" />
+  <property file="${user.home}/google-enterprise-connector-notes.properties" />
 
-  <property name="install"  location="/tomcat/webapps/connector-manager/WEB-INF/lib"/>
+  <propertyset id="javatest.properties">
+    <propertyref prefix="javatest."/>
+  </propertyset>
+
+  <property name="COMPILE_DEBUG_FLAG" value="true" />
+  <property name="COMPILE_DEBUG_LEVEL" value="source,lines,vars" />
+  <property name="COMPILE_TARGET" value="1.5" />
+  <property name="COMPILE_BOOTCLASSPATH" value="${build.bootclasspath}" />
+
+  <!-- Define Directories. -->
+  <property name="build" value="build" />
+  <property name="dist" value="dist" />
+  <property name="src" value="source/java" />
+  <property name="classes" value="${build}/classes" />
+  <property name="config" value="config" />
+  <property name="config.build" value="${build}/config" />
+
+  <property name="tests.src" value="source/javatests" />
+  <property name="tests.build" value="build/tests" />
+  <property name="tests.classes" value="${tests.build}/classes" />
+  <property name="tests.logging.properties"
+            location="${tests.classes}/tests.logging.properties"/>
+
+  <property name="jar.dir"  value="${dist}/jar" />
+  <property name="jarfile"  value="${jar.dir}/connector-notes.jar" />
 
   <property name="connector-manager-projects.dir"
             location="${build.connector.manager.home}/projects" />
@@ -21,85 +39,183 @@
             location="${connector-manager-projects.dir}/connector-manager/third-party" />
   <property name="spi.jar.dir" value="${connector-manager.dir}/dist/jarfile" />
   <property name="spi.jarfile" value="${spi.jar.dir}/connector-spi.jar" />
+  <property name="connector.jarfile" value="${spi.jar.dir}/connector.jar" />
+  <property name="tests.jarfile" value="${spi.jar.dir}/connector-tests.jar" />
 
-  <property name="notes.jarfile" location="${build.notes.jar}"/>
+  <property name="notes.jarfile" location="${build.notes.jar}" />
+  <property name="notes.librarydir" location="${build.notes.librarydir}" />
+
+  <!-- All reports go into this directory. -->
+  <property name="reports.dir" value="reports" />
+
+  <!-- Unit test reports from JUnit are deposited into this directory. -->
+  <!-- TODO: Use these if you switch to xml+html output, instead of plain text.
+  <property name="junit.xml.dir" value="${reports.dir}/junit-xml" />
+  <property name="junit.html.dir" value="${reports.dir}/junit-html" />
+  -->
+  <property name="junit.plain.dir" value="${reports.dir}/junit-plain" />
+  <property name="tests.todir" value="${junit.plain.dir}" />
+
+
+  <!-- =========================== TASKS =============================== -->
+  <target name="build" depends="init,compile,compile_tests,jar">
+  </target>
 
   <target name="init">
-    <!-- Create the time stamp -->
+    <mkdir dir="${build}" />
+    <mkdir dir="${dist}" />
+    <mkdir dir="${classes}" />
+    <mkdir dir="${config.build}" />
+    <mkdir dir="${tests.build}" />
+    <mkdir dir="${tests.classes}" />
+    <mkdir dir="${reports.dir}" />
+    <mkdir dir="${tests.todir}" />
+    <mkdir dir="${jar.dir}" />
+
     <tstamp/>
-    <!-- Create the bin directory structure used by compile -->
-    <mkdir dir="${bin}"/>
   </target>
 
   <target name="compile" depends="init"
-        description="compile the source " >
-    <!-- Compile the java code from ${src} into ${bin} -->
-    <javac includeantruntime="false" srcdir="${src}" destdir="${bin}" debug="true" debuglevel="lines,vars,source">
-            <classpath>
-                <pathelement location="${spi.jarfile}"/>
-                <pathelement location="${notes.jarfile}"/>
-                <pathelement location="${bin}"/>
-            </classpath>
-	</javac>
+          description="Compile the source">
+    <!-- Compile the java code -->
+    <javac srcdir="${src}" 
+           destdir="${classes}"
+           debug="${COMPILE_DEBUG_FLAG}" 
+           debuglevel="${COMPILE_DEBUG_LEVEL}"
+           target="${COMPILE_TARGET}" source="${COMPILE_TARGET}"
+           includeAntRuntime="false">
+      <compilerarg line="-Xlint -Xlint:-serial" />
+      <bootclasspath path="${COMPILE_BOOTCLASSPATH}" />
+      <classpath>
+        <pathelement location="${spi.jarfile}" />
+        <pathelement location="${notes.jarfile}" />
+      </classpath>
+    </javac>
   </target>
 
-  <target name="compile_test" depends="compile" description="compile the junit tests " >
-    <mkdir dir="${testbin}"/>
-    <!-- Compile the java code from ${src} into ${bin} -->
-    <javac includeantruntime="false" srcdir="${test}" destdir="${testbin}" debug="true" debuglevel="lines,vars,source">
-            <classpath>
-                <pathelement location="${spi.jarfile}"/>
-                <pathelement location="${thirdparty.jar.dir}/tests/junit.jar"/>
-                <pathelement location="${bin}"/>
-            </classpath>
-	</javac>
+  <path id="base_tests_path">
+        <pathelement location="${spi.jar.dir}/connector.jar" />
+        <pathelement location="${spi.jar.dir}/connector-tests.jar" />
+        <pathelement location="${jarfile}" />
+        <pathelement location="${spi.jarfile}" />
+  </path>
 
+  <path id="compile_tests_path">
+        <fileset dir="${thirdparty.jar.dir}">
+          <include name="prod/*.jar" />
+          <include name="tests/junit.jar" />
+        </fileset>
+        <path refid="base_tests_path" />
+  </path>
+
+  <target name="compile_tests" depends="init,jar">
+    <!-- compile java source files for tests -->
+    <javac srcdir="${tests.src}" destdir="${tests.classes}" 
+           debug="${COMPILE_DEBUG_FLAG}" 
+           debuglevel="${COMPILE_DEBUG_LEVEL}"
+           target="${COMPILE_TARGET}" source="${COMPILE_TARGET}"
+           includeAntRuntime="false"> 
+      <compilerarg line="-Xlint -Xlint:-serial -Xlint:-path" />
+      <bootclasspath path="${COMPILE_BOOTCLASSPATH}" />
+      <classpath refid="compile_tests_path" />
+    </javac>
   </target>
 
-  <target name="test" depends="compile_test">
-    <mkdir dir="${junitReports}"/>
-    <junit printsummary="yes" haltonfailure="no" showoutput="yes" >
-        <classpath>
-                <pathelement location="${notes.jarfile}"/>
-                <pathelement location="${spi.jarfile}"/>
-                <pathelement location="${thirdparty.jar.dir}/tests/junit.jar"/>
-                <pathelement location="${bin}"/>
-                <pathelement location="${testbin}"/>
-        </classpath>                   
+  <path id="run_tests_path">
+        <fileset dir="${thirdparty.jar.dir}">
+          <include name="prod/*.jar" />
+          <include name="tests/*.jar" />
+        </fileset>
+        <pathelement location="${tests.classes}" />
+        <path refid="base_tests_path" />
+        <pathelement location="${notes.jarfile}" />
+  </path>
+  <!-- This classpath gets overridden by code_coverage. -->
+  <property name="tests.classpath" value="run_tests_path" />
 
-        <batchtest fork="yes" todir="${junitReports}">
-                <formatter type="xml"/>
-                <fileset dir="${testbin}">
-                        <include name="**/NotesConnectorTest.class"/>
-                </fileset>
-        </batchtest>
-    </junit> 
+  <target name="run_tests" depends="compile_tests,jar">
+    <property name="test.suite" value="*" />
+    <unix-path propertyname="logging.file" dir="${tests.todir}"
+               filename="test.log"/>
+    <copy file="${tests.src}/tests.logging.properties"
+          tofile="${tests.logging.properties}"
+          overwrite="yes">
+      <filterset>
+        <filter token="logging.file"
+                value="${logging.file}"/>
+      </filterset>
+    </copy>
+    <junit>
+      <assertions><enable/></assertions>
+
+      <!-- TODO: add library path info for other platforms -->
+      <env key="DYLD_LIBRARY_PATH" path="${notes.librarydir}" />
+      <sysproperty key="java.library.path"
+                   path="${notes.librarydir}:${java.library.path}" />
+
+      <syspropertyset refid="javatest.properties" />
+      <sysproperty key="java.util.logging.config.file"
+                   value="${tests.logging.properties}" />
+      <jvmarg value="-d32" /> <!-- For Notes shared libraries --> 
+
+      <classpath refid="${tests.classpath}" />
+      <formatter type="brief" usefile="no" />
+      <formatter type="plain" />
+      <batchtest fork="yes" todir="${tests.todir}">
+        <fileset dir="${tests.src}">
+          <include name="**/${test.suite}Test.java" />
+        </fileset>
+      </batchtest>
+    </junit>
   </target>
 
-  <target name="dist" depends="compile_test"
-        description="generate the distribution" >
-    <!-- Put everything in ${bin} into the NotesConnector-${DSTAMP}.jar file -->
-    <jar jarfile="${dist}/NotesConnector-${DSTAMP}.jar">
-		<fileset dir="." includes="config/*"/>
-		<fileset dir="${bin}"/>
-		<fileset dir="${src}"/>
-	</jar>
+  <target name="jar" description="notes-connector" depends="compile">
+    <exec executable="svnversion" spawn="false"
+      failifexecutionfails="false"
+      dir="${basedir}"
+      outputproperty="svnversion">
+      <arg line="." />
+    </exec>
+
+    <copy todir="${config.build}">
+      <fileset dir="${config}" />
+    </copy>
+    <tstamp />
+    <jar jarfile="${jarfile}">
+      <fileset dir="${classes}" />
+      <fileset dir="${build}" includes="config/*.*" 
+               excludes="**/logging.properties" />
+      <zipfileset file="${build}/config/logging.properties" prefix="" />
+      <manifest>
+        <attribute name="Implementation-Title"
+                   value="Google Search Appliance Connector for Lotus Notes" />
+        <attribute name="Implementation-Version"
+                   value="${version} (build ${svnversion}  ${TODAY})" />
+        <attribute name="Implementation-Vendor" value="Google Inc." />
+        <attribute name="Specification-Title" value="Connector Manager SPI" />
+        <attribute name="Specification-Version" value="${version.spi}" />
+        <attribute name="Specification-Vendor" value="Google Inc." />
+        <attribute name="Main-Class"
+                   value="com.google.enterprise.connector.notes.NotesMain" />
+      </manifest>
+    </jar>
   </target>
 
-  <target name="install" depends="dist"
-        description="Install to tomcat" >
-    <!-- Put everything in ${bin} into the NotesConnector-${DSTAMP}.jar file -->
-    <copy file="${dist}/NotesConnector-${DSTAMP}.jar" tofile="${install}/NotesConnector.jar"/>
+  <target name="clean">
+    <!-- Delete the ${build} and ${dist} directory trees -->
+    <delete dir="${build}" />
+    <delete dir="${dist}" />
   </target>
 
-  <target name="clean"
-        description="clean up" >
-    <!-- Delete the ${bin} and ${dist} directory trees -->
-    <!-- TODO: update properties to point to build and dist directories -->
-    <delete dir="build"/>
-    <delete dir="dist"/>
-  </target>
-
-
+  <macrodef name="unix-path">
+    <attribute name="propertyname" />
+    <attribute name="dir" />
+    <attribute name="filename" />
+    <sequential>
+      <pathconvert property="@{propertyname}" targetos="unix">
+        <path> <filelist dir="@{dir}" files="@{filename}" /> </path>
+      </pathconvert>
+    </sequential>
+  </macrodef>
 </project>
 
