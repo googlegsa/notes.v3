@@ -56,6 +56,13 @@
   <property name="junit.plain.dir" value="${reports.dir}/junit-plain" />
   <property name="tests.todir" value="${junit.plain.dir}" />
 
+  <!-- ======== Cobertura Code Coverage Properties ======= -->
+  <!-- Instrumented classes are deposited into this directory. -->
+  <property name="instrumented.dir" value="${build}/instrumented" />
+
+  <!-- Coverage reports are deposited into these directories. -->
+  <property name="coverage.xml.dir" value="${reports.dir}/cobertura-xml" />
+  <property name="coverage.html.dir" value="${reports.dir}/cobertura-html" />
 
   <!-- =========================== TASKS =============================== -->
   <target name="build" depends="init,compile,compile_tests,jar">
@@ -201,7 +208,7 @@
     </jar>
   </target>
 
-  <target name="clean">
+  <target name="clean" depends="clean_coverage">
     <!-- Delete the ${build} and ${dist} directory trees -->
     <delete dir="${build}" />
     <delete dir="${dist}" />
@@ -217,5 +224,71 @@
       </pathconvert>
     </sequential>
   </macrodef>
+
+  <!-- ====================== Cobertura Tasks ====================== -->
+
+  <!-- Where Cobertura can find itself and its dependencies. -->
+  <path id="cobertura.classpath">
+    <fileset dir="${thirdparty.jar.dir}/cobertura" includes="**/*.jar" />
+  </path>
+  <taskdef classpathref="cobertura.classpath" resource="tasks.properties" />
+
+  <target name="init_coverage">
+    <mkdir dir="${instrumented.dir}" />
+    <mkdir dir="${coverage.xml.dir}" />
+    <mkdir dir="${coverage.html.dir}" />
+  </target>
+
+  <target name="compile_coverage"
+          depends="init_coverage,compile,compile_tests" />
+
+  <target name="instrument" depends="compile_coverage">
+    <cobertura-instrument todir="${instrumented.dir}">
+      <!-- The following line causes instrument to ignore any line
+           refering to log4j, for the purposes of coverage reporting.
+      -->
+      <ignore regex="org.apache.log4j.*" />
+
+      <!-- Instrument the application classes, but not the test classes. -->
+      <fileset dir="${classes}" includes="**/*.class" />
+    </cobertura-instrument>
+  </target>
+
+  <path id="coverage.classpath">
+    <pathelement location="${instrumented.dir}" />
+    <path refid="run_tests_path" />
+    <path refid="cobertura.classpath" />
+  </path>
+
+  <target name="run_coverage_tests" depends="jar,instrument">
+    <antcall target="run_tests">
+      <param name="tests.classpath" value="coverage.classpath" />
+    </antcall>
+  </target>
+
+  <target name="coverage_report">
+    <!-- Generate an XML file containing the coverage data. -->
+    <cobertura-report srcdir="${src}" destdir="${coverage.xml.dir}"
+                      format="xml" />
+    <!-- Generate a series of HTML files containing the coverage
+         data in a user-readable form using nested source filesets.
+    -->
+    <cobertura-report destdir="${coverage.html.dir}">
+      <fileset dir="${src}">
+        <include name="**/*.java"/>
+      </fileset>
+    </cobertura-report>
+  </target>
+
+  <target name="clean_coverage"
+          description="Remove all files created by the code coverage process.">
+    <delete file="cobertura.log" />
+    <delete file="cobertura.ser" />
+    <delete dir="${instrumented.dir}" />
+  </target>
+
+  <target name="code_coverage"
+          depends="run_coverage_tests,coverage_report"
+          description="Compile, instrument ourself, run the tests and generate coverage reports."/>
 </project>
 
