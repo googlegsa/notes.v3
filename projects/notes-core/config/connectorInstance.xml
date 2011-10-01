@@ -3,9 +3,9 @@
 <beans>
   <bean id="notes-connector"
     class="com.google.enterprise.connector.notes.NotesConnector">
-        <property name="googleConnectorWorkDir" value="${googleConnectorWorkDir}"/>          
-        <property name="IdPassword" value="${IdPassword}"/>
-        <property name="database" value="${Database}"/>    
-        <property name="server" value="${Server}"/>
+        <property name="googleConnectorWorkDir" value="${googleConnectorWorkDir}"/>
+        <property name="idPassword" value="${idPassword}"/>
+        <property name="database" value="${database}"/>
+        <property name="server" value="${server}"/>
   </bean>
 </beans>

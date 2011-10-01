@@ -107,7 +107,7 @@ public class NotesConnectorType implements ConnectorType {
   public boolean validateConfigPair(String key, String val) {
     if (val == null || val.length() == 0) {
       // Empty passwords are allowed
-      if (key.equals("IdPassword")) {
+      if (key.equals("idPassword")) {
         return true;
       }
       return false;

@@ -5,9 +5,9 @@
     class="com.google.enterprise.connector.notes.NotesConnectorType">
       <property name="configKeys">
       <list>
-        <value>IdPassword</value>
-        <value>Database</value>
-        <value>Server</value>
+        <value>idPassword</value>
+        <value>database</value>
+        <value>server</value>
        </list>
     </property>
   </bean>
