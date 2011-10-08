@@ -14,13 +14,13 @@
 
 package com.google.enterprise.connector.notes;
 
-import com.google.enterprise.connector.notes.NotesConnectorDocumentList;
+import com.google.enterprise.connector.notes.client.NotesDatabase;
+import com.google.enterprise.connector.notes.client.NotesSession;
+import com.google.enterprise.connector.notes.client.NotesView;
+import com.google.enterprise.connector.notes.client.NotesViewEntry;
+import com.google.enterprise.connector.notes.client.NotesViewNavigator;
 import com.google.enterprise.connector.spi.DocumentList;
 import com.google.enterprise.connector.spi.TraversalManager;
-import lotus.domino.Database;
-import lotus.domino.View;
-import lotus.domino.ViewNavigator;
-import lotus.domino.ViewEntry;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -30,7 +30,8 @@ import java.util.logging.Logger;
 public class NotesTraversalManager implements TraversalManager {
   //private static final int MAX_DOCID = 1000;
   private int batchHint = 10;
-  private static final String CLASS_NAME = NotesTraversalManager.class.getName();
+  private static final String CLASS_NAME =
+      NotesTraversalManager.class.getName();
   private static final Logger LOGGER = Logger.getLogger(CLASS_NAME);
   private NotesConnectorSession ncs = null;
 
@@ -68,7 +69,7 @@ public class NotesTraversalManager implements TraversalManager {
   private DocumentList traverse(String checkpoint) {
     final String METHOD = "traverse";
     List<String> unidList = new ArrayList<String>(batchHint);
-    lotus.domino.Session ns = null;
+    NotesSession ns = null;
 
     try {
       LOGGER.entering(CLASS_NAME, METHOD);
@@ -77,7 +78,7 @@ public class NotesTraversalManager implements TraversalManager {
           "Resuming from checkpoint: " + checkpoint);
 
       ns = ncs.createNotesSession();
-      Database cdb = ns.getDatabase(ncs.getServer(), ncs.getDatabase());
+      NotesDatabase cdb = ns.getDatabase(ncs.getServer(), ncs.getDatabase());
 
       // Poll for changes
       // TODO:  Consider moving this to the housekeeping thread
@@ -93,9 +94,9 @@ public class NotesTraversalManager implements TraversalManager {
       Thread.sleep(2000);
 
       // Get list of pre-fetched documents and put these in the doclist
-      View submitQ = cdb.getView(NCCONST.VIEWSUBMITQ);
-      ViewNavigator submitQNav = submitQ.createViewNav();
-      ViewEntry ve = submitQNav.getFirst();
+      NotesView submitQ = cdb.getView(NCCONST.VIEWSUBMITQ);
+      NotesViewNavigator submitQNav = submitQ.createViewNav();
+      NotesViewEntry ve = submitQNav.getFirst();
       int batchSize = 0;
       while (( ve != null) && (batchSize < batchHint)) {
         batchSize++;
@@ -103,7 +104,7 @@ public class NotesTraversalManager implements TraversalManager {
         LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD,
             "Adding document to list" + unid);
         unidList.add(unid);
-        ViewEntry prevVe = ve;
+        NotesViewEntry prevVe = ve;
         ve = submitQNav.getNext(prevVe);
         prevVe.recycle();
       }

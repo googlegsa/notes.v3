@@ -14,18 +14,16 @@
 
 package com.google.enterprise.connector.notes;
 
+import com.google.enterprise.connector.notes.client.NotesDatabase;
+import com.google.enterprise.connector.notes.client.NotesDocument;
+import com.google.enterprise.connector.notes.client.NotesDocumentCollection;
+import com.google.enterprise.connector.notes.client.NotesEmbeddedObject;
+import com.google.enterprise.connector.notes.client.NotesItem;
+import com.google.enterprise.connector.notes.client.NotesRichTextItem;
+import com.google.enterprise.connector.notes.client.NotesSession;
+import com.google.enterprise.connector.notes.client.NotesView;
 import com.google.enterprise.connector.spi.RepositoryException;
 import com.google.enterprise.connector.spi.SpiConstants.ActionType;
-import lotus.domino.Database;
-import lotus.domino.Document;
-import lotus.domino.DocumentCollection;
-import lotus.domino.EmbeddedObject;
-import lotus.domino.Item;
-import lotus.domino.NotesException;
-import lotus.domino.NotesFactory;
-import lotus.domino.NotesThread;
-import lotus.domino.RichTextItem;
-import lotus.domino.View;
 
 import java.util.Vector;
 import java.util.logging.Level;
@@ -37,14 +35,14 @@ public class NotesCrawlerThread extends Thread {
   private String attachRoot = null;
   NotesConnector nc = null;
   NotesConnectorSession ncs = null;
-  lotus.domino.Session ns = null;
-  Database cdb = null;
-  lotus.domino.Document templateDoc = null;
-  lotus.domino.Document formDoc = null;
-  DocumentCollection formsdc = null;
+  NotesSession ns = null;
+  NotesDatabase cdb = null;
+  NotesDocument templateDoc = null;
+  NotesDocument formDoc = null;
+  NotesDocumentCollection formsdc = null;
   String OpenDbRepId = "";
-  Database srcdb = null;
-  View crawlQueue = null;
+  NotesDatabase srcdb = null;
+  NotesView crawlQueue = null;
 
   NotesCrawlerThread(NotesConnector Connector, NotesConnectorSession Session) {
     final String METHOD = "NotesCrawlerThread";
@@ -58,12 +56,12 @@ public class NotesCrawlerThread extends Thread {
   // Since we are multi-threaded, each thread has its own objects
   // which are not shared.  Hence the calling thread must pass
   // the Domino objects to this method.
-  private static synchronized lotus.domino.Document getNextFromCrawlQueue(
-      lotus.domino.Session ns, View crawlQueue) {
+  private static synchronized NotesDocument getNextFromCrawlQueue(
+      NotesSession ns, NotesView crawlQueue) {
     final String METHOD = "getNextFromCrawlQueue";
     try {
       crawlQueue.refresh();
-      lotus.domino.Document nextDoc = crawlQueue.getFirstDocument();
+      NotesDocument nextDoc = crawlQueue.getFirstDocument();
       if (nextDoc == null) {
         return null;
       }
@@ -79,7 +77,8 @@ public class NotesCrawlerThread extends Thread {
     return null;
   }
 
-  protected void loadTemplateDoc(String TemplateName) throws NotesException {
+  protected void loadTemplateDoc(String TemplateName)
+      throws RepositoryException {
     final String METHOD = "loadTemplate";
     LOGGER.entering(CLASS_NAME, METHOD);
 
@@ -101,13 +100,13 @@ public class NotesCrawlerThread extends Thread {
       }
       formDoc = null;
     }
-    View vw = cdb.getView(NCCONST.VIEWTEMPLATES);
+    NotesView vw = cdb.getView(NCCONST.VIEWTEMPLATES);
     templateDoc = vw.getDocumentByKey(TemplateName, true);
     formsdc = templateDoc.getResponses();
     vw.recycle();
   }
 
-  protected void loadForm(String FormName) throws NotesException {
+  protected void loadForm(String FormName) throws RepositoryException {
     final String METHOD = "loadForm";
     LOGGER.entering(CLASS_NAME, METHOD);
 
@@ -127,7 +126,7 @@ public class NotesCrawlerThread extends Thread {
       if (formDocName.equals(FormName)) {
         return;
       }
-      Document prevDoc = formDoc;
+      NotesDocument prevDoc = formDoc;
       formDoc = formsdc.getNextDocument(prevDoc);
       prevDoc.recycle();
     }
@@ -144,20 +143,21 @@ public class NotesCrawlerThread extends Thread {
    *   authors fields, but not any non-blank readers fields,
    *   document level security will not be enforced.
    */
-  protected void getDocumentReaderNames(Document crawlDoc, Document srcDoc)
-      throws NotesException {
+  protected void getDocumentReaderNames(NotesDocument crawlDoc,
+      NotesDocument srcDoc) throws RepositoryException {
     final String METHOD = "getDocumentReaderNames";
     LOGGER.entering(CLASS_NAME, METHOD);
 
-    Item itm = null;
-    Item allReaders = crawlDoc.replaceItemValue(NCCONST.NCITM_DOCREADERS, null);
+    NotesItem itm = null;
+    NotesItem allReaders =
+        crawlDoc.replaceItemValue(NCCONST.NCITM_DOCREADERS, null);
     Vector<?> allItems = srcDoc.getItems();
     Vector<String> AuthorReaders = new Vector<String>();
 
     for (int i = 0; i < allItems.size(); i++) {
-      itm = (Item) allItems.elementAt(i);
+      itm = (NotesItem) allItems.elementAt(i);
       if (itm.isReaders()) {
-        Vector<?> readersVals = itm.getValues();
+        Vector readersVals = itm.getValues();
         if (null != readersVals) {
           LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD,
               "Adding readers " + readersVals.toString());
@@ -186,8 +186,8 @@ public class NotesCrawlerThread extends Thread {
   }
 
   // This function will set google security fields for the document
-  protected void setDocumentSecurity(Document crawlDoc, Document srcDoc)
-      throws NotesException {
+  protected void setDocumentSecurity(NotesDocument crawlDoc,
+      NotesDocument srcDoc) throws RepositoryException {
     final String METHOD = "setDocumentSecurity";
     LOGGER.entering(CLASS_NAME, METHOD);
 
@@ -210,8 +210,9 @@ public class NotesCrawlerThread extends Thread {
     }
   }
 
-  protected void evaluateField(Document crawlDoc, Document srcDoc,
-      String formula, String ItemName, String Default) throws NotesException {
+  protected void evaluateField(NotesDocument crawlDoc, NotesDocument srcDoc,
+      String formula, String ItemName, String Default)
+      throws RepositoryException {
     final String METHOD = "evaluateField";
     LOGGER.entering(CLASS_NAME, METHOD);
 
@@ -235,7 +236,7 @@ public class NotesCrawlerThread extends Thread {
       if (Result.length() == 0) {
         Result = Default;
       }
-    } catch (NotesException e) {
+    } catch (RepositoryException e) {
       LOGGER.log(Level.SEVERE, CLASS_NAME, e);
     } finally {
       crawlDoc.replaceItemValue(ItemName, Result);
@@ -250,8 +251,8 @@ public class NotesCrawlerThread extends Thread {
   // This function will map the fields from the source database
   // to the crawl doc using the configuration specified in
   // formDoc
-  protected void mapFields(Document crawlDoc, Document srcDoc)
-      throws NotesException {
+  protected void mapFields(NotesDocument crawlDoc, NotesDocument srcDoc)
+      throws RepositoryException {
     final String METHOD = "mapFields";
     LOGGER.entering(CLASS_NAME, METHOD);
 
@@ -298,8 +299,8 @@ public class NotesCrawlerThread extends Thread {
     // crawlDoc.replaceItemValue(NCCONST.ITM_SEARCHURL, HttpURL);
   }
 
-  protected String getHTTPURL(lotus.domino.Document crawlDoc)
-      throws NotesException {
+  protected String getHTTPURL(NotesDocument crawlDoc)
+      throws RepositoryException {
 
     String httpURL = null;
     String server = null;
@@ -316,8 +317,8 @@ public class NotesCrawlerThread extends Thread {
     return httpURL;
   }
 
-  protected String getContentFields(lotus.domino.Document srcDoc)
-      throws NotesException {
+  protected String getContentFields(NotesDocument srcDoc)
+      throws RepositoryException {
     final String METHOD = "getContentFields";
     LOGGER.entering(CLASS_NAME, METHOD);
 
@@ -336,7 +337,7 @@ public class NotesCrawlerThread extends Thread {
           continue;
         }
         content.append("\n");
-        Item tmpItem = srcDoc.getFirstItem(fieldName);
+        NotesItem tmpItem = srcDoc.getFirstItem(fieldName);
         if (null != tmpItem) {
           // Must use getText to get more than 64k of text
           content.append(tmpItem.getText(2 * 1024 * 1024));
@@ -350,22 +351,22 @@ public class NotesCrawlerThread extends Thread {
     // Otherwise we will index all allowable fields
     Vector <?> vi = srcDoc.getItems();
     for (int j = 0; j < vi.size(); j++) {
-      Item itm = (Item) vi.elementAt(j);
+      NotesItem itm = (NotesItem) vi.elementAt(j);
       String ItemName = itm.getName();
       if ((ItemName.charAt(0) == '$') || (ItemName.equalsIgnoreCase("form"))) {
         continue;
       }
       int type = itm.getType();
       switch (type) {
-        case Item.TEXT:
-        case Item.NUMBERS:
-        case Item.DATETIMES:
-        case Item.RICHTEXT:
-        case Item.NAMES:
-        case Item.AUTHORS:
-        case Item.READERS:
+        case NotesItem.TEXT:
+        case NotesItem.NUMBERS:
+        case NotesItem.DATETIMES:
+        case NotesItem.RICHTEXT:
+        case NotesItem.NAMES:
+        case NotesItem.AUTHORS:
+        case NotesItem.READERS:
           content.append("\n");
-          Item tmpItem = srcDoc.getFirstItem(ItemName);
+          NotesItem tmpItem = srcDoc.getFirstItem(ItemName);
           if (null != tmpItem) {
             // Must use getText to get more than 64k of text
             content.append(tmpItem.getText(2 * 1024 * 1024));
@@ -380,12 +381,12 @@ public class NotesCrawlerThread extends Thread {
     return content.toString();
   }
 
-  protected boolean prefetchDoc(lotus.domino.Document crawlDoc) {
+  protected boolean prefetchDoc(NotesDocument crawlDoc) {
     final String METHOD = "prefetchDoc";
     LOGGER.entering(CLASS_NAME, METHOD);
 
     String NotesURL = null;
-    lotus.domino.Document srcDoc = null;
+    NotesDocument srcDoc = null;
     try {
       NotesURL = crawlDoc.getItemValueString(NCCONST.ITM_GMETANOTESLINK);
       LOGGER.logp(Level.FINER, CLASS_NAME, METHOD,
@@ -438,7 +439,7 @@ public class NotesCrawlerThread extends Thread {
       // Lotus Notes automatically generates unique names for next document
       Vector<?> va = ns.evaluate("@AttachmentNames", srcDoc);
 
-      Item attachItems = crawlDoc.replaceItemValue(
+      NotesItem attachItems = crawlDoc.replaceItemValue(
           NCCONST.ITM_GMETAATTACHMENTS, "");
       for (int i = 0; i < va.size(); i++) {
         String attachName = va.elementAt(i).toString();
@@ -469,7 +470,7 @@ public class NotesCrawlerThread extends Thread {
       // We don't want the document content in the attachment docs
       // Our content must be stored as non-summary rich text to
       // avoid the 32/64K limits in Domino
-      RichTextItem contentItem = crawlDoc.createRichTextItem(
+      NotesRichTextItem contentItem = crawlDoc.createRichTextItem(
           NCCONST.ITM_CONTENT);
       String content = getContentFields(srcDoc);
       contentItem.appendText(content);
@@ -488,20 +489,20 @@ public class NotesCrawlerThread extends Thread {
   }
 
   // This function creates a document for an attachment
-  public boolean createAttachmentDoc(lotus.domino.Document crawlDoc,
-      lotus.domino.Document srcDoc, String AttachmentName, String MimeType)
-      throws NotesException {
+  public boolean createAttachmentDoc(NotesDocument crawlDoc,
+      NotesDocument srcDoc, String AttachmentName, String MimeType)
+      throws RepositoryException {
     final String METHOD = "createAttachmentDoc";
     String AttachmentURL = null;
     LOGGER.entering(CLASS_NAME, METHOD);
-    EmbeddedObject eo = null;
-    lotus.domino.Document attachDoc = null;
+    NotesEmbeddedObject eo = null;
+    NotesDocument attachDoc = null;
 
     try {
       // Error access the attachment
       eo = srcDoc.getAttachment(AttachmentName);
 
-      if (eo.getType() != EmbeddedObject.EMBED_ATTACHMENT) {
+      if (eo.getType() != NotesEmbeddedObject.EMBED_ATTACHMENT) {
         // The object is not an attachment - could be an OLE object or link
         LOGGER.logp(Level.FINER, CLASS_NAME, METHOD,
             "Ignoring embedded object " + AttachmentName);
@@ -588,8 +589,8 @@ public class NotesCrawlerThread extends Thread {
   // will delete the doc.  The second submit will then send an
   // empty doc So we must use the UNID of the crawl request to
   // generate the unique filename
-  public String getAttachmentFilePath(lotus.domino.Document crawlDoc,
-      String attachName) throws NotesException {
+  public String getAttachmentFilePath(NotesDocument crawlDoc,
+      String attachName) throws RepositoryException {
     String dirName = String.format("%s/attachments/%s/%s",
         ncs.getSpoolDir(),
         cdb.getReplicaID(),
@@ -600,7 +601,7 @@ public class NotesCrawlerThread extends Thread {
     return FilePath;
   }
 
-  public void connectQueue() throws NotesException, RepositoryException {
+  public void connectQueue() throws RepositoryException {
     if (null == ns) {
       ns = ncs.createNotesSession();
     }
@@ -656,8 +657,7 @@ public class NotesCrawlerThread extends Thread {
         ncs.closeNotesSession(ns);
       }
       ns = null;
-    } catch (NotesException e) {
-      // TODO: changed log level to WARNING.
+    } catch (RepositoryException e) {
       LOGGER.log(Level.WARNING, CLASS_NAME, e);
     } finally {
       LOGGER.exiting(CLASS_NAME, METHOD);
@@ -672,7 +672,7 @@ public class NotesCrawlerThread extends Thread {
     NotesPollerNotifier npn = ncs.getNotifier();
     while (nc.getShutdown() == false) {
       try {
-        lotus.domino.Document crawlDoc = null;
+        NotesDocument crawlDoc = null;
         // Only get from the queue if there is more than 300MB in the
         // spool directory
         // TODO: getFreeSpace is a Java 1.6 method.
@@ -680,11 +680,11 @@ public class NotesCrawlerThread extends Thread {
         LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
             "Spool free space is " + spoolDir.getFreeSpace());
         if (spoolDir.getFreeSpace()/1000000 < 300) {
-          LOGGER.logp(Level.WARNING, CLASS_NAME, METHOD, 
+          LOGGER.logp(Level.WARNING, CLASS_NAME, METHOD,
               "Insufficient space in spool directory to process " +
               "new documents.  Need at least 300MB.");
           npn.waitForWork();
-          LOGGER.logp(Level.FINE, CLASS_NAME, METHOD, 
+          LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
               "Crawler thread resuming after spool directory had " +
               "insufficient space.");
           continue;

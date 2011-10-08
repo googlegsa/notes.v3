@@ -14,19 +14,19 @@
 
 package com.google.enterprise.connector.notes;
 
+import com.google.enterprise.connector.notes.client.NotesDatabase;
+import com.google.enterprise.connector.notes.client.NotesDocument;
+import com.google.enterprise.connector.notes.client.NotesSession;
+import com.google.enterprise.connector.notes.client.NotesThread;
+import com.google.enterprise.connector.notes.client.NotesView;
+import com.google.enterprise.connector.notes.client.NotesViewEntry;
+import com.google.enterprise.connector.notes.client.NotesViewNavigator;
 import com.google.enterprise.connector.spi.AuthenticationIdentity;
 import com.google.enterprise.connector.spi.AuthenticationManager;
 import com.google.enterprise.connector.spi.AuthenticationResponse;
-import lotus.domino.Database;
-import lotus.domino.Document;
-import lotus.domino.NotesFactory;
-import lotus.domino.NotesThread;
-import lotus.domino.Session;
-import lotus.domino.View;
 
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
 
 class NotesAuthenticationManager implements AuthenticationManager {
   private static final String CLASS_NAME =
@@ -34,13 +34,13 @@ class NotesAuthenticationManager implements AuthenticationManager {
   private static final Logger LOGGER = Logger.getLogger(CLASS_NAME);
 
   private NotesConnectorSession ncs = null;
-  Session nSession = null;
-  Database namesDb = null;
-  Database acDb = null;
-  View usersVw = null;
-  View peopleVw = null;
-  Document authDoc = null;
-  Document personDoc = null;
+  private NotesSession nSession = null;
+  private NotesDatabase namesDb = null;
+  private NotesDatabase acDb = null;
+  private NotesView usersVw = null;
+  private NotesView peopleVw = null;
+  private NotesDocument authDoc = null;
+  private NotesDocument personDoc = null;
 
   public NotesAuthenticationManager(NotesConnectorSession session) {
     final String METHOD = "NotesAuthenticationManager";
@@ -61,17 +61,14 @@ class NotesAuthenticationManager implements AuthenticationManager {
       if (null != usersVw) {
         usersVw.recycle();
       }
-      if (null!= peopleVw) {
+      if (null != peopleVw) {
         peopleVw.recycle();
       }
       if (null != acDb) {
         acDb.recycle();
       }
-      if (null!= namesDb) {
+      if (null != namesDb) {
         namesDb.recycle();
-      }
-      if (nSession!= null) {
-        nSession.recycle();
       }
     }
     catch (Exception e) {
@@ -87,9 +84,8 @@ class NotesAuthenticationManager implements AuthenticationManager {
       String pvi = id.getUsername();
       LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
           "Authenticating user " + pvi);
-      NotesThread.sinitThread();
 
-      nSession = NotesFactory.createSessionWithFullAccess(ncs.getPassword());
+      nSession = ncs.createNotesSession();
 
       // TODO: Check what we need to support here
       namesDb = nSession.getDatabase(ncs.getServer(), "names.nsf");
@@ -134,7 +130,9 @@ class NotesAuthenticationManager implements AuthenticationManager {
       LOGGER.log(Level.SEVERE, CLASS_NAME, e);
     } finally {
       recycleDominoObjects();
-      NotesThread.stermThread();
+      // TODO: Is it ok to close the session here? Is there a
+      // reason it wasn't closed?
+      ncs.closeNotesSession(nSession);
     }
     return new AuthenticationResponse(false, null);
   }

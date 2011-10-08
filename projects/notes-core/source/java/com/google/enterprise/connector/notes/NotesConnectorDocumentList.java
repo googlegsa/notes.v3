@@ -14,13 +14,14 @@
 
 package com.google.enterprise.connector.notes;
 
+import com.google.enterprise.connector.notes.client.NotesDatabase;
+import com.google.enterprise.connector.notes.client.NotesDocument;
+import com.google.enterprise.connector.notes.client.NotesSession;
+import com.google.enterprise.connector.notes.client.NotesView;
 import com.google.enterprise.connector.spi.Document;
 import com.google.enterprise.connector.spi.DocumentList;
 import com.google.enterprise.connector.spi.RepositoryException;
 import com.google.enterprise.connector.spi.SpiConstants;
-import lotus.domino.Database;
-import lotus.domino.NotesException;
-import lotus.domino.View;
 
 import java.util.Iterator;
 import java.util.List;
@@ -34,17 +35,16 @@ class NotesConnectorDocumentList implements DocumentList {
   private Iterator<String> iterator;
   private NotesConnectorDocument ncdoc = null;
   private NotesConnectorSession ncs;
-  private lotus.domino.Session ns = null;
+  private NotesSession ns = null;
 
   /** The connector database */
-  private Database db = null;
+  private NotesDatabase db = null;
 
   /** The backend document being crawled */
-  private lotus.domino.Document crawldoc = null;
+  private NotesDocument crawldoc = null;
 
   /** The list of UNIDs included in this document list */
   private List<String> unidList = null;
-
 
   public NotesConnectorDocumentList(NotesConnectorSession doclistncs,
       List<String> documents) {
@@ -81,7 +81,7 @@ class NotesConnectorDocumentList implements DocumentList {
       if (null == db) {
         db = ns.getDatabase(ncs.getServer(), ncs.getDatabase());
       }
-      crawldoc =db.getDocumentByUNID(unid);
+      crawldoc = db.getDocumentByUNID(unid);
       if (null == ncdoc) {
         ncdoc = new NotesConnectorDocument();
       }
@@ -93,13 +93,13 @@ class NotesConnectorDocumentList implements DocumentList {
     return ncdoc;
   }
 
-  public void checkpointDelete(lotus.domino.Document deleteDoc,
-      View docidvw) throws NotesException {
+  public void checkpointDelete(NotesDocument deleteDoc,
+      NotesView docidvw) throws RepositoryException {
     final String METHOD = "checkpointDelete";
     LOGGER.entering(CLASS_NAME, METHOD);
     String docid = deleteDoc.getItemValueString(NCCONST.ITM_DOCID);
     docidvw.refresh();
-    lotus.domino.Document prevDoc = docidvw.getDocumentByKey(docid, true);
+    NotesDocument prevDoc = docidvw.getDocumentByKey(docid, true);
     if (null != prevDoc) {
       prevDoc.remove(true);
     }
@@ -107,8 +107,8 @@ class NotesConnectorDocumentList implements DocumentList {
     LOGGER.exiting(CLASS_NAME, METHOD);
   }
 
-  public void checkpointAdd(lotus.domino.Document indexedDoc,
-      View docidvw) throws NotesException {
+  public void checkpointAdd(NotesDocument indexedDoc,
+      NotesView docidvw) throws RepositoryException {
     final String METHOD = "checkpointAdd";
     LOGGER.entering(CLASS_NAME, METHOD);
     // getItemValueString returns null in Domino 6.5 or earlier.
@@ -139,7 +139,7 @@ class NotesConnectorDocumentList implements DocumentList {
     // Do we all ready have a document with this url all ready?
     String docid = indexedDoc.getItemValueString(NCCONST.ITM_DOCID);
     docidvw.refresh();
-    lotus.domino.Document prevDoc = docidvw.getDocumentByKey(docid, true);
+    NotesDocument prevDoc = docidvw.getDocumentByKey(docid, true);
     if (null != prevDoc) {
       prevDoc.remove(true);
     }
@@ -161,7 +161,7 @@ class NotesConnectorDocumentList implements DocumentList {
         //Otherwise our checkpoint should be the UNID of the
         //current document in the doclist
         checkPointUnid = ncdoc.getUNID();
-        View docidvw = db.getView(NCCONST.VIEWINDEXED);
+        NotesView docidvw = db.getView(NCCONST.VIEWINDEXED);
 
         // We need to iterate through the doclist and clean up
         // the pre-fetched documents and file system objects
@@ -170,7 +170,7 @@ class NotesConnectorDocumentList implements DocumentList {
           indexedDocUnid =  ci.next();
           LOGGER.logp(Level.FINER, CLASS_NAME, METHOD,
               "Checkpointing document: " + indexedDocUnid);
-          lotus.domino.Document indexedDoc =
+          NotesDocument indexedDoc =
               db.getDocumentByUNID(indexedDocUnid);
           if (indexedDoc.getItemValueString(NCCONST.ITM_ACTION)
               .equalsIgnoreCase(SpiConstants.ActionType.ADD.toString())) {

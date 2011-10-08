@@ -14,13 +14,14 @@
 
 package com.google.enterprise.connector.notes;
 
+import com.google.enterprise.connector.notes.client.SessionFactory;
 import com.google.enterprise.connector.spi.Connector;
 import com.google.enterprise.connector.spi.ConnectorShutdownAware;
 import com.google.enterprise.connector.spi.RepositoryException;
 
+import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.Vector;
 
 public class NotesConnector implements Connector, ConnectorShutdownAware  {
   private static final String CLASS_NAME = NotesConnector.class.getName();
@@ -36,11 +37,24 @@ public class NotesConnector implements Connector, ConnectorShutdownAware  {
   private NotesCrawlerThread crawlerThread = null;
   NotesPollerNotifier npn = null;
   Vector<NotesCrawlerThread> vecCrawlerThreads = null;
+  SessionFactory sessionFactory;
 
   NotesConnector() {
+    this(
+        "com.google.enterprise.connector.notes.client.notes.SessionFactoryImpl");
+  }
+
+  NotesConnector(String sessionFactoryClass) {
     final String METHOD = "NotesConnector";
     LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD,
         "NotesConnector being created.");
+    try {
+      sessionFactory = (SessionFactory)
+          Class.forName(sessionFactoryClass).newInstance();
+    } catch (Exception e) {
+      LOGGER.log(Level.SEVERE, e.getMessage(), e);
+      throw new RuntimeException(e);
+    }
   }
 
   /* @Override */
@@ -138,6 +152,15 @@ public class NotesConnector implements Connector, ConnectorShutdownAware  {
 
   public String getGoogleConnectorWorkDir(String googleConnectorWorkDir) {
     return workingDir;
+  }
+
+  /**
+   * Gets the <code>SessionFactory</code> for this Connector.
+   *
+   * @return the <code>SessionFactory</code>
+   */
+  SessionFactory getSessionFactory() {
+    return sessionFactory;
   }
 
   /* @Override */

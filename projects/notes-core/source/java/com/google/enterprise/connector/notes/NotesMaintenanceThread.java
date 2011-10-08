@@ -14,12 +14,14 @@
 
 package com.google.enterprise.connector.notes;
 
+import com.google.enterprise.connector.notes.client.NotesDateTime;
+import com.google.enterprise.connector.notes.client.NotesDatabase;
+import com.google.enterprise.connector.notes.client.NotesDocument;
+import com.google.enterprise.connector.notes.client.NotesError;
+import com.google.enterprise.connector.notes.client.NotesSession;
+import com.google.enterprise.connector.notes.client.NotesView;
+import com.google.enterprise.connector.spi.RepositoryException;
 import com.google.enterprise.connector.spi.SpiConstants.ActionType;
-import lotus.domino.Database;
-import lotus.domino.DateTime;
-import lotus.domino.NotesError;
-import lotus.domino.NotesException;
-import lotus.domino.View;
 
 import java.util.Vector;
 import java.util.logging.Level;
@@ -37,18 +39,18 @@ public class NotesMaintenanceThread extends Thread {
 
   NotesConnector nc = null;
   NotesConnectorSession ncs = null;
-  Database cdb = null;
+  NotesDatabase cdb = null;
   NotesPollerNotifier npn = null;
   String OpenDbRepId = "";
-  Database SrcDb = null;
-  lotus.domino.Document DbConfigDoc = null;
-  lotus.domino.Session ns = null;
+  NotesDatabase SrcDb = null;
+  NotesDocument DbConfigDoc = null;
+  NotesSession ns = null;
   String DbConfigDocRepId = "";
-  DateTime CheckTime = null;
+  NotesDateTime CheckTime = null;
   String IndexedDocRepId = "";
-  lotus.domino.Document TemplateDoc = null;
-  lotus.domino.Document SourceDocument = null;
-  lotus.domino.Document IndexedDoc = null;
+  NotesDocument TemplateDoc = null;
+  NotesDocument SourceDocument = null;
+  NotesDocument IndexedDoc = null;
 
   NotesMaintenanceThread(NotesConnector Connector,
       NotesConnectorSession Session) {
@@ -112,7 +114,7 @@ public class NotesMaintenanceThread extends Thread {
 
     int NumChecked = 0;
     String lastdocid = "";
-    lotus.domino.Document PrevDoc = null;
+    NotesDocument PrevDoc = null;
 
     try {
       LOGGER.logp(Level.INFO, CLASS_NAME, METHOD, "Checking for deletions ");
@@ -120,14 +122,14 @@ public class NotesMaintenanceThread extends Thread {
       CheckTime = ns.createDateTime("1/1/1900");
       CheckTime.setNow();
       cdb = ns.getDatabase(ncs.getServer(), ncs.getDatabase());
-      View DatabaseView = cdb.getView(NCCONST.VIEWDATABASES);
+      NotesView DatabaseView = cdb.getView(NCCONST.VIEWDATABASES);
 
       DatabaseView.refresh();
       LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
           "MaintenanceThread: Entries in database view: " +
           DatabaseView.getEntryCount());
 
-      View IndexedView = cdb.getView(NCCONST.VIEWINDEXED);
+      NotesView IndexedView = cdb.getView(NCCONST.VIEWINDEXED);
       IndexedView.refresh();
       LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
           "MaintenanceThread: Entries in indexed view: " +
@@ -308,17 +310,17 @@ public class NotesMaintenanceThread extends Thread {
         DbConfigDoc.recycle();
       }
       DbConfigDoc = null;
-      OpenDbRepId ="";
+      OpenDbRepId = "";
       if (null != SrcDb) {
         SrcDb.recycle();
       }
-      SrcDb=null;
+      SrcDb = null;
 
       if (null != cdb) {
         cdb.recycle();
       }
       cdb = null;
-    } catch (NotesException e) {
+    } catch (RepositoryException e) {
       // TODO: changed log level to WARNING. Can an exception
       // here be SEVERE?
       LOGGER.log(Level.WARNING, CLASS_NAME, e);
@@ -330,7 +332,7 @@ public class NotesMaintenanceThread extends Thread {
    *   Only start purging documents after a little while
    *
    */
-  protected boolean getStopped() throws NotesException {
+  protected boolean getStopped() throws RepositoryException {
     final String METHOD = "getStopped";
 
     // TODO:  Think about adding variable to provide some grace time
@@ -354,8 +356,8 @@ public class NotesMaintenanceThread extends Thread {
     return false;
   }
 
-  protected boolean openSourceDatabase(lotus.domino.Document IndexedDoc)
-      throws NotesException {
+  protected boolean openSourceDatabase(NotesDocument IndexedDoc)
+      throws RepositoryException {
     final String METHOD = "openSourceDatabase";
     LOGGER.entering(CLASS_NAME, METHOD);
 
@@ -383,7 +385,8 @@ public class NotesMaintenanceThread extends Thread {
     return srcdbisopen;
   }
 
-  protected void loadTemplateDoc(String TemplateName) throws NotesException {
+  protected void loadTemplateDoc(String TemplateName)
+      throws RepositoryException {
     final String METHOD = "loadTemplateDoc";
     LOGGER.entering(CLASS_NAME, METHOD);
     LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD,
@@ -401,7 +404,7 @@ public class NotesMaintenanceThread extends Thread {
       TemplateDoc.recycle();
       TemplateDoc = null;
     }
-    View vw = cdb.getView(NCCONST.VIEWTEMPLATES);
+    NotesView vw = cdb.getView(NCCONST.VIEWTEMPLATES);
     TemplateDoc = vw.getDocumentByKey(TemplateName, true);
     vw.recycle();
     if (null != TemplateDoc) {
@@ -412,8 +415,8 @@ public class NotesMaintenanceThread extends Thread {
     LOGGER.exiting(CLASS_NAME, METHOD);
   }
 
-  protected void loadDbConfigDoc(String ReplicaId, View DatabaseView)
-      throws NotesException {
+  protected void loadDbConfigDoc(String ReplicaId, NotesView DatabaseView)
+      throws RepositoryException {
     final String METHOD = "loadDbConfigDoc";
     LOGGER.entering(CLASS_NAME, METHOD);
     if (ReplicaId.contentEquals(DbConfigDocRepId)) {
@@ -437,7 +440,7 @@ public class NotesMaintenanceThread extends Thread {
   }
 
   @SuppressWarnings("unchecked")
-  protected boolean checkSelectionCriteria() throws NotesException {
+  protected boolean checkSelectionCriteria() throws RepositoryException {
     final String METHOD = "checkSelectionCriteria";
     LOGGER.entering(CLASS_NAME, METHOD);
 
@@ -464,7 +467,8 @@ public class NotesMaintenanceThread extends Thread {
   /*
    * Check to see if the source document still exists in the source database
    */
-  protected boolean loadSourceDocument(String UNID) throws NotesException {
+  protected boolean loadSourceDocument(String UNID)
+      throws RepositoryException {
     final String METHOD = "loadSourceDocument";
     LOGGER.entering(CLASS_NAME, METHOD);
 
@@ -475,8 +479,8 @@ public class NotesMaintenanceThread extends Thread {
         SourceDocument = null;
       }
       SourceDocument = SrcDb.getDocumentByUNID(UNID);
-    } catch (NotesException e) {
-      if (e.id == NotesError.NOTES_ERR_BAD_UNID) {
+    } catch (NotesConnectorException e) {
+      if (e.getId() == NotesError.NOTES_ERR_BAD_UNID) {
         LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD,
             "Document has been deleted " + UNID);
         LOGGER.exiting(CLASS_NAME, METHOD);
@@ -490,11 +494,11 @@ public class NotesMaintenanceThread extends Thread {
   /*
    * Create a request to delete this document
    */
-  protected void createDeleteRequest(lotus.domino.Document IndexedDoc,
-      String DocId) throws NotesException {
+  protected void createDeleteRequest(NotesDocument IndexedDoc,
+      String DocId) throws RepositoryException {
     final String METHOD = "createDeleteRequest";
     LOGGER.entering(CLASS_NAME, METHOD);
-    lotus.domino.Document DeleteReq = cdb.createDocument();
+    NotesDocument DeleteReq = cdb.createDocument();
     DeleteReq.appendItemValue(NCCONST.ITMFORM, NCCONST.FORMCRAWLREQUEST);
     DeleteReq.replaceItemValue(NCCONST.ITM_ACTION, ActionType.DELETE.toString());
     DeleteReq.replaceItemValue(NCCONST.ITM_DOCID, DocId);

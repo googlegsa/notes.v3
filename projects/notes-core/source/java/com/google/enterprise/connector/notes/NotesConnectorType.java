@@ -30,7 +30,7 @@ import java.util.TreeSet;
 import java.util.logging.Logger;
 
 public class NotesConnectorType implements ConnectorType {
-  private static final String CLASS_NAME = NotesConnectorSession.class.getName();
+  private static final String CLASS_NAME = NotesConnectorType.class.getName();
   private static final Logger LOGGER = Logger.getLogger(CLASS_NAME);
   private static final String VALUE = "value";
   private static final String NAME = "name";

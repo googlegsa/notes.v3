@@ -14,17 +14,18 @@
 
 package com.google.enterprise.connector.notes;
 
+import com.google.enterprise.connector.notes.client.NotesDatabase;
+import com.google.enterprise.connector.notes.client.NotesDocument;
+import com.google.enterprise.connector.notes.client.NotesSession;
+import com.google.enterprise.connector.notes.client.NotesThread;
+import com.google.enterprise.connector.notes.client.NotesView;
+import com.google.enterprise.connector.notes.client.NotesViewEntry;
+import com.google.enterprise.connector.notes.client.NotesViewNavigator;
 import com.google.enterprise.connector.spi.AuthenticationManager;
 import com.google.enterprise.connector.spi.AuthorizationManager;
 import com.google.enterprise.connector.spi.RepositoryException;
 import com.google.enterprise.connector.spi.Session;
 import com.google.enterprise.connector.spi.TraversalManager;
-import lotus.domino.Database;
-import lotus.domino.NotesFactory;
-import lotus.domino.NotesThread;
-import lotus.domino.View;
-import lotus.domino.ViewEntry;
-import lotus.domino.ViewNavigator;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -58,7 +59,7 @@ public class NotesConnectorSession implements Session {
     database = Database;
     password = Password;
     connector = Connector;
-    lotus.domino.Session ns = null;
+    NotesSession ns = null;
     boolean configValidated = false;
     LOGGER.entering(CLASS_NAME, METHOD);
     LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD,
@@ -91,7 +92,7 @@ public class NotesConnectorSession implements Session {
           "Connector debug_outfile: " +
           ns.getEnvironmentString(NCCONST.INIDEBUGOUTFILE, true));
 
-      Database db = ns.getDatabase(server, database);
+      NotesDatabase db = ns.getDatabase(server, database);
       configValidated = loadConfig(ns,db);
 
       db.recycle();
@@ -116,7 +117,7 @@ public class NotesConnectorSession implements Session {
   // Returns true if the configuration loads succesfully
   // Returns false if an error occurs
   @SuppressWarnings("unchecked")
-  public boolean loadConfig(lotus.domino.Session ns, Database db) {
+  public boolean loadConfig(NotesSession ns, NotesDatabase db) {
     final String METHOD = "loadConfiguration";
     LOGGER.entering(CLASS_NAME, METHOD);
 
@@ -124,8 +125,8 @@ public class NotesConnectorSession implements Session {
       LOGGER.logp(Level.CONFIG, CLASS_NAME, METHOD,
           "Loading configuration from system setup document.");
 
-      View vw = db.getView(NCCONST.VIEWSYSTEMSETUP);
-      lotus.domino.Document systemDoc = vw.getFirstDocument();
+      NotesView vw = db.getView(NCCONST.VIEWSYSTEMSETUP);
+      NotesDocument systemDoc = vw.getFirstDocument();
       if (null == systemDoc) {
         LOGGER.logp(Level.SEVERE, CLASS_NAME, METHOD,
             "System configuration document not found.");
@@ -219,11 +220,11 @@ public class NotesConnectorSession implements Session {
 
       // Load server regions
       LOGGER.logp(Level.CONFIG, CLASS_NAME, METHOD, "Loading server domains.");
-      View serversView = db.getView(NCCONST.VIEWSERVERS);
+      NotesView serversView = db.getView(NCCONST.VIEWSERVERS);
       serversView.refresh();
-      ViewNavigator svn = serversView.createViewNav();
-      ViewEntry sve = svn.getFirst();
-      ViewEntry tmpsve;
+      NotesViewNavigator svn = serversView.createViewNav();
+      NotesViewEntry sve = svn.getFirst();
+      NotesViewEntry tmpsve;
       HashMap<String, String> TmpServerRegionMap =
           new HashMap<String, String>();
       while (null != sve) {
@@ -381,15 +382,15 @@ public class NotesConnectorSession implements Session {
     return excluded;
   }
 
-  public lotus.domino.Session createNotesSession() throws RepositoryException {
+  public NotesSession createNotesSession() throws RepositoryException {
     final String METHOD = "createNotesSession";
     LOGGER.entering(CLASS_NAME, METHOD);
-    lotus.domino.Session ns = null;
+    NotesSession ns = null;
     try {
       // Create and recycle sessions as we need them to avoid memory leaks
       // Init the thread and try to login to validate credentials are correct
-      NotesThread.sinitThread();
-      ns = NotesFactory.createSessionWithFullAccess(password);
+      connector.getSessionFactory().getNotesThread().sinitThread();
+      ns = connector.getSessionFactory().createSessionWithFullAccess(password);
     } catch (Exception e) {
       LOGGER.log(Level.SEVERE, CLASS_NAME, e);
       throw new RepositoryException("Failed to create Notes Session", e);
@@ -399,7 +400,7 @@ public class NotesConnectorSession implements Session {
     return ns;
   }
 
-  public void closeNotesSession(lotus.domino.Session ns) {
+  public void closeNotesSession(NotesSession ns) {
     final String METHOD = "closeNotesSession";
     LOGGER.entering(CLASS_NAME, METHOD);
     try {
@@ -414,7 +415,7 @@ public class NotesConnectorSession implements Session {
       LOGGER.log(Level.SEVERE, CLASS_NAME, e);
     } finally {
       try {
-        NotesThread.stermThread();
+        connector.getSessionFactory().getNotesThread().stermThread();
       } catch (Throwable t) {
         LOGGER.logp(Level.WARNING, CLASS_NAME, METHOD,
             "Error closing session", t);

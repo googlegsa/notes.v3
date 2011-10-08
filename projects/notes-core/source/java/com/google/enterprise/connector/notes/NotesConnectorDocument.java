@@ -14,6 +14,9 @@
 
 package com.google.enterprise.connector.notes;
 
+import com.google.enterprise.connector.notes.client.NotesDateTime;
+import com.google.enterprise.connector.notes.client.NotesDocument;
+import com.google.enterprise.connector.notes.client.NotesItem;
 import com.google.enterprise.connector.spi.Document;
 import com.google.enterprise.connector.spi.Property;
 import com.google.enterprise.connector.spi.RepositoryException;
@@ -21,9 +24,6 @@ import com.google.enterprise.connector.spi.SimpleProperty;
 import com.google.enterprise.connector.spi.SpiConstants.ActionType;
 import com.google.enterprise.connector.spi.SpiConstants;
 import com.google.enterprise.connector.spi.Value;
-import lotus.domino.DateTime;
-import lotus.domino.Item;
-import lotus.domino.NotesException;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -45,7 +45,7 @@ public class NotesConnectorDocument implements Document {
   private String UNID = null;
   FileInputStream fin = null;
   String docid = null;
-  lotus.domino.Document crawlDoc = null;
+  NotesDocument crawlDoc = null;
 
   NotesConnectorDocument() {
     final String METHOD = "NotesConnectorDocument";
@@ -65,7 +65,7 @@ public class NotesConnectorDocument implements Document {
     }
   }
 
-  public void setCrawlDoc(String unid, lotus.domino.Document backenddoc) {
+  public void setCrawlDoc(String unid, NotesDocument backenddoc) {
     final String METHOD = "setcrawlDoc";
     LOGGER.entering(CLASS_NAME, METHOD);
     crawlDoc = backenddoc;
@@ -182,7 +182,7 @@ public class NotesConnectorDocument implements Document {
   }
 
   protected void setContentProperty()
-      throws NotesException, FileNotFoundException {
+      throws RepositoryException, FileNotFoundException {
     boolean isAttachment = docid.contains("/$File/");
     if (isAttachment) {
       String filePath = crawlDoc.getItemValueString(NCCONST.ITM_CONTENTPATH);
@@ -203,10 +203,10 @@ public class NotesConnectorDocument implements Document {
     }
   }
 
-  protected void setDateProperties() throws NotesException {
+  protected void setDateProperties() throws RepositoryException {
     final String METHOD = "setDateProperties";
 
-    DateTime dt = (DateTime) crawlDoc
+    NotesDateTime dt = (NotesDateTime) crawlDoc
         .getItemValueDateTimeArray(NCCONST.ITM_GMETALASTUPDATE).elementAt(0);
     Calendar tmpCal = Calendar.getInstance();
     tmpCal.setTime(dt.toJavaDate());
@@ -221,7 +221,7 @@ public class NotesConnectorDocument implements Document {
         asList(Value.getStringValue(nclastupdate)));
     dt.recycle();
 
-    DateTime createdate = (DateTime) crawlDoc
+    NotesDateTime createdate = (NotesDateTime) crawlDoc
         .getItemValueDateTimeArray(NCCONST.ITM_GMETACREATEDATE).elementAt(0);
     String nccreatedate = sdf.format(createdate.toJavaDate());
     docProps.put(NCCONST.PROPNAME_CREATEDATE,
@@ -230,7 +230,7 @@ public class NotesConnectorDocument implements Document {
   }
 
   protected void putTextListItem(String PropName, String ItemName,
-      String DefaultText) throws NotesException {
+      String DefaultText) throws RepositoryException {
     final String METHOD = "putTextItem";
     Vector<?> vText = crawlDoc.getItemValue(ItemName);
     if (0 == vText.size()) {
@@ -258,10 +258,10 @@ public class NotesConnectorDocument implements Document {
   // This method puts the text of an itme into a meta field.
   // Items with multiple values are separated by semicolons
   protected void putTextItem(String PropName, String ItemName,
-      String DefaultText) throws NotesException {
+      String DefaultText) throws RepositoryException {
     final String METHOD = "putTextItem";
     String text = null;
-    Item itm = crawlDoc.getFirstItem(ItemName);
+    NotesItem itm = crawlDoc.getFirstItem(ItemName);
 
     // Does the item exist?
     if (null == itm) {
@@ -289,7 +289,7 @@ public class NotesConnectorDocument implements Document {
   }
 
   protected void putBooleanItem(String PropName, String ItemName,
-      String DefaultText) throws NotesException {
+      String DefaultText) throws RepositoryException {
     final String METHOD = "putTextItem";
     String text = crawlDoc.getItemValueString(ItemName);
     if ((null == text) || (0 == text.length())) { // Does this field exist?

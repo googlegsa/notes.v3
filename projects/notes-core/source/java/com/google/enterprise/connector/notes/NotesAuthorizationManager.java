@@ -14,23 +14,23 @@
 
 package com.google.enterprise.connector.notes;
 
+import com.google.enterprise.connector.notes.client.NotesDatabase;
+import com.google.enterprise.connector.notes.client.NotesDocument;
+import com.google.enterprise.connector.notes.client.NotesSession;
+import com.google.enterprise.connector.notes.client.NotesThread;
+import com.google.enterprise.connector.notes.client.NotesView;
+import com.google.enterprise.connector.notes.client.NotesViewEntry;
+import com.google.enterprise.connector.notes.client.NotesViewNavigator;
 import com.google.enterprise.connector.spi.AuthenticationIdentity;
 import com.google.enterprise.connector.spi.AuthorizationManager;
 import com.google.enterprise.connector.spi.AuthorizationResponse;
 import com.google.enterprise.connector.spi.RepositoryException;
-import lotus.domino.Database;
-import lotus.domino.NotesException;
-import lotus.domino.NotesFactory;
-import lotus.domino.NotesThread;
-import lotus.domino.View;
-import lotus.domino.ViewNavigator;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.Vector;
-import javax.swing.text.html.HTMLDocument.Iterator;
 
 class NotesAuthorizationManager implements AuthorizationManager {
   private static final String CLASS_NAME =
@@ -84,28 +84,28 @@ class NotesAuthorizationManager implements AuthorizationManager {
     ArrayList<AuthorizationResponse> authorized =
         new ArrayList<AuthorizationResponse>(docIds.size());
     String pvi = id.getUsername();
+    NotesSession ns = null;
     try {
       LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
           "Authorizing documents for user " + pvi);
-      NotesThread.sinitThread();
-      lotus.domino.Session ns =
-          NotesFactory.createSessionWithFullAccess(ncs.getPassword());
-      Database cdb = ns.getDatabase(ncs.getServer(), ncs.getDatabase());
+      ns = ncs.createNotesSession();
+
+      NotesDatabase cdb = ns.getDatabase(ncs.getServer(), ncs.getDatabase());
 
       // TODO: Some of this code is very similar to code
       // elsewhere (esp.  NotesAuthenticationManager), with the
       // exception of the securityView in the middle (but unused
       // until later). Extract a helper method somewhere?
-      Database acdb = ns.getDatabase(null, null);
+      NotesDatabase acdb = ns.getDatabase(null, null);
       LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD, "Opening ACL database " +
           ncs.getServer() + " : " + ncs.getACLDbReplicaId());
 
       acdb.openByReplicaID(ncs.getServer(), ncs.getACLDbReplicaId());
-      View securityView = cdb.getView(NCCONST.VIEWSECURITY);
-      View people = acdb.getView(NCCONST.VIEWACPEOPLE);
+      NotesView securityView = cdb.getView(NCCONST.VIEWSECURITY);
+      NotesView people = acdb.getView(NCCONST.VIEWACPEOPLE);
 
       // Resolve the PVI to their Notes names and groups
-      lotus.domino.Document personDoc =
+      NotesDocument personDoc =
           people.getDocumentByKey(id.getUsername(), true);
       if (null == personDoc) {
         // Changed log level to FINE as an AuthZ message.
@@ -149,9 +149,10 @@ class NotesAuthorizationManager implements AuthorizationManager {
 
         boolean docallow = true;
         // Get the category from the security view for this database
-        ViewNavigator secVN = securityView.createViewNavFromCategory(repId);
+        NotesViewNavigator secVN =
+            securityView.createViewNavFromCategory(repId);
         // The first document in the category is ALWAYS the database document
-        lotus.domino.Document dbdoc = secVN.getFirstDocument().getDocument();
+        NotesDocument dbdoc = secVN.getFirstDocument().getDocument();
         // If there is more than one document in the category, we
         // will need to check for document level reader access
         // lists
@@ -171,7 +172,7 @@ class NotesAuthorizationManager implements AuthorizationManager {
           searchKey.addElement(unid);
           LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD,
               "Search key is  " + searchKey.toString());
-          lotus.domino.Document crawlDoc =
+          NotesDocument crawlDoc =
               securityView.getDocumentByKey(searchKey, true);
           if (crawlDoc != null) {
             // Found a crawldoc, so we will need to check document level access
@@ -208,9 +209,6 @@ class NotesAuthorizationManager implements AuthorizationManager {
       if (null != acdb) {
         acdb.recycle();
       }
-      if (null != ns) {
-        ns.recycle();
-      }
     } catch (Exception e) {
       // TODO: what Notes exceptions can be caught here? Should
       // we be catching exceptions within the method on a
@@ -219,7 +217,7 @@ class NotesAuthorizationManager implements AuthorizationManager {
       // document list?
       LOGGER.log(Level.SEVERE, CLASS_NAME, e);
     } finally {
-      NotesThread.stermThread();
+      ncs.closeNotesSession(ns);
     }
     if (LOGGER.isLoggable(Level.FINER)) {
       for (int i = 0; i < authorized.size(); i++) {
@@ -241,8 +239,8 @@ class NotesAuthorizationManager implements AuthorizationManager {
   }
 
   protected boolean checkDocumentReaders(String NotesName,
-      Vector<String> UserGroups, lotus.domino.Document crawldoc,
-      lotus.domino.Document dbdoc) throws NotesException {
+      Vector<String> UserGroups, NotesDocument crawldoc,
+      NotesDocument dbdoc) throws RepositoryException {
     final String METHOD = "checkDocumentReaders";
     LOGGER.entering(CLASS_NAME, METHOD);
 
@@ -311,8 +309,8 @@ class NotesAuthorizationManager implements AuthorizationManager {
   // TODO: Check and validate this with other versions
   @SuppressWarnings("unchecked")
   protected Vector <String> expandRoles(String NotesName,
-      Vector<String> UserGroups, lotus.domino.Document dbdoc)
-      throws NotesException {
+      Vector<String> UserGroups, NotesDocument dbdoc)
+      throws RepositoryException {
     final String METHOD = "expandRoles";
     LOGGER.entering(CLASS_NAME, METHOD);
 
@@ -351,8 +349,8 @@ class NotesAuthorizationManager implements AuthorizationManager {
   }
 
   protected boolean checkDatabaseAccess(String NotesName,
-      lotus.domino.Document DbDoc, Vector<?> UserGroups)
-      throws NotesException {
+      NotesDocument DbDoc, Vector<?> UserGroups)
+      throws RepositoryException {
     final String METHOD = "checkDatabaseAccess";
     LOGGER.entering(CLASS_NAME, METHOD);
 
@@ -387,7 +385,7 @@ class NotesAuthorizationManager implements AuthorizationManager {
 
   // TODO:  the access groups may not need to be summary data. to avoid 64k
   protected boolean checkAllowGroup(Vector<?>UserGroups,
-      lotus.domino.Document dbdoc) throws NotesException {
+      NotesDocument dbdoc) throws RepositoryException {
     final String METHOD = "checkAllowGroup";
     LOGGER.entering(CLASS_NAME, METHOD);
 
@@ -411,7 +409,7 @@ class NotesAuthorizationManager implements AuthorizationManager {
   }
 
   protected boolean checkAllowUser(String userName,
-      lotus.domino.Document dbdoc) throws NotesException {
+      NotesDocument dbdoc) throws RepositoryException {
     final String METHOD = "checkAllowUser";
     LOGGER.entering(CLASS_NAME, METHOD);
 
@@ -433,8 +431,8 @@ class NotesAuthorizationManager implements AuthorizationManager {
     return false;
   }
 
-  protected boolean checkDenyUser(String userName, lotus.domino.Document dbdoc)
-      throws NotesException {
+  protected boolean checkDenyUser(String userName, NotesDocument dbdoc)
+      throws RepositoryException {
     final String METHOD = "checkDenyUser";
     LOGGER.entering(CLASS_NAME, METHOD);
 
