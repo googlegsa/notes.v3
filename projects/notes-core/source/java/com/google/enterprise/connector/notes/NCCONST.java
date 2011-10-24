@@ -65,6 +65,7 @@ public class NCCONST {
   public static final String TITM_SEARCHSTRING = "SearchString";
   public static final String TITM_SEARCHRESULTSFIELDS = "SearchResultsFields";
   public static final String TITM_DESCRIPTIONFIELDS = "DescriptionFields";
+  public static final String TITM_METAFIELDS = "MetaFields";
   //public static final String TITM_AUTOGENERATE = "AutoGenerate";  -- NOT USED
   public static final String AUTOGENERATE_YES = "Yes";  // Size in MB
 

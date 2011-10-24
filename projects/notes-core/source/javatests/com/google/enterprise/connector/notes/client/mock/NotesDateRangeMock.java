@@ -21,4 +21,14 @@ class NotesDateRangeMock extends NotesBaseMock
 
   NotesDateRangeMock() {
   }
+
+  /* TODO: implement getText.
+  public String toString() {
+    try {
+      return getText();
+    } catch (RepositoryException e) {
+      return "";
+    }
+  }
+  */
 }

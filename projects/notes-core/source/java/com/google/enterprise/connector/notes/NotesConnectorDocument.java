@@ -14,6 +14,7 @@
 
 package com.google.enterprise.connector.notes;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.enterprise.connector.notes.client.NotesDateTime;
 import com.google.enterprise.connector.notes.client.NotesDocument;
 import com.google.enterprise.connector.notes.client.NotesItem;
@@ -41,10 +42,15 @@ public class NotesConnectorDocument implements Document {
   private static final String CLASS_NAME =
       NotesConnectorDocument.class.getName();
   private static final Logger LOGGER = Logger.getLogger(CLASS_NAME);
-  private HashMap<String, List<Value>> docProps;
+
+  @VisibleForTesting
+  HashMap<String, List<Value>> docProps;
+
   private String UNID = null;
-  FileInputStream fin = null;
-  String docid = null;
+  private FileInputStream fin = null;
+  private String docid = null;
+
+  @VisibleForTesting
   NotesDocument crawlDoc = null;
 
   NotesConnectorDocument() {
@@ -168,6 +174,7 @@ public class NotesConnectorDocument implements Document {
       putTextItem(NCCONST.PROPNAME_NCAUTHORS, NCCONST.ITM_GMETAWRITERNAME, null);
       putTextItem(NCCONST.PROPNAME_NCFORM, NCCONST.ITM_GMETAFORM, null);
       setCustomProperties();
+      setMetaFields();
     } catch (Exception e) {
       // TODO: Handle errors correctly so that we remove the
       // document from the queue if it is corrupt.
@@ -179,6 +186,24 @@ public class NotesConnectorDocument implements Document {
 
   protected void setCustomProperties() {
     // TODO: Set Custom properties
+  }
+
+  @VisibleForTesting
+  void setMetaFields() throws RepositoryException {
+    Vector items = crawlDoc.getItems();
+    for (Object i : items) {
+      NotesItem item = (NotesItem) i;
+      String name = item.getName();
+      if (!name.startsWith(NotesCrawlerThread.META_FIELDS_PREFIX)) {
+        continue;
+      }
+      if (LOGGER.isLoggable(Level.FINEST)) {
+        LOGGER.finest("found a custom property to map to a meta field: "
+            + name);
+      }
+      putItemValues(
+          name.substring(NotesCrawlerThread.META_FIELDS_PREFIX.length()), name);
+    }
   }
 
   protected void setContentProperty()
@@ -299,6 +324,54 @@ public class NotesConnectorDocument implements Document {
       text = DefaultText;
     }
     docProps.put(PropName, asList(Value.getBooleanValue(text)));
+  }
+
+  /**
+   * Copies the values from an Item to the document properties as Values.
+   *
+   * @param propName the document property name
+   * @param itemName the crawl doc item name
+   * @throws RepositoryException
+   */
+  private void putItemValues(String propName, String itemName)
+      throws RepositoryException {
+    final String METHOD = "putItemValues";
+    Vector<?> values = crawlDoc.getItemValue(itemName);
+    if (0 == values.size()) {
+      return;
+    }
+    List<Value> list = new LinkedList<Value>();
+    for (int i = 0; i < values.size(); i++) {
+      Object value = values.get(i);
+      if (null == value) {
+        continue;
+      }
+      if (value instanceof String) {
+        String v = (String) value;
+        if (v.length() == 0) {
+          continue;
+        }
+        list.add(Value.getStringValue(v));
+      } else if (value instanceof Double) {
+        list.add(Value.getDoubleValue((Double) value));
+      } else if (value instanceof NotesDateTime) {
+        Calendar cal = Calendar.getInstance();
+        cal.setTime(((NotesDateTime) value).toJavaDate());
+        list.add(Value.getDateValue(cal));
+      } else {
+        if (LOGGER.isLoggable(Level.FINEST)) {
+          LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD,
+              "Unexpected item value type: " + value.getClass().getName());
+        }
+      }
+    }
+    if (list.size() > 0) {
+      if (LOGGER.isLoggable(Level.FINEST)) {
+        LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD,
+            "Adding property " + propName + " ::: " + list);
+      }
+      docProps.put(propName, list);
+    }
   }
 
   public String getUNID() {

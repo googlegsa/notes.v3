@@ -14,13 +14,15 @@
 
 package com.google.enterprise.connector.notes.client.mock;
 
+import com.google.common.primitives.Ints;
 import com.google.enterprise.connector.notes.client.NotesDateTime;
 import com.google.enterprise.connector.spi.RepositoryException;
 
+import java.util.Calendar;
 import java.util.Date;
 import java.util.logging.Logger;
 
-class NotesDateTimeMock extends NotesBaseMock
+public class NotesDateTimeMock extends NotesBaseMock
     implements NotesDateTime {
   private static final String CLASS_NAME = NotesDateTimeMock.class.getName();
 
@@ -28,27 +30,49 @@ class NotesDateTimeMock extends NotesBaseMock
   private static final Logger LOGGER =
       Logger.getLogger(CLASS_NAME);
 
+  private Date date;
+
   NotesDateTimeMock() {
+  }
+
+  public NotesDateTimeMock(Date date) {
+    this.date = date;
   }
 
   /** {@inheritDoc} */
   /* @Override */
   public Date toJavaDate() throws RepositoryException {
    LOGGER.entering(CLASS_NAME, "");
-   return null;
+   return date;
   }
 
   /** {@inheritDoc} */
   /* @Override */
   public void setNow() throws RepositoryException {
    LOGGER.entering(CLASS_NAME, "setNow");
+   date = new Date();
   }
 
   /** {@inheritDoc} */
   /* @Override */
   public int timeDifference(NotesDateTime otherDateTime)
-      throws RepositoryException {
+      throws RepositoryException, IllegalArgumentException {
    LOGGER.entering(CLASS_NAME, "timeDifference");
-   return -1;
+   Calendar thisDate = Calendar.getInstance();
+   thisDate.setTime(date);
+   Calendar otherDate = Calendar.getInstance();
+   otherDate.setTime(otherDateTime.toJavaDate());
+   return Ints.checkedCast(
+       (thisDate.getTimeInMillis() - otherDate.getTimeInMillis()) / 1000L);
   }
+
+  /* TODO: implement getLocalTime.
+  public String toString() {
+    try {
+      return getLocalTime();
+    } catch (RepositoryException e) {
+      return "";
+    }
+  }
+  */
 }

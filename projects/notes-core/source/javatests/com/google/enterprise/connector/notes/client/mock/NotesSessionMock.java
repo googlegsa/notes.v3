@@ -86,4 +86,14 @@ class NotesSessionMock extends NotesBaseMock
    LOGGER.entering(CLASS_NAME, "createDateTime");
    return null;
   }
+
+  /* TODO: implement getUserName.
+  public String toString() {
+    try {
+      return getUserName();
+    } catch (RepositoryException e) {
+      return "";
+    }
+  }
+  */
 }

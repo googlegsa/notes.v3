@@ -50,4 +50,14 @@ class NotesEmbeddedObjectMock extends NotesBaseMock
   public void extractFile(String path) throws RepositoryException {
      LOGGER.entering(CLASS_NAME, "extractFile");
  }
+
+  /* TODO: implement getName.
+  public String toString() {
+    try {
+      return getName();
+    } catch (RepositoryException e) {
+      return "";
+    }
+  }
+  */
 }

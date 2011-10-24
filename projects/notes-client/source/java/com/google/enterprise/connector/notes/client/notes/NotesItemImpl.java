@@ -24,13 +24,35 @@ import java.util.Vector;
 class NotesItemImpl extends NotesBaseImpl<Item> implements NotesItem {
 
   static {
-    assert TEXT == Item.TEXT;
-    assert NUMBERS == Item.NUMBERS;
-    assert DATETIMES == Item.DATETIMES;
-    assert RICHTEXT == Item.RICHTEXT;
-    assert NAMES == Item.NAMES;
+    assert ACTIONCD == Item.ACTIONCD;
+    assert ASSISTANTINFO == Item.ASSISTANTINFO;
+    assert ATTACHMENT == Item.ATTACHMENT;
     assert AUTHORS == Item.AUTHORS;
+    assert COLLATION == Item.COLLATION;
+    assert DATETIMES == Item.DATETIMES;
+    assert EMBEDDEDOBJECT == Item.EMBEDDEDOBJECT;
+    assert ERRORITEM == Item.ERRORITEM;
+    assert FORMULA == Item.FORMULA;
+    assert HTML == Item.HTML;
+    assert ICON == Item.ICON;
+    assert LSOBJECT == Item.LSOBJECT;
+    assert MIME_PART == Item.MIME_PART;
+    assert NAMES == Item.NAMES;
+    assert NOTELINKS == Item.NOTELINKS;
+    assert NOTEREFS == Item.NOTEREFS;
+    assert NUMBERS == Item.NUMBERS;
+    assert OTHEROBJECT == Item.OTHEROBJECT;
+    assert QUERYCD == Item.QUERYCD;
     assert READERS == Item.READERS;
+    assert RICHTEXT == Item.RICHTEXT;
+    assert SIGNATURE == Item.SIGNATURE;
+    assert TEXT == Item.TEXT;
+    assert UNAVAILABLE == Item.UNAVAILABLE;
+    assert UNKNOWN == Item.UNKNOWN;
+    assert USERDATA == Item.USERDATA;
+    assert USERID == Item.USERID;
+    assert VIEWMAPDATA == Item.VIEWMAPDATA;
+    assert VIEWMAPLAYOUT == Item.VIEWMAPLAYOUT;
   }
 
   NotesItemImpl(Item item) {

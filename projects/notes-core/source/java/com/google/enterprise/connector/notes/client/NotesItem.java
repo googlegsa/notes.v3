@@ -19,13 +19,36 @@ import com.google.enterprise.connector.spi.RepositoryException;
 import java.util.Vector;
 
 public interface NotesItem extends NotesBase {
-  static final int TEXT = 1280;
-  static final int NUMBERS = 768;
-  static final int DATETIMES = 1024;
-  static final int RICHTEXT = 1;
-  static final int NAMES = 1074;
+
+  static final int ACTIONCD = 16;
+  static final int ASSISTANTINFO = 17;
+  static final int ATTACHMENT = 1084;
   static final int AUTHORS = 1076;
+  static final int COLLATION = 2;
+  static final int DATETIMES = 1024;
+  static final int EMBEDDEDOBJECT = 1090;
+  static final int ERRORITEM = 256;
+  static final int FORMULA = 1536;
+  static final int HTML = 21;
+  static final int ICON = 6;
+  static final int LSOBJECT = 20;
+  static final int MIME_PART = 25;
+  static final int NAMES = 1074;
+  static final int NOTELINKS = 7;
+  static final int NOTEREFS = 4;
+  static final int NUMBERS = 768;
+  static final int OTHEROBJECT = 1085;
+  static final int QUERYCD = 15;
   static final int READERS = 1075;
+  static final int RICHTEXT = 1;
+  static final int SIGNATURE = 8;
+  static final int TEXT = 1280;
+  static final int UNAVAILABLE = 512;
+  static final int UNKNOWN = 0;
+  static final int USERDATA = 14;
+  static final int USERID = 1792;
+  static final int VIEWMAPDATA = 18;
+  static final int VIEWMAPLAYOUT = 19;
 
   /**
    * Returns the item's name.

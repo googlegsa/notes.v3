@@ -57,4 +57,12 @@ class NotesACLEntryMock extends NotesBaseMock
     LOGGER.entering(CLASS_NAME, "getName");
     return "ACL Entry Name";
   }
+
+  public String toString() {
+    try {
+      return getName();
+    } catch (RepositoryException e) {
+      return "";
+    }
+  }
 }

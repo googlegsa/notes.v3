@@ -117,4 +117,12 @@ class NotesDatabaseMock extends NotesBaseMock
     LOGGER.entering(CLASS_NAME, "getACLActivityLog");
     return null;
   }
+
+  public String toString() {
+    try {
+      return getFilePath();
+    } catch (RepositoryException e) {
+      return "";
+    }
+  }
 }

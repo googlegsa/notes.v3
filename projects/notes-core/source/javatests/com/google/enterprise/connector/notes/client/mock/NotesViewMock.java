@@ -90,5 +90,15 @@ class NotesViewMock extends NotesBaseMock implements NotesView {
   /* @Override */
   public void refresh() throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "refresh");
- }
+  }
+
+  /* TODO: implement getName
+  public String toString() {
+    try {
+      return getName();
+    } catch (RepositoryException e) {
+      return "";
+    }
+  }
+  */
 }

@@ -14,6 +14,7 @@
 
 package com.google.enterprise.connector.notes;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.enterprise.connector.notes.client.NotesDatabase;
 import com.google.enterprise.connector.notes.client.NotesDocument;
 import com.google.enterprise.connector.notes.client.NotesDocumentCollection;
@@ -25,24 +26,33 @@ import com.google.enterprise.connector.notes.client.NotesView;
 import com.google.enterprise.connector.spi.RepositoryException;
 import com.google.enterprise.connector.spi.SpiConstants.ActionType;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class NotesCrawlerThread extends Thread {
   private static final String CLASS_NAME = NotesCrawlerThread.class.getName();
   private static final Logger LOGGER = Logger.getLogger(CLASS_NAME);
+  static final String META_FIELDS_PREFIX = "x.";
+
   private String attachRoot = null;
-  NotesConnector nc = null;
-  NotesConnectorSession ncs = null;
-  NotesSession ns = null;
-  NotesDatabase cdb = null;
-  NotesDocument templateDoc = null;
-  NotesDocument formDoc = null;
-  NotesDocumentCollection formsdc = null;
-  String OpenDbRepId = "";
-  NotesDatabase srcdb = null;
-  NotesView crawlQueue = null;
+  private NotesConnector nc = null;
+  private NotesConnectorSession ncs = null;
+  private NotesSession ns = null;
+  private NotesDatabase cdb = null;
+  private NotesDocument templateDoc = null;
+  private NotesDocument formDoc = null;
+  private NotesDocumentCollection formsdc = null;
+  private String openDbRepId = "";
+  private NotesDatabase srcdb = null;
+  private NotesView crawlQueue = null;
+
+  @VisibleForTesting
+  List<MetaField> metaFields;
 
   NotesCrawlerThread(NotesConnector Connector, NotesConnectorSession Session) {
     final String METHOD = "NotesCrawlerThread";
@@ -103,6 +113,18 @@ public class NotesCrawlerThread extends Thread {
     NotesView vw = cdb.getView(NCCONST.VIEWTEMPLATES);
     templateDoc = vw.getDocumentByKey(TemplateName, true);
     formsdc = templateDoc.getResponses();
+
+    // Parse any configured MetaFields once per template load.
+    Vector templateMetaFields =
+        templateDoc.getItemValue(NCCONST.TITM_METAFIELDS);
+    metaFields = new ArrayList<MetaField>(templateMetaFields.size());
+    for (Object o : templateMetaFields) {
+      metaFields.add(new MetaField((String) o));
+    }
+    if (LOGGER.isLoggable(Level.FINEST)) {
+      LOGGER.finest("template MetaFields: '" + templateMetaFields
+          + "'; parsed MetaFields: " + metaFields);
+    }
     vw.recycle();
   }
 
@@ -299,6 +321,83 @@ public class NotesCrawlerThread extends Thread {
     // crawlDoc.replaceItemValue(NCCONST.ITM_SEARCHURL, HttpURL);
   }
 
+  @VisibleForTesting
+  void mapMetaFields(NotesDocument crawlDoc, NotesDocument srcDoc)
+      throws RepositoryException {
+    final String METHOD = "mapMetaFields";
+    LOGGER.entering(CLASS_NAME, METHOD);
+    NotesItem item = null;
+    for (MetaField mf : metaFields) {
+      try {
+        if (null == mf.getFieldName()) {
+          if (LOGGER.isLoggable(Level.FINEST)) {
+            LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD,
+                "Skipping null fieldname");
+          }
+          continue;
+        }
+        String configForm = mf.getFormName();
+        if (null != configForm) {
+          String docForm = srcDoc.getItemValueString(NCCONST.ITMFORM);
+          if (!configForm.equalsIgnoreCase(docForm)) {
+            if (LOGGER.isLoggable(Level.FINEST)) {
+              LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD,
+                  "Skipping metafields because configured form {0} does not "
+                  + "match doc form {1}",
+                  new Object[] { configForm, docForm });
+            }
+            continue;
+          }
+        }
+        if (!srcDoc.hasItem(mf.getFieldName())) {
+          if (LOGGER.isLoggable(Level.FINEST)) {
+            LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD,
+                "Source doc does not have field: " + mf.getFieldName());
+          }
+          continue;
+        }
+        // If there are multiple items with the same name (not a
+        // common Notes occurrence), only the first item will be
+        // mapped.
+        item = srcDoc.getFirstItem(mf.getFieldName());
+        if (null == item.getValues()) {
+          if (LOGGER.isLoggable(Level.FINEST)) {
+            LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD,
+                "Source doc does not have value for: " + mf.getFieldName());
+          }
+          continue;
+        }
+        Object content = item;
+        if (item.getType() == NotesItem.RICHTEXT) {
+          content = item.getText(2 * 1024);
+        }
+        if (crawlDoc.hasItem(META_FIELDS_PREFIX + mf.getMetaName())) {
+          LOGGER.logp(Level.WARNING, CLASS_NAME, METHOD,
+              "Mapping meta fields: meta field {0} already exists in crawl doc",
+              mf.getMetaName());
+          // If multiple Notes fields are mapped to the same meta
+          // field, only the first mapping will be used.
+          continue;
+        }
+        crawlDoc.replaceItemValue(META_FIELDS_PREFIX + mf.getMetaName(),
+            content);
+        if (LOGGER.isLoggable(Level.FINEST)) {
+          LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD,
+              "Mapped meta field : " + META_FIELDS_PREFIX
+              + mf.getMetaName() + " =  " + content);
+        }
+      } catch (RepositoryException e) {
+        LOGGER.logp(Level.WARNING, CLASS_NAME, METHOD,
+            "Error mapping MetaField " + mf, e);
+      } finally {
+        if (null != item) {
+          item.recycle();
+        }
+      }
+    }
+    LOGGER.exiting(CLASS_NAME, METHOD);
+  }
+
   protected String getHTTPURL(NotesDocument crawlDoc)
       throws RepositoryException {
 
@@ -405,7 +504,7 @@ public class NotesCrawlerThread extends Thread {
       // the right one by comparing replicaids
       String crawlDocDbRepId = crawlDoc.getItemValueString(
           NCCONST.NCITM_REPLICAID);
-      if (!crawlDocDbRepId.contentEquals(OpenDbRepId)) {
+      if (!crawlDocDbRepId.contentEquals(openDbRepId)) {
         // Different ReplicaId - Recycle and close the old database
         if (srcdb != null) {
           srcdb.recycle();
@@ -415,7 +514,7 @@ public class NotesCrawlerThread extends Thread {
         srcdb = ns.getDatabase(null, null);
         srcdb.openByReplicaID(crawlDoc.getItemValueString(
                 NCCONST.NCITM_SERVER), crawlDocDbRepId);
-        OpenDbRepId = crawlDocDbRepId;
+        openDbRepId = crawlDocDbRepId;
       }
 
       // Load our source document
@@ -433,6 +532,7 @@ public class NotesCrawlerThread extends Thread {
       setDocumentSecurity(crawlDoc, srcDoc);
 
       mapFields(crawlDoc, srcDoc);
+      mapMetaFields(crawlDoc, srcDoc);
 
       // Process the attachments associated with this document
       // When there are multiple attachments with the same name
@@ -638,7 +738,7 @@ public class NotesCrawlerThread extends Thread {
       formsdc = null;
 
       if (null != srcdb) {
-        OpenDbRepId = "";
+        openDbRepId = "";
         srcdb.recycle();
         srcdb = null;
       }
@@ -730,5 +830,70 @@ public class NotesCrawlerThread extends Thread {
     LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
         "Connector shutdown - NotesCrawlerThread exiting.");
     LOGGER.entering(CLASS_NAME, METHOD);
+  }
+
+  @VisibleForTesting
+  static class MetaField {
+    private static final Pattern formFieldMetaPattern =
+        Pattern.compile("\\A(.+)===([^=]+)=([^=]+)\\z");
+    private static final Pattern fieldMetaPattern =
+        Pattern.compile("\\A([^=]+)=([^=]+)\\z");
+    private static final Pattern fieldPattern =
+        Pattern.compile("\\A([^=]+)\\z");
+
+    private String formName;
+    private String fieldName;
+    private String metaName;
+
+    MetaField(String configString) {
+      String METHOD = "MetaField";
+      if (configString == null) {
+        return;
+      }
+      configString = configString.trim();
+      if (configString.length() == 0) {
+        return;
+      }
+
+      Matcher matcher = formFieldMetaPattern.matcher(configString);
+      if (matcher.matches()) {
+        formName = matcher.group(1);
+        fieldName = matcher.group(2);
+        metaName = matcher.group(3);
+        return;
+      }
+      matcher = fieldMetaPattern.matcher(configString);
+      if (matcher.matches()) {
+        fieldName = matcher.group(1);
+        metaName = matcher.group(2);
+        return;
+      }
+      matcher = fieldPattern.matcher(configString);
+      if (matcher.matches()) {
+        fieldName = matcher.group(1);
+        metaName = fieldName;
+        return;
+      }
+      LOGGER.logp(Level.WARNING, CLASS_NAME, METHOD,
+          "Unable to parse custom meta field definition; skipping: "
+          + configString);
+    }
+
+    String getFormName() {
+      return formName;
+    }
+
+    String getFieldName() {
+      return fieldName;
+    }
+
+    String getMetaName() {
+      return metaName;
+    }
+
+    public String toString() {
+      return "[form: " + formName + "; field: " + fieldName
+          + "; meta: " + metaName + "]";
+    }
   }
 }

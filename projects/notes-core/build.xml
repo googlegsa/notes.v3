@@ -95,6 +95,9 @@
       <bootclasspath path="${COMPILE_BOOTCLASSPATH}" />
       <classpath>
         <pathelement location="${spi.jarfile}" />
+        <fileset dir="${thirdparty.jar.dir}">
+          <include name="prod/*.jar" />
+        </fileset>
       </classpath>
     </javac>
   </target>
@@ -179,6 +182,10 @@
 
     <copy todir="${config.build}">
       <fileset dir="${config}" />
+      <filterset>
+        <filter token="constructor-arg"
+                value="&lt;constructor-arg value=&quot;com.google.enterprise.connector.notes.client.mock.SessionFactoryMock&quot; /&gt;" />
+      </filterset>
     </copy>
     <tstamp />
     <jar jarfile="${jarfile}">

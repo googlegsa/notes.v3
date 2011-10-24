@@ -30,6 +30,9 @@ public class NotesPollerNotifier {
     nc = connector;
   }
 
+  /**
+   * Wrapper around java.lang.Object wait(timeout).
+   */
   synchronized void waitForWork(long timeout) {
     final String METHOD = "waitForWork";
     try {
@@ -48,6 +51,9 @@ public class NotesPollerNotifier {
     }
   }
 
+  /**
+   * Wrapper around java.lang.Object wait().
+   */
   synchronized void waitForWork() {
     final String METHOD = "waitForWork";
     try {
@@ -69,6 +75,11 @@ public class NotesPollerNotifier {
     NumThreads = i;
   }
 
+  /**
+   * Calls java.lang.Object.notifyAll() numThreads times (once
+   * per crawler thread, plus once for the maintenance thread
+   * (see NotesConnector where numThreads is set)).
+   */
   synchronized void wakeWorkers() {
     final String METHOD="wakeWorkers";
     LOGGER.logp(Level.FINE, CLASS_NAME, METHOD, "Waking worker threads.");

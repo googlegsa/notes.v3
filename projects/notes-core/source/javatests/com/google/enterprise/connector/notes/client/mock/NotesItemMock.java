@@ -17,6 +17,8 @@ package com.google.enterprise.connector.notes.client.mock;
 import com.google.enterprise.connector.notes.client.NotesItem;
 import com.google.enterprise.connector.spi.RepositoryException;
 
+import java.util.Collections;
+import java.util.Map;
 import java.util.Vector;
 import java.util.logging.Logger;
 
@@ -27,28 +29,48 @@ class NotesItemMock extends NotesBaseMock implements NotesItem {
   private static final Logger LOGGER =
       Logger.getLogger(CLASS_NAME);
 
+  private Map<String, Object> properties;
+
   NotesItemMock() {
+    this.properties = Collections.emptyMap();
+  }
+
+  NotesItemMock(Map<String, Object> properties) {
+    this.properties = properties;
   }
 
   /** {@inheritDoc} */
   /* @Override */
   public String getName() throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "getName");
-    return null;
+    return (String) properties.get("name");
   }
 
   /** {@inheritDoc} */
   /* @Override */
   public int getType() throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "getType");
-    return -1;
+    Object type = properties.get("type");
+    if (null == type) {
+      return -1;
+    }
+    return (Integer) type;
   }
 
   /** {@inheritDoc} */
   /* @Override */
   public String getText(int maxlen) throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "getText");
-    return null;
+    Vector values = getValues();
+    if (values == null) {
+      return null;
+    }
+    StringBuilder builder = new StringBuilder();
+    for (Object o : values) {
+      builder.append(o.toString()).append(";");
+    }
+    builder.deleteCharAt(builder.length() -1);
+    return builder.toString();
   }
 
   /** {@inheritDoc} */
@@ -69,7 +91,7 @@ class NotesItemMock extends NotesBaseMock implements NotesItem {
   /* @Override */
   public Vector getValues() throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "getValues");
-    return null;
+    return (Vector) properties.get("values");
   }
 
   /** {@inheritDoc} */
@@ -88,5 +110,13 @@ class NotesItemMock extends NotesBaseMock implements NotesItem {
   /* @Override */
   public void setSummary(boolean summary) throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "setSummary");
+  }
+
+  public String toString() {
+    try {
+      return getName();
+    } catch (RepositoryException e) {
+      return "";
+    }
   }
 }
