@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE beans PUBLIC "-//SPRING//DTD BEAN//EN" "http://www.springframework.org/dtd/spring-beans.dtd">
+<!DOCTYPE beans PUBLIC "-//SPRING//DTD BEAN//EN" "http://www.springframework.org/dtd/spring-beans-2.0.dtd">
 <beans>
-  <bean id="notes-connector"
+  <bean id="Lotus_Notes"
     class="com.google.enterprise.connector.notes.NotesConnectorType">
       <property name="configKeys">
       <list>
-        <value>IdPassword</value>
-        <value>Database</value>
-        <value>Server</value>
+        <value>idPassword</value>
+        <value>database</value>
+        <value>server</value>
        </list>
     </property>
   </bean>

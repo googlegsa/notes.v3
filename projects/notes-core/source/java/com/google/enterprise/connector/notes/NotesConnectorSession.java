@@ -14,17 +14,18 @@
 
 package com.google.enterprise.connector.notes;
 
+import com.google.enterprise.connector.notes.client.NotesDatabase;
+import com.google.enterprise.connector.notes.client.NotesDocument;
+import com.google.enterprise.connector.notes.client.NotesSession;
+import com.google.enterprise.connector.notes.client.NotesThread;
+import com.google.enterprise.connector.notes.client.NotesView;
+import com.google.enterprise.connector.notes.client.NotesViewEntry;
+import com.google.enterprise.connector.notes.client.NotesViewNavigator;
 import com.google.enterprise.connector.spi.AuthenticationManager;
 import com.google.enterprise.connector.spi.AuthorizationManager;
 import com.google.enterprise.connector.spi.RepositoryException;
 import com.google.enterprise.connector.spi.Session;
 import com.google.enterprise.connector.spi.TraversalManager;
-import lotus.domino.Database;
-import lotus.domino.NotesFactory;
-import lotus.domino.NotesThread;
-import lotus.domino.View;
-import lotus.domino.ViewEntry;
-import lotus.domino.ViewNavigator;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -49,16 +50,16 @@ public class NotesConnectorSession implements Session {
   private int maxCrawlQDepth;
   private int deletionBatchSize;
   private int numCrawlerThreads;
-	
-  public NotesConnectorSession(NotesConnector Connector, 
-      NotesPollerNotifier connectorNpn, String Password, 
+
+  public NotesConnectorSession(NotesConnector Connector,
+      NotesPollerNotifier connectorNpn, String Password,
       String Server, String Database) throws RepositoryException {
     final String METHOD = "NotesConnectorSession";
     server = Server;
     database = Database;
     password = Password;
     connector = Connector;
-    lotus.domino.Session ns = null;
+    NotesSession ns = null;
     boolean configValidated = false;
     LOGGER.entering(CLASS_NAME, METHOD);
     LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD,
@@ -72,26 +73,26 @@ public class NotesConnectorSession implements Session {
       LOGGER.logp(Level.CONFIG, CLASS_NAME, METHOD,
           "Connector platform is " + ns.getPlatform());
       LOGGER.logp(Level.CONFIG, CLASS_NAME, METHOD,
-          "Connector config database on server: " + server);			
-      LOGGER.logp(Level.CONFIG, CLASS_NAME, METHOD, 
+          "Connector config database on server: " + server);
+      LOGGER.logp(Level.CONFIG, CLASS_NAME, METHOD,
           "Connector config database path: " + database);
-      LOGGER.logp(Level.CONFIG, CLASS_NAME, METHOD, 
-          "Connector local data directory: " + 
+      LOGGER.logp(Level.CONFIG, CLASS_NAME, METHOD,
+          "Connector local data directory: " +
           ns.getEnvironmentString(NCCONST.INIDIRECTORY, true));
-      LOGGER.logp(Level.CONFIG, CLASS_NAME, METHOD, 
-          "Connector kittype: " + 
+      LOGGER.logp(Level.CONFIG, CLASS_NAME, METHOD,
+          "Connector kittype: " +
           ns.getEnvironmentString(NCCONST.INIKITTYPE, true));
       LOGGER.logp(Level.CONFIG, CLASS_NAME, METHOD,
-          "Connector keyfilename: " + 
+          "Connector keyfilename: " +
           ns.getEnvironmentString(NCCONST.INIKEYFILENAME, true));
       LOGGER.logp(Level.CONFIG, CLASS_NAME, METHOD,
-          "Connector serverkeyfilename: " + 
+          "Connector serverkeyfilename: " +
           ns.getEnvironmentString(NCCONST.INISERVERKEYFILENAME, true));
-      LOGGER.logp(Level.CONFIG, CLASS_NAME, METHOD, 
-          "Connector debug_outfile: " + 
+      LOGGER.logp(Level.CONFIG, CLASS_NAME, METHOD,
+          "Connector debug_outfile: " +
           ns.getEnvironmentString(NCCONST.INIDEBUGOUTFILE, true));
-			
-      Database db = ns.getDatabase(server, database);
+
+      NotesDatabase db = ns.getDatabase(server, database);
       configValidated = loadConfig(ns,db);
 
       db.recycle();
@@ -101,7 +102,7 @@ public class NotesConnectorSession implements Session {
     } finally {
       closeNotesSession(ns);
     }
-		
+
     // If we could not validate our config then let the connector
     // manager know session creation has failed.
     if (!configValidated) {
@@ -111,23 +112,23 @@ public class NotesConnectorSession implements Session {
     }
     LOGGER.exiting(CLASS_NAME, METHOD);
   }
-	
+
   // Loads configuration from the system config doc
   // Returns true if the configuration loads succesfully
   // Returns false if an error occurs
   @SuppressWarnings("unchecked")
-  public boolean loadConfig(lotus.domino.Session ns, Database db) {
+  public boolean loadConfig(NotesSession ns, NotesDatabase db) {
     final String METHOD = "loadConfiguration";
     LOGGER.entering(CLASS_NAME, METHOD);
-		
+
     try {
       LOGGER.logp(Level.CONFIG, CLASS_NAME, METHOD,
           "Loading configuration from system setup document.");
 
-      View vw = db.getView(NCCONST.VIEWSYSTEMSETUP);
-      lotus.domino.Document systemDoc = vw.getFirstDocument();
+      NotesView vw = db.getView(NCCONST.VIEWSYSTEMSETUP);
+      NotesDocument systemDoc = vw.getFirstDocument();
       if (null == systemDoc) {
-        LOGGER.logp(Level.SEVERE, CLASS_NAME, METHOD, 
+        LOGGER.logp(Level.SEVERE, CLASS_NAME, METHOD,
             "System configuration document not found.");
         return false;
       }
@@ -139,24 +140,24 @@ public class NotesConnectorSession implements Session {
         return false;
       }
       if (ACLDbReplicaId.length() == 0) {
-        LOGGER.logp(Level.SEVERE, CLASS_NAME, METHOD, 
+        LOGGER.logp(Level.SEVERE, CLASS_NAME, METHOD,
             "Access Control Database has not been set up.");
         return false;
       }
-			
+
       // "." means no file extension.  Replace with an empty string if it exists.
-      ExcludedExtns = (Vector<String>) 
+      ExcludedExtns = (Vector<String>)
           systemDoc.getItemValue(NCCONST.SITM_EXCLUDEDEXTENSIONS);
       for (int i = 0; i < ExcludedExtns.size(); i++ ) {
         LOGGER.logp(Level.CONFIG, CLASS_NAME, METHOD,
-            "The following file extensions will be excluded " + 
+            "The following file extensions will be excluded " +
             ExcludedExtns.elementAt(i).toString());
         if (ExcludedExtns.elementAt(i).equals(".")) {
           ExcludedExtns.set(i, "");
         }
       }
 
-      MaxFileSize = 1024 * 1024 * 
+      MaxFileSize = 1024 * 1024 *
           systemDoc.getItemValueInteger(NCCONST.SITM_MAXFILESIZE);
       LOGGER.logp(Level.CONFIG, CLASS_NAME, METHOD,
           "Maximum attachment size is " + MaxFileSize);
@@ -173,17 +174,17 @@ public class NotesConnectorSession implements Session {
             NCCONST.DEFAULT_ATTACHMENT_DIR);;
       }
       java.io.File sdir = new java.io.File(SpoolDir);
-			
+
       // Make the directory and make sure we can write to it
       sdir.mkdirs();
       if (!sdir.isDirectory() || !sdir.canWrite()) {
-        LOGGER.logp(Level.SEVERE, CLASS_NAME, METHOD, 
+        LOGGER.logp(Level.SEVERE, CLASS_NAME, METHOD,
             "Can't write to spool directory " + SpoolDir);
         return false;
       }
-      LOGGER.logp(Level.CONFIG, CLASS_NAME, METHOD, 
+      LOGGER.logp(Level.CONFIG, CLASS_NAME, METHOD,
           "Attachment spool directory is set to " + SpoolDir);
-			
+
       // Threshhold for polling
       maxCrawlQDepth = systemDoc.getItemValueInteger(
           NCCONST.SITM_MAXCRAWLQDEPTH);
@@ -192,9 +193,9 @@ public class NotesConnectorSession implements Session {
             "Invalid setting for maxCrawlQDepth: " + maxCrawlQDepth);
         return false;
       }
-      LOGGER.logp(Level.CONFIG, CLASS_NAME, METHOD, 
+      LOGGER.logp(Level.CONFIG, CLASS_NAME, METHOD,
           "maxCrawlQDepth is " + maxCrawlQDepth);
-			
+
       // Number of docs to check when deleting
       deletionBatchSize = systemDoc.getItemValueInteger(
           NCCONST.SITM_DELETIONBATCHSIZE);
@@ -203,7 +204,7 @@ public class NotesConnectorSession implements Session {
             "Invalid setting for deletionBatchSize: " + deletionBatchSize);
         return false;
       }
-      LOGGER.logp(Level.CONFIG, CLASS_NAME, METHOD, 
+      LOGGER.logp(Level.CONFIG, CLASS_NAME, METHOD,
           "deletionBatchSize is " + deletionBatchSize);
 
       // Number of crawler threads to spawn
@@ -214,25 +215,25 @@ public class NotesConnectorSession implements Session {
             "Invalid setting for numCrawlerThreads: " + numCrawlerThreads);
         return false;
       }
-      LOGGER.logp(Level.CONFIG, CLASS_NAME, METHOD, 
+      LOGGER.logp(Level.CONFIG, CLASS_NAME, METHOD,
           "numCrawlerThreads is " + numCrawlerThreads);
-			
+
       // Load server regions
       LOGGER.logp(Level.CONFIG, CLASS_NAME, METHOD, "Loading server domains.");
-      View serversView = db.getView(NCCONST.VIEWSERVERS);
+      NotesView serversView = db.getView(NCCONST.VIEWSERVERS);
       serversView.refresh();
-      ViewNavigator svn = serversView.createViewNav();
-      ViewEntry sve = svn.getFirst();
-      ViewEntry tmpsve;
+      NotesViewNavigator svn = serversView.createViewNav();
+      NotesViewEntry sve = svn.getFirst();
+      NotesViewEntry tmpsve;
       HashMap<String, String> TmpServerRegionMap =
-          new HashMap<String, String>(); 
+          new HashMap<String, String>();
       while (null != sve) {
         Vector<?> ColumnVals = sve.getColumnValues();
         // This is a problem with the Notes Java API.
         // when this column has 1 element we get a String
         // when this column has more than 1 element we get a Vector
         // The alternative is to test whether this is a vector
-        // before we start using it i.e.  
+        // before we start using it i.e.
         // if (ColumnVals.elementAt(0).getClass().getName()
         //    .compareTo("java.util.Vector")
         String TmpServer = ColumnVals.elementAt(0).toString().toLowerCase();
@@ -244,7 +245,7 @@ public class NotesConnectorSession implements Session {
         }
         String TmpDomain = ColumnVals.elementAt(2).toString().toLowerCase();
         String TmpMsg = String.format("Server %s is in domain %s",
-            TmpServer, TmpDomain); 
+            TmpServer, TmpDomain);
         LOGGER.logp(Level.CONFIG, CLASS_NAME, METHOD, TmpMsg);
         TmpServerRegionMap.put(TmpServer, TmpDomain);
         tmpsve = svn.getNext();
@@ -259,7 +260,7 @@ public class NotesConnectorSession implements Session {
             "No regions have been configured for this connector.");
         return false;
       }
-			
+
       // Load the mimetypes
       // TODO:  Fix the extension list to include new ones like .docx
       LOGGER.logp(Level.CONFIG, CLASS_NAME, METHOD, "Loading mimetypes.");
@@ -271,13 +272,13 @@ public class NotesConnectorSession implements Session {
             mimerecord.indexOf('@')).toLowerCase();
         String mimetype = mimerecord.substring(mimerecord.indexOf('@') + 1);
         String TmpMsg = String.format(
-            "File extension %s is set for mimetype %s", ext, mimetype); 
+            "File extension %s is set for mimetype %s", ext, mimetype);
         LOGGER.logp(Level.CONFIG, CLASS_NAME, METHOD, TmpMsg);
         tmpMimeExtnMap.put(ext, mimetype);
       }
       // Load into a new map then reassign to minimize threading issues
       MimeTypeMap = tmpMimeExtnMap;
-			
+
       systemDoc.recycle();
       LOGGER.logp(Level.CONFIG, CLASS_NAME, METHOD,
           "Configuration successfully loaded.");
@@ -289,7 +290,7 @@ public class NotesConnectorSession implements Session {
     }
     return true;
   }
-	
+
   public int getMaxCrawlQDepth() {
     return maxCrawlQDepth;
   }
@@ -297,19 +298,19 @@ public class NotesConnectorSession implements Session {
   public int getDeletionBatchSize() {
     return deletionBatchSize;
   }
-	
+
   public int getNumCrawlerThreads() {
     return numCrawlerThreads;
   }
-	
+
   public NotesPollerNotifier getNotifier() {
     return npn;
   }
-	
+
   public String getSpoolDir() {
     return SpoolDir;
   }
-	
+
   public String getDomain(String server) {
     String domain = ServerDomainMap.get(server.toLowerCase());
     if (null == domain) {
@@ -327,7 +328,7 @@ public class NotesConnectorSession implements Session {
       return mimeType;
     }
   }
-	
+
   public String getPassword() {
     return password;
   }
@@ -335,19 +336,19 @@ public class NotesConnectorSession implements Session {
   public String getServer() {
     return server;
   }
-	
+
   public int getMaxFileSize() {
     return MaxFileSize;
   }
 
   public String getACLDbReplicaId() {
     return ACLDbReplicaId;
-  }		
-	
+  }
+
   public String getDatabase() {
     return database ;
-  }		
-	
+  }
+
   public NotesConnector getConnector() {
     return connector;
   }
@@ -369,7 +370,7 @@ public class NotesConnectorSession implements Session {
     //TODO: Should we always return the same TraversalManager?
     return new NotesTraversalManager(this);
   }
-	
+
   public boolean isExcludedExtension(String extension) {
     boolean excluded = false;
 
@@ -380,26 +381,26 @@ public class NotesConnectorSession implements Session {
     }
     return excluded;
   }
-	
-  public lotus.domino.Session createNotesSession() throws RepositoryException {
+
+  public NotesSession createNotesSession() throws RepositoryException {
     final String METHOD = "createNotesSession";
     LOGGER.entering(CLASS_NAME, METHOD);
-    lotus.domino.Session ns = null;
+    NotesSession ns = null;
     try {
       // Create and recycle sessions as we need them to avoid memory leaks
       // Init the thread and try to login to validate credentials are correct
-      NotesThread.sinitThread();
-      ns = NotesFactory.createSessionWithFullAccess(password);
+      connector.getSessionFactory().getNotesThread().sinitThread();
+      ns = connector.getSessionFactory().createSessionWithFullAccess(password);
     } catch (Exception e) {
       LOGGER.log(Level.SEVERE, CLASS_NAME, e);
-      throw new RepositoryException("Failed to create Notes Session", e); 
+      throw new RepositoryException("Failed to create Notes Session", e);
     } finally {
       LOGGER.exiting(CLASS_NAME, METHOD);
     }
     return ns;
   }
-	
-  public void closeNotesSession(lotus.domino.Session ns) {
+
+  public void closeNotesSession(NotesSession ns) {
     final String METHOD = "closeNotesSession";
     LOGGER.entering(CLASS_NAME, METHOD);
     try {
@@ -414,12 +415,12 @@ public class NotesConnectorSession implements Session {
       LOGGER.log(Level.SEVERE, CLASS_NAME, e);
     } finally {
       try {
-        NotesThread.stermThread();
+        connector.getSessionFactory().getNotesThread().stermThread();
       } catch (Throwable t) {
-        LOGGER.logp(Level.WARNING, CLASS_NAME, METHOD, 
-            "Error closing session", t); 
+        LOGGER.logp(Level.WARNING, CLASS_NAME, METHOD,
+            "Error closing session", t);
       }
-              
+
       LOGGER.exiting(CLASS_NAME, METHOD);
     }
   }

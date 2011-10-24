@@ -14,37 +14,45 @@
 
 package com.google.enterprise.connector.notes;
 
+import com.google.common.annotations.VisibleForTesting;
+import com.google.enterprise.connector.notes.client.NotesDatabase;
+import com.google.enterprise.connector.notes.client.NotesDocument;
+import com.google.enterprise.connector.notes.client.NotesDocumentCollection;
+import com.google.enterprise.connector.notes.client.NotesEmbeddedObject;
+import com.google.enterprise.connector.notes.client.NotesItem;
+import com.google.enterprise.connector.notes.client.NotesRichTextItem;
+import com.google.enterprise.connector.notes.client.NotesSession;
+import com.google.enterprise.connector.notes.client.NotesView;
 import com.google.enterprise.connector.spi.RepositoryException;
 import com.google.enterprise.connector.spi.SpiConstants.ActionType;
-import lotus.domino.Database;
-import lotus.domino.Document;
-import lotus.domino.DocumentCollection;
-import lotus.domino.EmbeddedObject;
-import lotus.domino.Item;
-import lotus.domino.NotesException;
-import lotus.domino.NotesFactory;
-import lotus.domino.NotesThread;
-import lotus.domino.RichTextItem;
-import lotus.domino.View;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class NotesCrawlerThread extends Thread {
   private static final String CLASS_NAME = NotesCrawlerThread.class.getName();
   private static final Logger LOGGER = Logger.getLogger(CLASS_NAME);
+  static final String META_FIELDS_PREFIX = "x.";
+
   private String attachRoot = null;
-  NotesConnector nc = null;
-  NotesConnectorSession ncs = null;
-  lotus.domino.Session ns = null;
-  Database cdb = null;
-  lotus.domino.Document templateDoc = null;
-  lotus.domino.Document formDoc = null;
-  DocumentCollection formsdc = null;
-  String OpenDbRepId = "";
-  Database srcdb = null;
-  View crawlQueue = null;
+  private NotesConnector nc = null;
+  private NotesConnectorSession ncs = null;
+  private NotesSession ns = null;
+  private NotesDatabase cdb = null;
+  private NotesDocument templateDoc = null;
+  private NotesDocument formDoc = null;
+  private NotesDocumentCollection formsdc = null;
+  private String openDbRepId = "";
+  private NotesDatabase srcdb = null;
+  private NotesView crawlQueue = null;
+
+  @VisibleForTesting
+  List<MetaField> metaFields;
 
   NotesCrawlerThread(NotesConnector Connector, NotesConnectorSession Session) {
     final String METHOD = "NotesCrawlerThread";
@@ -54,38 +62,39 @@ public class NotesCrawlerThread extends Thread {
     nc = Connector;
     ncs = Session;
   }
-		
+
   // Since we are multi-threaded, each thread has its own objects
   // which are not shared.  Hence the calling thread must pass
   // the Domino objects to this method.
-  private static synchronized lotus.domino.Document getNextFromCrawlQueue(
-      lotus.domino.Session ns, View crawlQueue) {
+  private static synchronized NotesDocument getNextFromCrawlQueue(
+      NotesSession ns, NotesView crawlQueue) {
     final String METHOD = "getNextFromCrawlQueue";
     try {
       crawlQueue.refresh();
-      lotus.domino.Document nextDoc = crawlQueue.getFirstDocument();
+      NotesDocument nextDoc = crawlQueue.getFirstDocument();
       if (nextDoc == null) {
         return null;
       }
       LOGGER.logp(Level.FINER, CLASS_NAME, METHOD, "Prefetching document");
       nextDoc.replaceItemValue(NCCONST.NCITM_STATE, NCCONST.STATEINCRAWL);
       nextDoc.save(true);
-			
+
       return nextDoc;
     } catch (Exception e) {
-      LOGGER.log(Level.SEVERE, CLASS_NAME, e); 
+      LOGGER.log(Level.SEVERE, CLASS_NAME, e);
     } finally {
     }
     return null;
   }
-	
-  protected void loadTemplateDoc(String TemplateName) throws NotesException {
+
+  protected void loadTemplateDoc(String TemplateName)
+      throws RepositoryException {
     final String METHOD = "loadTemplate";
     LOGGER.entering(CLASS_NAME, METHOD);
-		
+
     // Is a template document all ready loaded?
     if (null != templateDoc) {
-      // Is this the one we need?  
+      // Is this the one we need?
       if (TemplateName.equals(
               templateDoc.getItemValueString(NCCONST.TITM_TEMPLATENAME))) {
         return;
@@ -101,16 +110,28 @@ public class NotesCrawlerThread extends Thread {
       }
       formDoc = null;
     }
-    View vw = cdb.getView(NCCONST.VIEWTEMPLATES);
+    NotesView vw = cdb.getView(NCCONST.VIEWTEMPLATES);
     templateDoc = vw.getDocumentByKey(TemplateName, true);
     formsdc = templateDoc.getResponses();
+
+    // Parse any configured MetaFields once per template load.
+    Vector templateMetaFields =
+        templateDoc.getItemValue(NCCONST.TITM_METAFIELDS);
+    metaFields = new ArrayList<MetaField>(templateMetaFields.size());
+    for (Object o : templateMetaFields) {
+      metaFields.add(new MetaField((String) o));
+    }
+    if (LOGGER.isLoggable(Level.FINEST)) {
+      LOGGER.finest("template MetaFields: '" + templateMetaFields
+          + "'; parsed MetaFields: " + metaFields);
+    }
     vw.recycle();
   }
-	
-  protected void loadForm(String FormName) throws NotesException {
+
+  protected void loadForm(String FormName) throws RepositoryException {
     final String METHOD = "loadForm";
     LOGGER.entering(CLASS_NAME, METHOD);
-		
+
     if (null != formDoc) {
       if (FormName == formDoc.getItemValueString(NCCONST.FITM_LASTALIAS)) {
         return;
@@ -127,7 +148,7 @@ public class NotesCrawlerThread extends Thread {
       if (formDocName.equals(FormName)) {
         return;
       }
-      Document prevDoc = formDoc;
+      NotesDocument prevDoc = formDoc;
       formDoc = formsdc.getNextDocument(prevDoc);
       prevDoc.recycle();
     }
@@ -144,20 +165,21 @@ public class NotesCrawlerThread extends Thread {
    *   authors fields, but not any non-blank readers fields,
    *   document level security will not be enforced.
    */
-  protected void getDocumentReaderNames(Document crawlDoc, Document srcDoc)
-      throws NotesException {
+  protected void getDocumentReaderNames(NotesDocument crawlDoc,
+      NotesDocument srcDoc) throws RepositoryException {
     final String METHOD = "getDocumentReaderNames";
     LOGGER.entering(CLASS_NAME, METHOD);
-		
-    Item itm = null;
-    Item allReaders = crawlDoc.replaceItemValue(NCCONST.NCITM_DOCREADERS, null);
+
+    NotesItem itm = null;
+    NotesItem allReaders =
+        crawlDoc.replaceItemValue(NCCONST.NCITM_DOCREADERS, null);
     Vector<?> allItems = srcDoc.getItems();
     Vector<String> AuthorReaders = new Vector<String>();
-		
+
     for (int i = 0; i < allItems.size(); i++) {
-      itm = (Item) allItems.elementAt(i);
+      itm = (NotesItem) allItems.elementAt(i);
       if (itm.isReaders()) {
-        Vector<?> readersVals = itm.getValues();
+        Vector readersVals = itm.getValues();
         if (null != readersVals) {
           LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD,
               "Adding readers " + readersVals.toString());
@@ -184,15 +206,15 @@ public class NotesCrawlerThread extends Thread {
       crawlDoc.replaceItemValue(NCCONST.NCITM_DOCAUTHORREADERS, AuthorReaders);
     }
   }
-	
+
   // This function will set google security fields for the document
-  protected void setDocumentSecurity(Document crawlDoc, Document srcDoc)
-      throws NotesException {
+  protected void setDocumentSecurity(NotesDocument crawlDoc,
+      NotesDocument srcDoc) throws RepositoryException {
     final String METHOD = "setDocumentSecurity";
     LOGGER.entering(CLASS_NAME, METHOD);
-		
+
     String AuthType = crawlDoc.getItemValueString(NCCONST.NCITM_AUTHTYPE);
-		
+
     if (AuthType.equals(NCCONST.AUTH_NONE)) {
       crawlDoc.replaceItemValue(NCCONST.ITM_ISPUBLIC, Boolean.TRUE.toString());
       return;
@@ -205,16 +227,17 @@ public class NotesCrawlerThread extends Thread {
     }
     if (AuthType.equals(NCCONST.AUTH_CONNECTOR)) {
       crawlDoc.replaceItemValue(NCCONST.ITM_ISPUBLIC, Boolean.FALSE.toString());
-      ;  
+      ;
       return;
     }
   }
 
-  protected void evaluateField(Document crawlDoc, Document srcDoc, 
-      String formula, String ItemName, String Default) throws NotesException {
+  protected void evaluateField(NotesDocument crawlDoc, NotesDocument srcDoc,
+      String formula, String ItemName, String Default)
+      throws RepositoryException {
     final String METHOD = "evaluateField";
     LOGGER.entering(CLASS_NAME, METHOD);
-		
+
     Vector<?> VecEvalResult = null;
     String Result = null;
     try {
@@ -235,23 +258,23 @@ public class NotesCrawlerThread extends Thread {
       if (Result.length() == 0) {
         Result = Default;
       }
-    } catch (NotesException e) {
+    } catch (RepositoryException e) {
       LOGGER.log(Level.SEVERE, CLASS_NAME, e);
     } finally {
-      crawlDoc.replaceItemValue(ItemName, Result);			
+      crawlDoc.replaceItemValue(ItemName, Result);
     }
     LOGGER.exiting(CLASS_NAME, METHOD);
   }
-	
-	
+
+
   // TODO: Consider mapping other fields so they can be used for
   // dynamic navigation.  This could be an configurable option.
-	
+
   // This function will map the fields from the source database
   // to the crawl doc using the configuration specified in
   // formDoc
-  protected void mapFields(Document crawlDoc, Document srcDoc)
-      throws NotesException {
+  protected void mapFields(NotesDocument crawlDoc, NotesDocument srcDoc)
+      throws RepositoryException {
     final String METHOD = "mapFields";
     LOGGER.entering(CLASS_NAME, METHOD);
 
@@ -267,7 +290,7 @@ public class NotesCrawlerThread extends Thread {
     crawlDoc.replaceItemValue(NCCONST.ITM_GMETALASTUPDATE,
         srcDoc.getLastModified());
     crawlDoc.replaceItemValue(NCCONST.ITM_GMETACREATEDATE, srcDoc.getCreated());
-		
+
     // We need to generate the title and description using a formula
     String formula = null;
     // When there is no form configuration use the config from the template
@@ -278,7 +301,7 @@ public class NotesCrawlerThread extends Thread {
       formula = templateDoc.getItemValueString(NCCONST.TITM_SEARCHRESULTSFIELDS);
     }
     evaluateField(crawlDoc, srcDoc, formula, NCCONST.ITM_TITLE, "");
-		
+
     // Again..when there is no form configuration use the config
     // from the template
     if (formDoc != null) {
@@ -289,38 +312,115 @@ public class NotesCrawlerThread extends Thread {
     }
     evaluateField(crawlDoc, srcDoc, formula, NCCONST.ITM_GMETADESCRIPTION, "");
     LOGGER.exiting(CLASS_NAME, METHOD);
-		
+
     // Don't map these here -> just do it in the document properties
     // crawlDoc.replaceItemValue(NCCONST.ITM_DISPLAYURL, HttpURL);
-    // crawlDoc.replaceItemValue(NCCONST.ITM_GMETATOPIC, 
-    //     VecSearchTitle.elementAt(0));		
+    // crawlDoc.replaceItemValue(NCCONST.ITM_GMETATOPIC,
+    //     VecSearchTitle.elementAt(0));
     // DO NOT MAP THIS FIELD - it will force the GSA to try and crawl this URL
-    // crawlDoc.replaceItemValue(NCCONST.ITM_SEARCHURL, HttpURL);  
+    // crawlDoc.replaceItemValue(NCCONST.ITM_SEARCHURL, HttpURL);
   }
-	
-  protected String getHTTPURL(lotus.domino.Document crawlDoc) 
-      throws NotesException {
-		
+
+  @VisibleForTesting
+  void mapMetaFields(NotesDocument crawlDoc, NotesDocument srcDoc)
+      throws RepositoryException {
+    final String METHOD = "mapMetaFields";
+    LOGGER.entering(CLASS_NAME, METHOD);
+    NotesItem item = null;
+    for (MetaField mf : metaFields) {
+      try {
+        if (null == mf.getFieldName()) {
+          if (LOGGER.isLoggable(Level.FINEST)) {
+            LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD,
+                "Skipping null fieldname");
+          }
+          continue;
+        }
+        String configForm = mf.getFormName();
+        if (null != configForm) {
+          String docForm = srcDoc.getItemValueString(NCCONST.ITMFORM);
+          if (!configForm.equalsIgnoreCase(docForm)) {
+            if (LOGGER.isLoggable(Level.FINEST)) {
+              LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD,
+                  "Skipping metafields because configured form {0} does not "
+                  + "match doc form {1}",
+                  new Object[] { configForm, docForm });
+            }
+            continue;
+          }
+        }
+        if (!srcDoc.hasItem(mf.getFieldName())) {
+          if (LOGGER.isLoggable(Level.FINEST)) {
+            LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD,
+                "Source doc does not have field: " + mf.getFieldName());
+          }
+          continue;
+        }
+        // If there are multiple items with the same name (not a
+        // common Notes occurrence), only the first item will be
+        // mapped.
+        item = srcDoc.getFirstItem(mf.getFieldName());
+        if (null == item.getValues()) {
+          if (LOGGER.isLoggable(Level.FINEST)) {
+            LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD,
+                "Source doc does not have value for: " + mf.getFieldName());
+          }
+          continue;
+        }
+        Object content = item;
+        if (item.getType() == NotesItem.RICHTEXT) {
+          content = item.getText(2 * 1024);
+        }
+        if (crawlDoc.hasItem(META_FIELDS_PREFIX + mf.getMetaName())) {
+          LOGGER.logp(Level.WARNING, CLASS_NAME, METHOD,
+              "Mapping meta fields: meta field {0} already exists in crawl doc",
+              mf.getMetaName());
+          // If multiple Notes fields are mapped to the same meta
+          // field, only the first mapping will be used.
+          continue;
+        }
+        crawlDoc.replaceItemValue(META_FIELDS_PREFIX + mf.getMetaName(),
+            content);
+        if (LOGGER.isLoggable(Level.FINEST)) {
+          LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD,
+              "Mapped meta field : " + META_FIELDS_PREFIX
+              + mf.getMetaName() + " =  " + content);
+        }
+      } catch (RepositoryException e) {
+        LOGGER.logp(Level.WARNING, CLASS_NAME, METHOD,
+            "Error mapping MetaField " + mf, e);
+      } finally {
+        if (null != item) {
+          item.recycle();
+        }
+      }
+    }
+    LOGGER.exiting(CLASS_NAME, METHOD);
+  }
+
+  protected String getHTTPURL(NotesDocument crawlDoc)
+      throws RepositoryException {
+
     String httpURL = null;
     String server = null;
-		
+
     // Get the domain name associated with the server
     server = crawlDoc.getItemValueString(NCCONST.NCITM_SERVER);
     String domain = ncs.getDomain(server);
-		
-    httpURL = String.format("http://%s%s/%s/0/%s", 
-        crawlDoc.getItemValueString(NCCONST.NCITM_SERVER), 
+
+    httpURL = String.format("http://%s%s/%s/0/%s",
+        crawlDoc.getItemValueString(NCCONST.NCITM_SERVER),
         domain,
         crawlDoc.getItemValueString(NCCONST.NCITM_REPLICAID),
         crawlDoc.getItemValueString(NCCONST.NCITM_UNID));
     return httpURL;
-  }	
-	
-  protected String getContentFields(lotus.domino.Document srcDoc)
-      throws NotesException {
+  }
+
+  protected String getContentFields(NotesDocument srcDoc)
+      throws RepositoryException {
     final String METHOD = "getContentFields";
     LOGGER.entering(CLASS_NAME, METHOD);
-		
+
     // TODO:  Handle stored forms
     StringBuffer content = new StringBuffer();
     // If we have a form document then we have a specified list
@@ -331,12 +431,12 @@ public class NotesCrawlerThread extends Thread {
         String fieldName = v.elementAt(i).toString();
         // Fields beginning with $ are reserved fields in Domino
         // Do not index the Form field ever
-        if ((fieldName.charAt(0) == '$') || 
+        if ((fieldName.charAt(0) == '$') ||
             (fieldName.equalsIgnoreCase("form"))) {
           continue;
         }
         content.append("\n");
-        Item tmpItem = srcDoc.getFirstItem(fieldName);
+        NotesItem tmpItem = srcDoc.getFirstItem(fieldName);
         if (null != tmpItem) {
           // Must use getText to get more than 64k of text
           content.append(tmpItem.getText(2 * 1024 * 1024));
@@ -350,52 +450,52 @@ public class NotesCrawlerThread extends Thread {
     // Otherwise we will index all allowable fields
     Vector <?> vi = srcDoc.getItems();
     for (int j = 0; j < vi.size(); j++) {
-      Item itm = (Item) vi.elementAt(j);
+      NotesItem itm = (NotesItem) vi.elementAt(j);
       String ItemName = itm.getName();
       if ((ItemName.charAt(0) == '$') || (ItemName.equalsIgnoreCase("form"))) {
         continue;
       }
       int type = itm.getType();
       switch (type) {
-        case Item.TEXT:
-        case Item.NUMBERS:
-        case Item.DATETIMES:
-        case Item.RICHTEXT:
-        case Item.NAMES:
-        case Item.AUTHORS:
-        case Item.READERS:
+        case NotesItem.TEXT:
+        case NotesItem.NUMBERS:
+        case NotesItem.DATETIMES:
+        case NotesItem.RICHTEXT:
+        case NotesItem.NAMES:
+        case NotesItem.AUTHORS:
+        case NotesItem.READERS:
           content.append("\n");
-          Item tmpItem = srcDoc.getFirstItem(ItemName);
+          NotesItem tmpItem = srcDoc.getFirstItem(ItemName);
           if (null != tmpItem) {
             // Must use getText to get more than 64k of text
-            content.append(tmpItem.getText(2 * 1024 * 1024));  
+            content.append(tmpItem.getText(2 * 1024 * 1024));
             tmpItem.recycle();
           }
           break;
         default:
           break;
-      }			
+      }
     }
     LOGGER.exiting(CLASS_NAME, METHOD);
     return content.toString();
   }
-	
-  protected boolean prefetchDoc(lotus.domino.Document crawlDoc) {
+
+  protected boolean prefetchDoc(NotesDocument crawlDoc) {
     final String METHOD = "prefetchDoc";
     LOGGER.entering(CLASS_NAME, METHOD);
-		
+
     String NotesURL = null;
-    lotus.domino.Document srcDoc = null;
+    NotesDocument srcDoc = null;
     try {
       NotesURL = crawlDoc.getItemValueString(NCCONST.ITM_GMETANOTESLINK);
-      LOGGER.logp(Level.FINER, CLASS_NAME, METHOD, 
+      LOGGER.logp(Level.FINER, CLASS_NAME, METHOD,
           "Prefetching document " + NotesURL);
-			
+
       // Get the template for this document
       loadTemplateDoc(crawlDoc.getItemValueString(NCCONST.NCITM_TEMPLATE));
       if (null == templateDoc) {
         LOGGER.logp(Level.FINER, CLASS_NAME, METHOD,
-            "No template found for document " + 
+            "No template found for document " +
             crawlDoc.getItemValueString(NCCONST.ITM_GMETANOTESLINK));
         return false;
       }
@@ -404,45 +504,46 @@ public class NotesCrawlerThread extends Thread {
       // the right one by comparing replicaids
       String crawlDocDbRepId = crawlDoc.getItemValueString(
           NCCONST.NCITM_REPLICAID);
-      if (!crawlDocDbRepId.contentEquals(OpenDbRepId)) {
+      if (!crawlDocDbRepId.contentEquals(openDbRepId)) {
         // Different ReplicaId - Recycle and close the old database
         if (srcdb != null) {
           srcdb.recycle();
           srcdb= null;
         }
         // Open the new database
-        srcdb = ns.getDatabase(null, null); 
+        srcdb = ns.getDatabase(null, null);
         srcdb.openByReplicaID(crawlDoc.getItemValueString(
                 NCCONST.NCITM_SERVER), crawlDocDbRepId);
-        OpenDbRepId = crawlDocDbRepId;
+        openDbRepId = crawlDocDbRepId;
       }
-			
+
       // Load our source document
       srcDoc = srcdb.getDocumentByUNID(crawlDoc.getItemValueString(
-              NCCONST.NCITM_UNID)); 
+              NCCONST.NCITM_UNID));
       loadForm(srcDoc.getItemValueString(NCCONST.ITMFORM));
       if (null == formDoc) {
-        LOGGER.logp(Level.FINER, CLASS_NAME, METHOD, 
+        LOGGER.logp(Level.FINER, CLASS_NAME, METHOD,
             "No form definition found.  Using template definition " +
             "to process document " + NotesURL);
       }
-			
+
       // Get the form configuration for this document
       getDocumentReaderNames(crawlDoc, srcDoc);
       setDocumentSecurity(crawlDoc, srcDoc);
-			
+
       mapFields(crawlDoc, srcDoc);
-			
+      mapMetaFields(crawlDoc, srcDoc);
+
       // Process the attachments associated with this document
       // When there are multiple attachments with the same name
       // Lotus Notes automatically generates unique names for next document
       Vector<?> va = ns.evaluate("@AttachmentNames", srcDoc);
-		    
-      Item attachItems = crawlDoc.replaceItemValue(
+
+      NotesItem attachItems = crawlDoc.replaceItemValue(
           NCCONST.ITM_GMETAATTACHMENTS, "");
       for (int i = 0; i < va.size(); i++) {
         String attachName = va.elementAt(i).toString();
-		    	
+
         if (attachName.length() == 0) {
           continue;
         }
@@ -454,13 +555,13 @@ public class NotesCrawlerThread extends Thread {
           xtn = attachName.substring(period + 1);
         }
         if (!ncs.isExcludedExtension(xtn.toLowerCase())) {
-          boolean success = createAttachmentDoc(crawlDoc, srcDoc, 
+          boolean success = createAttachmentDoc(crawlDoc, srcDoc,
               attachName, ncs.getMimeType(xtn));
           if (success) {
             attachItems.appendToTextList(attachName);
-          } 
+          }
         } else {
-          LOGGER.logp(Level.FINER, CLASS_NAME, METHOD, 
+          LOGGER.logp(Level.FINER, CLASS_NAME, METHOD,
               "Excluding attachment in " + NotesURL + " : " + attachName);
         }
       }
@@ -469,12 +570,12 @@ public class NotesCrawlerThread extends Thread {
       // We don't want the document content in the attachment docs
       // Our content must be stored as non-summary rich text to
       // avoid the 32/64K limits in Domino
-      RichTextItem contentItem = crawlDoc.createRichTextItem(
+      NotesRichTextItem contentItem = crawlDoc.createRichTextItem(
           NCCONST.ITM_CONTENT);
       String content = getContentFields(srcDoc);
       contentItem.appendText(content);
       contentItem.setSummary(false);
-			
+
       // Update the status of the document to be fetched.
       crawlDoc.replaceItemValue(NCCONST.ITM_ACTION, ActionType.ADD.toString());
       srcDoc.recycle();
@@ -486,38 +587,38 @@ public class NotesCrawlerThread extends Thread {
       LOGGER.exiting(CLASS_NAME, METHOD);
     }
   }
-	
+
   // This function creates a document for an attachment
-  public boolean createAttachmentDoc(lotus.domino.Document crawlDoc, 
-      lotus.domino.Document srcDoc, String AttachmentName, String MimeType)
-      throws NotesException {
+  public boolean createAttachmentDoc(NotesDocument crawlDoc,
+      NotesDocument srcDoc, String AttachmentName, String MimeType)
+      throws RepositoryException {
     final String METHOD = "createAttachmentDoc";
     String AttachmentURL = null;
     LOGGER.entering(CLASS_NAME, METHOD);
-    EmbeddedObject eo = null;
-    lotus.domino.Document attachDoc = null;
-		
+    NotesEmbeddedObject eo = null;
+    NotesDocument attachDoc = null;
+
     try {
       // Error access the attachment
       eo = srcDoc.getAttachment(AttachmentName);
 
-      if (eo.getType() != EmbeddedObject.EMBED_ATTACHMENT) {
+      if (eo.getType() != NotesEmbeddedObject.EMBED_ATTACHMENT) {
         // The object is not an attachment - could be an OLE object or link
-        LOGGER.logp(Level.FINER, CLASS_NAME, METHOD, 
+        LOGGER.logp(Level.FINER, CLASS_NAME, METHOD,
             "Ignoring embedded object " + AttachmentName);
         eo.recycle();
         return false;
       }
 
       if (null == eo) {
-        LOGGER.logp(Level.FINER, CLASS_NAME, METHOD, 
+        LOGGER.logp(Level.FINER, CLASS_NAME, METHOD,
             "Attachment could not be accessed " + AttachmentName);
         return false;
       }
 
       // Don't send attachments larger than the limit
       if (eo.getFileSize() > ncs.getMaxFileSize()) {
-        LOGGER.logp(Level.FINER, CLASS_NAME, METHOD, 
+        LOGGER.logp(Level.FINER, CLASS_NAME, METHOD,
             "Attachment larger than the configured limit and content " +
             "will not be sent. " + AttachmentName);
       }
@@ -554,7 +655,7 @@ public class NotesCrawlerThread extends Thread {
         attachDoc.replaceItemValue(NCCONST.ITM_MIMETYPE,
             NCCONST.DEFAULT_MIMETYPE);
       }
-      eo.recycle();		
+      eo.recycle();
 
       // DO NOT MAP THESE FIELDS
       // attachDoc.replaceItemValue(NCCONST.ITM_DISPLAYURL, AttachmentURL);
@@ -567,8 +668,8 @@ public class NotesCrawlerThread extends Thread {
       LOGGER.exiting(CLASS_NAME, METHOD);
       return true;
     } catch (Exception e) {
-      LOGGER.logp(Level.SEVERE, CLASS_NAME, METHOD, 
-          "Error pre-fetching attachment: " + AttachmentName + 
+      LOGGER.logp(Level.SEVERE, CLASS_NAME, METHOD,
+          "Error pre-fetching attachment: " + AttachmentName +
           " in document: " + srcDoc.getNotesURL(), e);
       if (null != eo) {
         eo.recycle();
@@ -581,17 +682,17 @@ public class NotesCrawlerThread extends Thread {
       return false;
     }
   }
-	
+
   // This function will generate an unique file path for an attachment object.
   // Consider the situation where a document is updated twice and
   // appears in the submitq twice In this case, the first submit
   // will delete the doc.  The second submit will then send an
   // empty doc So we must use the UNID of the crawl request to
   // generate the unique filename
-  public String getAttachmentFilePath(lotus.domino.Document crawlDoc,
-      String attachName) throws NotesException {
-    String dirName = String.format("%s/attachments/%s/%s", 
-        ncs.getSpoolDir(), 
+  public String getAttachmentFilePath(NotesDocument crawlDoc,
+      String attachName) throws RepositoryException {
+    String dirName = String.format("%s/attachments/%s/%s",
+        ncs.getSpoolDir(),
         cdb.getReplicaID(),
         crawlDoc.getUniversalID());
     new java.io.File(dirName).mkdirs();
@@ -599,8 +700,8 @@ public class NotesCrawlerThread extends Thread {
     //TODO:  Ensure that FilePath is a valid Windows filepath
     return FilePath;
   }
-	
-  public void connectQueue() throws NotesException, RepositoryException {
+
+  public void connectQueue() throws RepositoryException {
     if (null == ns) {
       ns = ncs.createNotesSession();
     }
@@ -611,8 +712,8 @@ public class NotesCrawlerThread extends Thread {
       crawlQueue = cdb.getView(NCCONST.VIEWCRAWLQ);
     }
   }
-	
-	
+
+
   /*
    * We accumulate objects as pre-fetch documents
    * De-allocate these in reverse order
@@ -625,45 +726,44 @@ public class NotesCrawlerThread extends Thread {
         templateDoc.recycle();
       }
       templateDoc = null;
-			
+
       if (null != formDoc) {
         formDoc.recycle();
       }
       formDoc = null;
-			
+
       if (null != formsdc) {
         formsdc.recycle();
       }
       formsdc = null;
-			
+
       if (null != srcdb) {
-        OpenDbRepId = "";
+        openDbRepId = "";
         srcdb.recycle();
         srcdb = null;
       }
-			
+
       if (null != crawlQueue) {
         crawlQueue.recycle();
       }
       crawlQueue = null;
-			
+
       if (null != cdb) {
         cdb.recycle();
       }
       cdb = null;
-			
+
       if (null != ns) {
         ncs.closeNotesSession(ns);
       }
       ns = null;
-    } catch (NotesException e) {
-      // TODO: changed log level to WARNING. 
+    } catch (RepositoryException e) {
       LOGGER.log(Level.WARNING, CLASS_NAME, e);
     } finally {
       LOGGER.exiting(CLASS_NAME, METHOD);
     }
   }
-	
+
   @Override
   public void run() {
     final String METHOD = "run";
@@ -672,7 +772,7 @@ public class NotesCrawlerThread extends Thread {
     NotesPollerNotifier npn = ncs.getNotifier();
     while (nc.getShutdown() == false) {
       try {
-        lotus.domino.Document crawlDoc = null;
+        NotesDocument crawlDoc = null;
         // Only get from the queue if there is more than 300MB in the
         // spool directory
         // TODO: getFreeSpace is a Java 1.6 method.
@@ -680,11 +780,11 @@ public class NotesCrawlerThread extends Thread {
         LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
             "Spool free space is " + spoolDir.getFreeSpace());
         if (spoolDir.getFreeSpace()/1000000 < 300) {
-          LOGGER.logp(Level.WARNING, CLASS_NAME, METHOD, 
+          LOGGER.logp(Level.WARNING, CLASS_NAME, METHOD,
               "Insufficient space in spool directory to process " +
               "new documents.  Need at least 300MB.");
           npn.waitForWork();
-          LOGGER.logp(Level.FINE, CLASS_NAME, METHOD, 
+          LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
               "Crawler thread resuming after spool directory had " +
               "insufficient space.");
           continue;
@@ -692,9 +792,9 @@ public class NotesCrawlerThread extends Thread {
         LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD,
             "Connecting to crawl queue.");
         connectQueue();
-        crawlDoc = getNextFromCrawlQueue(ns, crawlQueue);	
+        crawlDoc = getNextFromCrawlQueue(ns, crawlQueue);
         if (crawlDoc == null) {
-          LOGGER.logp(Level.FINE, CLASS_NAME, METHOD, this.getName() + 
+          LOGGER.logp(Level.FINE, CLASS_NAME, METHOD, this.getName() +
               ": Crawl queue is empty.  Crawler thread sleeping.");
           // If we have finished processing the queue shutdown our connections
           disconnectQueue();
@@ -720,7 +820,7 @@ public class NotesCrawlerThread extends Thread {
           LOGGER.logp(Level.WARNING, CLASS_NAME, METHOD,
               "Too many exceptions.  Crawler thread sleeping.");
           npn.waitForWork();
-          LOGGER.logp(Level.WARNING, CLASS_NAME, METHOD, 
+          LOGGER.logp(Level.WARNING, CLASS_NAME, METHOD,
               "Crawler thread resuming after too many exceptions " +
               "were encountered.");
         }
@@ -730,5 +830,70 @@ public class NotesCrawlerThread extends Thread {
     LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
         "Connector shutdown - NotesCrawlerThread exiting.");
     LOGGER.entering(CLASS_NAME, METHOD);
+  }
+
+  @VisibleForTesting
+  static class MetaField {
+    private static final Pattern formFieldMetaPattern =
+        Pattern.compile("\\A(.+)===([^=]+)=([^=]+)\\z");
+    private static final Pattern fieldMetaPattern =
+        Pattern.compile("\\A([^=]+)=([^=]+)\\z");
+    private static final Pattern fieldPattern =
+        Pattern.compile("\\A([^=]+)\\z");
+
+    private String formName;
+    private String fieldName;
+    private String metaName;
+
+    MetaField(String configString) {
+      String METHOD = "MetaField";
+      if (configString == null) {
+        return;
+      }
+      configString = configString.trim();
+      if (configString.length() == 0) {
+        return;
+      }
+
+      Matcher matcher = formFieldMetaPattern.matcher(configString);
+      if (matcher.matches()) {
+        formName = matcher.group(1);
+        fieldName = matcher.group(2);
+        metaName = matcher.group(3);
+        return;
+      }
+      matcher = fieldMetaPattern.matcher(configString);
+      if (matcher.matches()) {
+        fieldName = matcher.group(1);
+        metaName = matcher.group(2);
+        return;
+      }
+      matcher = fieldPattern.matcher(configString);
+      if (matcher.matches()) {
+        fieldName = matcher.group(1);
+        metaName = fieldName;
+        return;
+      }
+      LOGGER.logp(Level.WARNING, CLASS_NAME, METHOD,
+          "Unable to parse custom meta field definition; skipping: "
+          + configString);
+    }
+
+    String getFormName() {
+      return formName;
+    }
+
+    String getFieldName() {
+      return fieldName;
+    }
+
+    String getMetaName() {
+      return metaName;
+    }
+
+    public String toString() {
+      return "[form: " + formName + "; field: " + fieldName
+          + "; meta: " + metaName + "]";
+    }
   }
 }

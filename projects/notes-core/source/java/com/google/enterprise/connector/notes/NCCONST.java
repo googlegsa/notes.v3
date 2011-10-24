@@ -21,9 +21,9 @@ public class NCCONST {
   // without affecting the connector.
 
   // TODO:  Change this to an alias
-  public static final String VIEWTEMPLATES = "($Templates)";  
+  public static final String VIEWTEMPLATES = "($Templates)";
   // TODO:  Change this to an alias
-  public static final String VIEWDATABASES = "($Databases)";  
+  public static final String VIEWDATABASES = "($Databases)";
   public static final String VIEWCRAWLQ = "NCCrawlQ";
   public static final String VIEWSUBMITQ = "NCSubmitQ";
   public static final String VIEWINDEXED = "NCIndexed";
@@ -31,7 +31,7 @@ public class NCCONST {
   public static final String VIEWSYSTEMSETUP = "NCSystemSetup";
   public static final String VIEWSERVERS = "NCServers";
   public static final String VIEWSECURITY = "NCSecurity";
-  
+
   // Form Names
   public static final String ITMFORM = "Form";
   public static final String FORMCRAWLREQUEST = "NCCrawlRequest";
@@ -53,7 +53,7 @@ public class NCCONST {
   public static final String DITM_LOCKATTRIBUTE = "LockAttribute";
   public static final String DITM_CHECKDELETIONS = "CheckDeletions";
   public static final String DITM_ACLTEXT = "DbACLText";
-  
+
 
   // Authorization methods specified in the field ITM_DAUTHTYPE
   public static final String AUTH_NONE = "none";
@@ -65,43 +65,44 @@ public class NCCONST {
   public static final String TITM_SEARCHSTRING = "SearchString";
   public static final String TITM_SEARCHRESULTSFIELDS = "SearchResultsFields";
   public static final String TITM_DESCRIPTIONFIELDS = "DescriptionFields";
+  public static final String TITM_METAFIELDS = "MetaFields";
   //public static final String TITM_AUTOGENERATE = "AutoGenerate";  -- NOT USED
   public static final String AUTOGENERATE_YES = "Yes";  // Size in MB
-  
+
   //Item names used in forms documents
   public static final String FITM_LASTALIAS = "LastAlias";
   public static final String FITM_FIELDSTOINDEX = "FieldsToIndex";
   public static final String FITM_SEARCHRESULTSFORMULA = "SearchResultsFormula";
   public static final String FITM_DESCRIPTIONFORMULA = "DescriptionFormula";
-  
-  
+
+
   // Access Control Database Views
   public static final String VIEWACPEOPLE = "($People)";
   public static final String ACITM_GROUPS = "Groups";
   public static final String ACITM_NOTESNAME = "NotesName";
-  
-  //Item names used by the connector for crawling documents 
+
+  //Item names used by the connector for crawling documents
 
   /** The source database for this  */
-  public static final String NCITM_DB = "NC.Database"; 
+  public static final String NCITM_DB = "NC.Database";
 
   /** The UNID of the source document */
-  public static final String NCITM_UNID = "NC.UNID"; 
+  public static final String NCITM_UNID = "NC.UNID";
 
   /** The state of the document */
-  public static final String NCITM_STATE = "NC.State"; 
+  public static final String NCITM_STATE = "NC.State";
 
   /** The source database for this */
-  public static final String NCITM_REPLICAID = "NC.ReplicaID"; 
+  public static final String NCITM_REPLICAID = "NC.ReplicaID";
 
   /** The source database for this */
-  public static final String NCITM_SERVER = "NC.Server"; 
+  public static final String NCITM_SERVER = "NC.Server";
 
   /** The source database for this */
   public static final String NCITM_TEMPLATE = "NC.Template";
 
   /** The domain for this document */
-  public static final String NCITM_DOMAIN = "NC.Domain"; 
+  public static final String NCITM_DOMAIN = "NC.Domain";
 
   /** The type of authorization for the document */
   public static final String NCITM_AUTHTYPE = "NC.AuthType";
@@ -120,7 +121,7 @@ public class NCCONST {
 
   /** The readers of this document */
   public static final String NCITM_DOCAUTHORREADERS = "NC.DocAuthorReaders";
-  
+
   public static final String NCITM_CONFLICT = "$Conflict";
 
   /** Users with access */
@@ -130,30 +131,30 @@ public class NCCONST {
   public static final String NCITM_DBPERMITGROUPS = "NC.DBPermitGroups";
 
   /** Prefix for roles */
-  public static final String NCITM_ROLEPREFIX = "NC.DBROLES"; 
+  public static final String NCITM_ROLEPREFIX = "NC.DBROLES";
 
   /** New document to be crawled */
   public static final String STATENEW = "New";
 
   // NOT USED Previously submitted document needs to be updated
-  //public static final String STATEUPDATED = "Update"; 
+  //public static final String STATEUPDATED = "Update";
 
-  public static final String STATEDELETED =  "DeletePending"; 
+  public static final String STATEDELETED =  "DeletePending";
 
   /** Possible States for documents */
   public static final String STATEINCRAWL = "InCrawl";
 
   /** Possible States for documents */
   public static final String STATEFETCHED = "Fetched";
-  
+
   // NOT USED Possible States for documents
-  //public static final String STATEINSUBMIT = "InSubmit"; 
+  //public static final String STATEINSUBMIT = "InSubmit";
 
   /** Possible States for documents */
   public static final String STATEINDEXED = "Indexed";
 
   /** Possible States for documents */
-  public static final String STATEERROR = "Error"; 
+  public static final String STATEERROR = "Error";
 
 
   // The following item names map directly to the SPI constants
@@ -178,7 +179,7 @@ public class NCCONST {
   public static final String ITM_SECURITYTOKEN = "google.securitytoken";
   public static final String ITM_TITLE = "google.title";
   public static final String ITM_LOCK = "google.lock";
-  
+
   // The following are standard meta fields for the connector
 
   /** The authors of a document */
@@ -225,14 +226,14 @@ public class NCCONST {
 
   /** Replica servers for this document */
   public static final String ITM_GMETAREPLICASERVERS = "lnmeta.replicaservers";
-  
+
   // Notes.INI environment variables
   public static final String INIDIRECTORY = "Directory";
   public static final String INIKEYFILENAME = "KeyFileName";
   public static final String INIKITTYPE = "KitType";
   public static final String INISERVERKEYFILENAME = "ServerKeyFileName";
   public static final String INIDEBUGOUTFILE="debug_outfile";
-  
+
   // Item names in the system setup configuration
   public static final String SITM_ACLDBREPLICAID = "AccessDbRepID";
   public static final String SITM_EXCLUDEDEXTENSIONS = "ExcludeFileTypes";
@@ -242,7 +243,7 @@ public class NCCONST {
   public static final String SITM_MAXCRAWLQDEPTH = "MaxCrawlQDepth";
   public static final String SITM_DELETIONBATCHSIZE = "DeletionBatchSize";
   public static final String SITM_NUMCRAWLERTHREADS = "NumCrawlerThreads";
-  
+
 
   // Default configuration for the connector
 
@@ -252,12 +253,12 @@ public class NCCONST {
   /** In the notes data directory */
   public static final String DEFAULT_ATTACHMENT_DIR = "gsaSpool";
   public static final String DEFAULT_MIMETYPE = "text/plain";
-  public static final String DEFAULT_DOCMIMETYPE = "text/plain"; 
+  public static final String DEFAULT_DOCMIMETYPE = "text/plain";
   public static final String DEFAULT_TITLE = "Document title not found";
-  public static final String DEFAULT_DESCRIPTION = 
+  public static final String DEFAULT_DESCRIPTION =
       "Document description not found";
-  
-  // Domino properties  
+
+  // Domino properties
   public static final String PROPNAME_DESCRIPTION = "Description";
   public static final String PROPNAME_NCLASTUPDATE = "dom_lastmodified";
   public static final String PROPNAME_NCDATABASE = "dom_database";

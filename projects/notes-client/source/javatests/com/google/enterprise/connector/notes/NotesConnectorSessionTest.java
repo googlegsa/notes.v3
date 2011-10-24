@@ -28,33 +28,33 @@ import com.google.enterprise.connector.spi.TraversalManager;
 
 import junit.framework.TestCase;
 
-import java.util.ArrayList; 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
 public class NotesConnectorSessionTest extends TestCase {
 
-  private String server; 
-  private String database; 
-  private String idpassword; 
-  private NotesConnector connector; 
+  private String server;
+  private String database;
+  private String idpassword;
+  private NotesConnector connector;
 
   public NotesConnectorSessionTest() {
   }
-  
+
   private String getProperty(String key) {
     String value = System.getProperty(key);
     assertNotNull(key, value);
-    return value; 
+    return value;
   }
 
   @Override
   protected void setUp() throws Exception {
-    super.setUp(); 
-    server = getProperty("javatest.server"); 
-    database = getProperty("javatest.database"); 
-    idpassword = getProperty("javatest.idpassword"); 
+    super.setUp();
+    server = getProperty("javatest.server");
+    database = getProperty("javatest.database");
+    idpassword = getProperty("javatest.idpassword");
     connector = new NotesConnector();
     connector.setServer(server);
     connector.setDatabase(database);
@@ -70,19 +70,19 @@ public class NotesConnectorSessionTest extends TestCase {
   /**
    * Tests NotesConnector.login and the properties set in
    * NotesConnectorSession. Assumes that the Notes GSA Connector
-   * config is using default values where appropriate. 
+   * config is using default values where appropriate.
    *
    * @throws RepositoryLoginException
    * @throws RepositoryException
    */
-  public void testProperties() throws RepositoryLoginException, 
+  public void testProperties() throws RepositoryLoginException,
       RepositoryException {
     NotesConnectorSession session = (NotesConnectorSession) connector.login();
     assertEquals("maxCrawlQDepth", 5000, session.getMaxCrawlQDepth());
     assertEquals("deletionBatchSize", 300, session.getDeletionBatchSize());
     assertEquals("numCrawlerThreads", 1, session.getNumCrawlerThreads());
     assertNotNull("notifier", session.getNotifier());
-    assertTrue("spoolDir", session.getSpoolDir().endsWith("gsaSpool")); 
+    assertTrue("spoolDir", session.getSpoolDir().endsWith("gsaSpool"));
     assertEquals("domain", "", session.getDomain(server));
     assertEquals("mimetype", "application/msword", session.getMimeType("doc"));
     assertEquals("idpassword", idpassword, session.getPassword());
@@ -91,14 +91,14 @@ public class NotesConnectorSessionTest extends TestCase {
     assertEquals("database", database, session.getDatabase());
     assertSame("connector", connector, session.getConnector());
 
-    assertFalse(".doc is excluded", session.isExcludedExtension("doc")); 
+    assertFalse(".doc is excluded", session.isExcludedExtension("doc"));
     assertFalse(".DOC is excluded", session.isExcludedExtension("DOC"));
-    assertTrue(".jpg is included", session.isExcludedExtension("jpg")); 
+    assertTrue(".jpg is included", session.isExcludedExtension("jpg"));
     // TODO: File extensions are currently case-sensitive, so
     // this fails. Modify this assertion appropriately when a
     // decision is reached about whether extensions should be
     // case-insensitive.
-    //assertTrue(".JPG is included", session.isExcludedExtension("JPG")); 
+    //assertTrue(".JPG is included", session.isExcludedExtension("JPG"));
   }
 }
 

@@ -14,15 +14,15 @@
 
 package com.google.enterprise.connector.notes;
 
-import com.google.enterprise.connector.notes.NotesConnectorDocumentList;
+import com.google.enterprise.connector.notes.client.NotesDatabase;
+import com.google.enterprise.connector.notes.client.NotesSession;
+import com.google.enterprise.connector.notes.client.NotesView;
+import com.google.enterprise.connector.notes.client.NotesViewEntry;
+import com.google.enterprise.connector.notes.client.NotesViewNavigator;
 import com.google.enterprise.connector.spi.DocumentList;
 import com.google.enterprise.connector.spi.TraversalManager;
-import lotus.domino.Database;
-import lotus.domino.View;
-import lotus.domino.ViewNavigator;
-import lotus.domino.ViewEntry;
 
-import java.util.ArrayList; 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -30,14 +30,15 @@ import java.util.logging.Logger;
 public class NotesTraversalManager implements TraversalManager {
   //private static final int MAX_DOCID = 1000;
   private int batchHint = 10;
-  private static final String CLASS_NAME = NotesTraversalManager.class.getName();
+  private static final String CLASS_NAME =
+      NotesTraversalManager.class.getName();
   private static final Logger LOGGER = Logger.getLogger(CLASS_NAME);
   private NotesConnectorSession ncs = null;
-	
+
   public NotesTraversalManager(NotesConnectorSession session) {
     ncs = session;
   }
-	
+
   /* @Override */
   public void setBatchHint(int hint) {
     final String METHOD = "setBatchHint";
@@ -47,12 +48,12 @@ public class NotesTraversalManager implements TraversalManager {
 
   /* @Override */
   public DocumentList startTraversal() {
-    LOGGER.info("Start traversal"); 
-    // This will reset the start date on all connector		
+    LOGGER.info("Start traversal");
+    // This will reset the start date on all connector
     NotesDatabasePoller.resetDatabases(ncs);
     return traverse("0");
   }
- 
+
   /* @Override */
   public DocumentList resumeTraversal(String checkpoint) {
     return traverse(checkpoint);
@@ -61,14 +62,14 @@ public class NotesTraversalManager implements TraversalManager {
   /**
    * Utility method to produce a {@code DocumentList} containing the next
    * batch of {@code Document} from the checkpoint.
-   * 
+   *
    * @param checkpoint
    *            a String representing the last document number processed.
    */
   private DocumentList traverse(String checkpoint) {
     final String METHOD = "traverse";
     List<String> unidList = new ArrayList<String>(batchHint);
-    lotus.domino.Session ns = null;
+    NotesSession ns = null;
 
     try {
       LOGGER.entering(CLASS_NAME, METHOD);
@@ -77,25 +78,25 @@ public class NotesTraversalManager implements TraversalManager {
           "Resuming from checkpoint: " + checkpoint);
 
       ns = ncs.createNotesSession();
-      Database cdb = ns.getDatabase(ncs.getServer(), ncs.getDatabase());
-			
+      NotesDatabase cdb = ns.getDatabase(ncs.getServer(), ncs.getDatabase());
+
       // Poll for changes
       // TODO:  Consider moving this to the housekeeping thread
       // Since it takes two polling cycles to get documents into the GSA
       // if the system is idle
-			
+
       NotesDatabasePoller dbpoller = new NotesDatabasePoller();
       dbpoller.pollDatabases(ns, cdb, ncs.getMaxCrawlQDepth());
       NotesPollerNotifier npn = ncs.getNotifier();
       npn.wakeWorkers();
 
       // Give the worker threads a chance to pre-fetch documents
-      Thread.sleep(2000);  
-			
+      Thread.sleep(2000);
+
       // Get list of pre-fetched documents and put these in the doclist
-      View submitQ = cdb.getView(NCCONST.VIEWSUBMITQ);
-      ViewNavigator submitQNav = submitQ.createViewNav();
-      ViewEntry ve = submitQNav.getFirst();
+      NotesView submitQ = cdb.getView(NCCONST.VIEWSUBMITQ);
+      NotesViewNavigator submitQNav = submitQ.createViewNav();
+      NotesViewEntry ve = submitQNav.getFirst();
       int batchSize = 0;
       while (( ve != null) && (batchSize < batchHint)) {
         batchSize++;
@@ -103,10 +104,10 @@ public class NotesTraversalManager implements TraversalManager {
         LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD,
             "Adding document to list" + unid);
         unidList.add(unid);
-        ViewEntry prevVe = ve;
+        NotesViewEntry prevVe = ve;
         ve = submitQNav.getNext(prevVe);
         prevVe.recycle();
-      }		
+      }
       submitQNav.recycle();
       submitQ.recycle();
     } catch (Exception e) {

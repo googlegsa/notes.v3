@@ -14,13 +14,14 @@
 
 package com.google.enterprise.connector.notes;
 
+import com.google.enterprise.connector.notes.client.SessionFactory;
 import com.google.enterprise.connector.spi.Connector;
 import com.google.enterprise.connector.spi.ConnectorShutdownAware;
 import com.google.enterprise.connector.spi.RepositoryException;
 
+import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.Vector;
 
 public class NotesConnector implements Connector, ConnectorShutdownAware  {
   private static final String CLASS_NAME = NotesConnector.class.getName();
@@ -36,11 +37,24 @@ public class NotesConnector implements Connector, ConnectorShutdownAware  {
   private NotesCrawlerThread crawlerThread = null;
   NotesPollerNotifier npn = null;
   Vector<NotesCrawlerThread> vecCrawlerThreads = null;
-        
+  SessionFactory sessionFactory;
+
   NotesConnector() {
+    this(
+        "com.google.enterprise.connector.notes.client.notes.SessionFactoryImpl");
+  }
+
+  NotesConnector(String sessionFactoryClass) {
     final String METHOD = "NotesConnector";
-    LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD, 
+    LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD,
         "NotesConnector being created.");
+    try {
+      sessionFactory = (SessionFactory)
+          Class.forName(sessionFactoryClass).newInstance();
+    } catch (Exception e) {
+      LOGGER.log(Level.SEVERE, e.getMessage(), e);
+      throw new RuntimeException(e);
+    }
   }
 
   /* @Override */
@@ -49,14 +63,14 @@ public class NotesConnector implements Connector, ConnectorShutdownAware  {
     final String METHOD = "login";
 
     // We always want to return ok here
-                
+
     // If we are all ready logged in, return the existing session
     // The Notes libraries take care of creating actual
     // connections to the server using RPCs
     if (null != ncs) {
       return ncs;
     }
-                
+
     if (null == npn) {
       npn = new NotesPollerNotifier(this);
     }
@@ -66,7 +80,7 @@ public class NotesConnector implements Connector, ConnectorShutdownAware  {
 
     // Start a crawler thread
     // Reset any documents before we start crawling
-    
+
     if (null == maintThread) {
       maintThread = new NotesMaintenanceThread(this, ncs);
       maintThread.start();
@@ -80,13 +94,13 @@ public class NotesConnector implements Connector, ConnectorShutdownAware  {
       }
     */
     if (null == vecCrawlerThreads) {
-      vecCrawlerThreads = 
+      vecCrawlerThreads =
           new Vector<NotesCrawlerThread>(ncs.getNumCrawlerThreads());
       for (int i = 0; i < ncs.getNumCrawlerThreads(); i++) {
         vecCrawlerThreads.add(new NotesCrawlerThread(this, ncs));
         NotesCrawlerThread tmpThread = vecCrawlerThreads.elementAt(i);
         tmpThread.setName(NotesCrawlerThread.class.getSimpleName() + i);
-        LOGGER.logp(Level.INFO, CLASS_NAME, METHOD, 
+        LOGGER.logp(Level.INFO, CLASS_NAME, METHOD,
             "Starting crawler thread " + tmpThread.getName());
         tmpThread.start();
       }
@@ -94,11 +108,11 @@ public class NotesConnector implements Connector, ConnectorShutdownAware  {
     npn.setNumThreads(ncs.getNumCrawlerThreads() + 1);
     return ncs;
   }
-        
+
   // The following setters are necessary for Spring to pass configuration to us
   public void setIdPassword(String idPassword) {
     final String METHOD = "setIdPassword";
-    LOGGER.logp(Level.CONFIG, CLASS_NAME, METHOD, 
+    LOGGER.logp(Level.CONFIG, CLASS_NAME, METHOD,
         "Connector config Password being set");
     password = idPassword;
   }
@@ -116,10 +130,10 @@ public class NotesConnector implements Connector, ConnectorShutdownAware  {
         "Connector config Database=" + database);
     this.database = database;
   }
-        
+
   public void setGoogleConnectorWorkDir(String googleConnectorWorkDir) {
     final String METHOD = "setGoogleConnectorWorkDir";
-    LOGGER.logp(Level.CONFIG, CLASS_NAME, METHOD, 
+    LOGGER.logp(Level.CONFIG, CLASS_NAME, METHOD,
         "Connector config GoogleConnectorWorkDir=" + googleConnectorWorkDir);
     workingDir = googleConnectorWorkDir;
   }
@@ -140,6 +154,15 @@ public class NotesConnector implements Connector, ConnectorShutdownAware  {
     return workingDir;
   }
 
+  /**
+   * Gets the <code>SessionFactory</code> for this Connector.
+   *
+   * @return the <code>SessionFactory</code>
+   */
+  SessionFactory getSessionFactory() {
+    return sessionFactory;
+  }
+
   /* @Override */
   public void delete() {
     final String METHOD = "delete";
@@ -153,7 +176,7 @@ public class NotesConnector implements Connector, ConnectorShutdownAware  {
     LOGGER.entering(CLASS_NAME, METHOD);
     return deleted;
   }
-        
+
   /* @Override */
   public void shutdown() {
     final String METHOD = "shutdown";

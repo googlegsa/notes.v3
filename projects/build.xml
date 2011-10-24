@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="google-enterprise-connector-notes" default="everything" basedir=".">
+
+  <!-- ========================= PROPERTIES ============================= -->
+  <property file="version.properties"/>
+
+  <!-- Define Directories. -->
+  <property name="notes-core.dir" value="notes-core" />
+  <property name="install.dir" value="install" />
+  <property name="notes-client.dir" value="notes-client" />
+  <property name="downloads.dir" value="downloads" />
+  <property name="build.dir" value="build" />
+  <property name="trunk.dir" value=".." />
+
+  <!-- =========================== TASKS =============================== -->
+
+  <target name="clean-all">
+    <ant dir="${notes-core.dir}" target="clean" />
+    <ant dir="${notes-client.dir}" target="clean" />
+    <delete dir="${build.dir}" />
+    <delete dir="${install.dir}" />
+    <delete dir="${downloads.dir}" />
+  </target>
+
+  <target name="prebuild">
+    <exec executable="svnversion" spawn="false"
+      failifexecutionfails="false"
+      dir="${basedir}"
+      outputproperty="svnversion">
+      <arg line="."/>
+    </exec>
+    <mkdir dir="${build.dir}" />
+  </target>
+
+  <target name="notes-core" depends="prebuild">
+    <ant dir="${notes-core.dir}" />
+  </target>
+
+  <target name="notes-client" depends="notes-core">
+    <ant dir="${notes-client.dir}" />
+  </target>
+
+  <target name="build-all" depends="prebuild,notes-core,notes-client"/>
+
+  <target name="make-install-dir">
+    <mkdir dir="${install.dir}" />
+  </target>
+
+  <target name="install-notes-core" depends="notes-core,make-install-dir">
+    <mkdir dir="${install.dir}/notes-core" />
+    <copy todir="${install.dir}/notes-core" >
+      <fileset dir="${notes-core.dir}/dist"/>
+    </copy>
+  </target>
+
+  <target name="install-notes-client" depends="notes-client,make-install-dir">
+    <mkdir dir="${install.dir}/notes-client" />
+    <copy todir="${install.dir}/notes-client" >
+      <fileset dir="${notes-client.dir}/dist"/>
+    </copy>
+  </target>
+
+  <target name="install-all" depends="bin-archive">
+      <copy todir="${install.dir}" >
+        <fileset dir="${build.dir}">
+          <include name="${bin.archive}.zip"/>
+          <include name="${bin.archive}.tar.gz"/>
+        </fileset>
+      </copy>
+    </target>
+
+  <target name="bin-archive"
+    depends="prebuild,install-notes-core,install-notes-client">
+    <condition property="lang" value="" else="_en">
+      <available file="notes-core/config/NotesConnectorResources_de.properties" />
+    </condition>
+    <property name="bin.archive" value="connector-notes-${version}${lang}" />
+    <zip destfile="${build.dir}/${bin.archive}.zip">
+      <zipfileset dir="${install.dir}/notes-client/jar"
+        prefix="${bin.archive}" />
+      <zipfileset file="../README" prefix="${bin.archive}" />
+      <zipfileset file="../RELEASE_NOTES"
+        prefix="${bin.archive}" />
+      <zipfileset file="notes-core/config/logging.properties"
+        prefix="${bin.archive}/Config" />
+      <zipfileset file="../COPYING"
+        prefix="${bin.archive}/License" />
+    </zip>
+    <tar destfile="${build.dir}/${bin.archive}.tar.gz"
+      compression="gzip">
+      <zipfileset src="${build.dir}/${bin.archive}.zip"/>
+    </tar>
+  </target>
+
+  <target name="src-archive" depends="prebuild">
+    <property name="src.archive" value="connector-notes-${version}-src" />
+
+    <!-- Use 'svn export' to create a clean version of the source tree
+         in the build dir.  You can adjust the behaviour of this by setting
+         some properties when invoking ant:
+
+         svn.export.revision - the revision of the tree to pull from svn.
+         svn.export.source - the source of the tree, either a svn repository
+                             URL, or a pathname of a working directory tree.
+
+         Note: you cannot specify both svn.export.revision and point
+         svn.export.source at a local working tree.
+    -->
+    <condition property="svn.export.revision.arg"
+               value="-r ${svn.export.revision}"
+               else="" >
+      <isset property="svn.export.revision"/>
+    </condition>
+    <property name="svn.export.source" value=".." />
+    <property name="svn.export.dir" value="${build.dir}/${src.archive}" />
+
+    <delete dir="${svn.export.dir}" quiet="true" />
+    <exec executable="svn">
+      <arg line="export ${svn.export.revision.arg} ${svn.export.source} ${svn.export.dir}" />
+    </exec>
+
+    <!-- Create .zip and .tar.gz archives of the exported source tree. -->
+    <zip destfile="${build.dir}/${src.archive}.zip">
+          <zipfileset dir="${svn.export.dir}" prefix="${src.archive}" />
+    </zip>
+    <tar destfile="${build.dir}/${src.archive}.tar.gz"
+         longfile="gnu" compression="gzip">
+      <zipfileset src="${build.dir}/${src.archive}.zip"/>
+    </tar>
+    <delete dir="${svn.export.dir}" quiet="true" />
+  </target>
+
+  <target name="make-downloads-dir">
+    <mkdir dir="${downloads.dir}" />
+  </target>
+
+  <target name="downloads-all"
+            depends="bin-archive,src-archive,make-downloads-dir">
+    <copy todir="${downloads.dir}" preservelastmodified="true">
+          <fileset dir="${build.dir}">
+            <include name="${src.archive}.zip"/>
+            <include name="${src.archive}.tar.gz"/>
+            <include name="${bin.archive}.zip"/>
+            <include name="${bin.archive}.tar.gz"/>
+          </fileset>
+        </copy>
+    <checksum file="${downloads.dir}/${src.archive}.zip"/>
+    <checksum file="${downloads.dir}/${src.archive}.tar.gz"/>
+    <checksum file="${downloads.dir}/${bin.archive}.zip"/>
+    <checksum file="${downloads.dir}/${bin.archive}.tar.gz"/>
+    </target>
+
+  <target name="everything" depends="clean-all,build-all,install-all,downloads-all"/>
+
+</project>

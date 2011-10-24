@@ -32,35 +32,35 @@ import junit.framework.TestCase;
 
 public class NotesAuthenticationManagerTest extends TestCase {
 
-  private String server; 
-  private String database; 
-  private String idpassword; 
-  private NotesConnector connector; 
+  private String server;
+  private String database;
+  private String idpassword;
+  private NotesConnector connector;
   private String username;
-  private String password; 
+  private String password;
 
   public NotesAuthenticationManagerTest() {
   }
-  
+
   private String getProperty(String key) {
     String value = System.getProperty(key);
     assertNotNull(key, value);
-    return value; 
+    return value;
   }
 
   @Override
   protected void setUp() throws Exception {
-    super.setUp(); 
-    server = getProperty("javatest.server"); 
-    database = getProperty("javatest.database"); 
-    idpassword = getProperty("javatest.idpassword"); 
+    super.setUp();
+    server = getProperty("javatest.server");
+    database = getProperty("javatest.database");
+    idpassword = getProperty("javatest.idpassword");
     connector = new NotesConnector();
     connector.setServer(server);
     connector.setDatabase(database);
     connector.setIdPassword(idpassword);
 
-    username = getProperty("javatest.authentication.username"); 
-    password = getProperty("javatest.authentication.password"); 
+    username = getProperty("javatest.authentication.username");
+    password = getProperty("javatest.authentication.password");
   }
 
   @Override
@@ -79,7 +79,7 @@ public class NotesAuthenticationManagerTest extends TestCase {
     AuthenticationManager manager = session.getAuthenticationManager();
     AuthenticationResponse response = manager.authenticate(
         new SimpleAuthenticationIdentity("not a real username"));
-    assertFalse(response.isValid()); 
+    assertFalse(response.isValid());
   }
 
   /**
@@ -92,7 +92,7 @@ public class NotesAuthenticationManagerTest extends TestCase {
     AuthenticationManager manager = session.getAuthenticationManager();
     AuthenticationResponse response = manager.authenticate(
         new SimpleAuthenticationIdentity(username, password));
-    assertTrue("Failed to authenticate: " + username, response.isValid()); 
+    assertTrue("Failed to authenticate: " + username, response.isValid());
   }
 }
 

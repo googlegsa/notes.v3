@@ -14,13 +14,14 @@
 
 package com.google.enterprise.connector.notes;
 
+import com.google.enterprise.connector.notes.client.NotesDatabase;
+import com.google.enterprise.connector.notes.client.NotesDocument;
+import com.google.enterprise.connector.notes.client.NotesSession;
+import com.google.enterprise.connector.notes.client.NotesView;
 import com.google.enterprise.connector.spi.Document;
 import com.google.enterprise.connector.spi.DocumentList;
 import com.google.enterprise.connector.spi.RepositoryException;
 import com.google.enterprise.connector.spi.SpiConstants;
-import lotus.domino.Database;
-import lotus.domino.NotesException;
-import lotus.domino.View;
 
 import java.util.Iterator;
 import java.util.List;
@@ -28,25 +29,24 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 class NotesConnectorDocumentList implements DocumentList {
-  private static final String CLASS_NAME = 
+  private static final String CLASS_NAME =
       NotesConnectorDocumentList.class.getName();
   private static final Logger LOGGER = Logger.getLogger(CLASS_NAME);
   private Iterator<String> iterator;
   private NotesConnectorDocument ncdoc = null;
   private NotesConnectorSession ncs;
-  private lotus.domino.Session ns = null;
+  private NotesSession ns = null;
 
   /** The connector database */
-  private Database db = null; 
+  private NotesDatabase db = null;
 
   /** The backend document being crawled */
-  private lotus.domino.Document crawldoc = null; 
+  private NotesDocument crawldoc = null;
 
   /** The list of UNIDs included in this document list */
-  private List<String> unidList = null; 
+  private List<String> unidList = null;
 
-
-  public NotesConnectorDocumentList(NotesConnectorSession doclistncs, 
+  public NotesConnectorDocumentList(NotesConnectorSession doclistncs,
       List<String> documents) {
     final String METHOD = "Constructor";
     LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD,
@@ -59,7 +59,7 @@ class NotesConnectorDocumentList implements DocumentList {
   /* @Override */
   public Document nextDocument() {
     final String METHOD = "nextDocument";
-		
+
     try {
       // The connector manager has finished last doc so recycle it
       if (null != crawldoc) {
@@ -68,7 +68,7 @@ class NotesConnectorDocumentList implements DocumentList {
       if (null != ncdoc) {
         ncdoc.closeInputStream();
       }
-      // Is there a next document?	
+      // Is there a next document?
       if (!iterator.hasNext()) {
         return null;
       }
@@ -81,11 +81,11 @@ class NotesConnectorDocumentList implements DocumentList {
       if (null == db) {
         db = ns.getDatabase(ncs.getServer(), ncs.getDatabase());
       }
-      crawldoc =db.getDocumentByUNID(unid);
+      crawldoc = db.getDocumentByUNID(unid);
       if (null == ncdoc) {
         ncdoc = new NotesConnectorDocument();
       }
-      ncdoc.setCrawlDoc(unid,crawldoc); 
+      ncdoc.setCrawlDoc(unid,crawldoc);
     } catch (Exception e) {
       LOGGER.log(Level.SEVERE, CLASS_NAME, e);
     } finally {
@@ -93,22 +93,22 @@ class NotesConnectorDocumentList implements DocumentList {
     return ncdoc;
   }
 
-  public void checkpointDelete(lotus.domino.Document deleteDoc,
-      View docidvw) throws NotesException {
+  public void checkpointDelete(NotesDocument deleteDoc,
+      NotesView docidvw) throws RepositoryException {
     final String METHOD = "checkpointDelete";
     LOGGER.entering(CLASS_NAME, METHOD);
     String docid = deleteDoc.getItemValueString(NCCONST.ITM_DOCID);
     docidvw.refresh();
-    lotus.domino.Document prevDoc = docidvw.getDocumentByKey(docid, true);
+    NotesDocument prevDoc = docidvw.getDocumentByKey(docid, true);
     if (null != prevDoc) {
       prevDoc.remove(true);
     }
     deleteDoc.remove(true);
     LOGGER.exiting(CLASS_NAME, METHOD);
   }
-	
-  public void checkpointAdd(lotus.domino.Document indexedDoc,
-      View docidvw) throws NotesException {
+
+  public void checkpointAdd(NotesDocument indexedDoc,
+      NotesView docidvw) throws RepositoryException {
     final String METHOD = "checkpointAdd";
     LOGGER.entering(CLASS_NAME, METHOD);
     // getItemValueString returns null in Domino 6.5 or earlier.
@@ -117,7 +117,7 @@ class NotesConnectorDocumentList implements DocumentList {
     if ( null != attachPath) {
       if (attachPath.length() > 0) {
         LOGGER.logp(Level.FINER, CLASS_NAME, METHOD,
-            "Checkpoint cleaning up attachment: " + attachPath); 
+            "Checkpoint cleaning up attachment: " + attachPath);
         java.io.File f = new java.io.File(attachPath);
         f.delete();
         // Remove the parent directory for the document if it is empty
@@ -129,17 +129,17 @@ class NotesConnectorDocumentList implements DocumentList {
             parentDir.delete();
           }
         }
-        // Leave the directory for the database.  
+        // Leave the directory for the database.
       }
     }
-		
+
     // Delete the content, but leave the meta-data.
-    // TODO:   Consider moving content to a text file and then we can cache it 
+    // TODO:   Consider moving content to a text file and then we can cache it
     indexedDoc.removeItem(NCCONST.ITM_CONTENT);
     // Do we all ready have a document with this url all ready?
     String docid = indexedDoc.getItemValueString(NCCONST.ITM_DOCID);
     docidvw.refresh();
-    lotus.domino.Document prevDoc = docidvw.getDocumentByKey(docid, true);
+    NotesDocument prevDoc = docidvw.getDocumentByKey(docid, true);
     if (null != prevDoc) {
       prevDoc.remove(true);
     }
@@ -147,7 +147,7 @@ class NotesConnectorDocumentList implements DocumentList {
     indexedDoc.save(true);
     LOGGER.exiting(CLASS_NAME, METHOD);
   }
-	
+
   /* @Override */
   public String checkpoint() throws RepositoryException {
     final String METHOD = "checkpoint";
@@ -155,22 +155,22 @@ class NotesConnectorDocumentList implements DocumentList {
     try {
       LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
           "Connector checkpoint documents.");
-			
+
       // If we don't have a new checkpoint we return null
-      if (ncdoc != null) {				
+      if (ncdoc != null) {
         //Otherwise our checkpoint should be the UNID of the
         //current document in the doclist
         checkPointUnid = ncdoc.getUNID();
-        View docidvw = db.getView(NCCONST.VIEWINDEXED);
-				
+        NotesView docidvw = db.getView(NCCONST.VIEWINDEXED);
+
         // We need to iterate through the doclist and clean up
         // the pre-fetched documents and file system objects
         String indexedDocUnid = "";
         for (Iterator<String> ci = unidList.iterator(); ci.hasNext();) {
           indexedDocUnid =  ci.next();
           LOGGER.logp(Level.FINER, CLASS_NAME, METHOD,
-              "Checkpointing document: " + indexedDocUnid); 
-          lotus.domino.Document indexedDoc = 
+              "Checkpointing document: " + indexedDocUnid);
+          NotesDocument indexedDoc =
               db.getDocumentByUNID(indexedDocUnid);
           if (indexedDoc.getItemValueString(NCCONST.ITM_ACTION)
               .equalsIgnoreCase(SpiConstants.ActionType.ADD.toString())) {
@@ -191,7 +191,7 @@ class NotesConnectorDocumentList implements DocumentList {
       }
       else
         LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
-            "Checkpoint for empty document list."); 
+            "Checkpoint for empty document list.");
       // Without lifecycle methods, use the checkpoint to clean up our session
       if (this.crawldoc != null) {
         this.crawldoc.recycle();
