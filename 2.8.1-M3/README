@@ -1,0 +1,41 @@
+Welcome to the Google Search Appliance Connector for Lotus Notes!
+
+The Google Search Appliance connector framework enables Google search
+appliances to search and serve documents stored in non-Web
+repositories, such as enterprise content management systems. An
+enterprise content management (ECM) system provides a central
+repository for large numbers of documents.
+
+This connector for Lotus Notes provides access to documents and
+document meta-data stored in the Lotus Domino Server developed by
+IBM.
+
+The connector communicates with the Lotus Domino Server using the
+Java language Application Programming Interface. To properly
+build this connector you will need access to certain components
+of the Lotus Notes client or the Lotus Domino Server,
+specifically Notes.jar. Lotus Notes and Domino are offered by IBM
+and are not included in this distribution.
+
+
+Documentation Links
+
+    * Documentation for the Google Search Appliance Connectors
+      http://code.google.com/apis/searchappliance/documentation/connectors/index.html
+
+    * Google Search Appliance Connector for Lotus Notes
+      http://code.google.com/p/google-enterprise-connector-notes/
+
+    * Google Search Appliance
+      http://code.google.com/apis/searchappliance/documentation/index.html
+
+    * Lotus Notes Java API documentation
+      Lotus Notes Java API information is available on the IBM
+      corporate web site: http://www.ibm.com
+
+Licensing
+
+      This product includes software developed by
+      The Apache Software Foundation (http://www.apache.org/).
+
+      A copy of the licensing terms is available in a file called COPYING.
