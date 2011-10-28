@@ -14,13 +14,13 @@
 
 package com.google.enterprise.connector.notes.client.notes;
 
+import com.google.enterprise.connector.notes.client.NotesDocument;
 import com.google.enterprise.connector.notes.client.NotesView;
 import com.google.enterprise.connector.notes.client.NotesViewNavigator;
-import com.google.enterprise.connector.notes.client.NotesDocument;
 
 import lotus.domino.Document;
-import lotus.domino.View;
 import lotus.domino.NotesException;
+import lotus.domino.View;
 
 import java.util.Vector;
 
@@ -88,10 +88,42 @@ class NotesViewImpl extends NotesBaseImpl<View> implements NotesView {
 
   /** {@inheritDoc} */
   /* @Override */
+  public NotesDocument getDocumentByKey(Vector key)
+      throws NotesConnectorExceptionImpl {
+    try {
+      Document doc = getNotesObject().getDocumentByKey(
+          (Vector) TypeConverter.toNotesItemValue(key));
+      if (doc == null) {
+        return null;
+      }
+      return new NotesDocumentImpl(doc);
+    } catch (NotesException e) {
+      throw new NotesConnectorExceptionImpl(e);
+    }
+  }
+
+  /** {@inheritDoc} */
+  /* @Override */
   public NotesDocument getDocumentByKey(Object key, boolean exact)
       throws NotesConnectorExceptionImpl {
     try {
       Document doc = getNotesObject().getDocumentByKey(key, exact);
+      if (doc == null) {
+        return null;
+      }
+      return new NotesDocumentImpl(doc);
+    } catch (NotesException e) {
+      throw new NotesConnectorExceptionImpl(e);
+    }
+  }
+
+  /** {@inheritDoc} */
+  /* @Override */
+  public NotesDocument getDocumentByKey(Vector key, boolean exact)
+      throws NotesConnectorExceptionImpl {
+    try {
+      Document doc = getNotesObject().getDocumentByKey(
+          (Vector) TypeConverter.toNotesItemValue(key), exact);
       if (doc == null) {
         return null;
       }

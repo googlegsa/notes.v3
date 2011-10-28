@@ -132,68 +132,80 @@ class NotesAuthorizationManager implements AuthorizationManager {
       // The first document in the category will always be the database document
 
       for (String docId : docIds) {
-        // Extract the database and UNID from the URL
-        String repId = getRepIdFromDocId(docId);
-        String unid = getUNIDFromDocId(docId);
-        // Per-document log message
-        LOGGER.logp(Level.FINER, CLASS_NAME, METHOD,
-            "Authorizing documents for user " + pvi + " : " +
-            repId + " : " + unid);
+        NotesViewNavigator secVN = null;
+        NotesDocument dbdoc = null;
+        try {
+          // Extract the database and UNID from the URL
+          String repId = getRepIdFromDocId(docId);
+          String unid = getUNIDFromDocId(docId);
+          // Per-document log message
+          LOGGER.logp(Level.FINER, CLASS_NAME, METHOD,
+              "Authorizing documents for user " + pvi + " : " +
+              repId + " : " + unid);
 
-        if (null == personDoc) {
-          // We didn't find this person, so deny all.
-          // Alternatively we could return INDETERMINATE...
-          authorized.add(new AuthorizationResponse(false, docId));
-          continue;
-        }
+          if (null == personDoc) {
+            // We didn't find this person, so deny all.
+            // Alternatively we could return INDETERMINATE...
+            authorized.add(new AuthorizationResponse(false, docId));
+            continue;
+          }
 
-        boolean docallow = true;
-        // Get the category from the security view for this database
-        NotesViewNavigator secVN =
-            securityView.createViewNavFromCategory(repId);
-        // The first document in the category is ALWAYS the database document
-        NotesDocument dbdoc = secVN.getFirstDocument().getDocument();
-        // If there is more than one document in the category, we
-        // will need to check for document level reader access
-        // lists
-        int securityCount = secVN.getCount();
-        LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD,
-            "Count for viewNavigator is  " + securityCount);
-
-        boolean dballow = checkDatabaseAccess(NotesName, dbdoc, UserGroups);
-
-        // Only check document level security if it exists
-        if (dballow && (securityCount > 1)) {
-          Vector<String> searchKey = new Vector<String>(3);
-          searchKey.addElement(repId);
-          // Database documents are type '1' in this view.
-          // Crawler documents are type '2'
-          searchKey.addElement("2");
-          searchKey.addElement(unid);
+          boolean docallow = true;
+          // Get the category from the security view for this database
+          secVN = securityView.createViewNavFromCategory(repId);
+          // The first document in the category is ALWAYS the database document
+          dbdoc = secVN.getFirstDocument().getDocument();
+          // If there is more than one document in the category, we
+          // will need to check for document level reader access
+          // lists
+          int securityCount = secVN.getCount();
           LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD,
-              "Search key is  " + searchKey.toString());
-          NotesDocument crawlDoc =
-              securityView.getDocumentByKey(searchKey, true);
-          if (crawlDoc != null) {
-            // Found a crawldoc, so we will need to check document level access
-            docallow = checkDocumentReaders(NotesName, UserGroups, crawlDoc,
-                dbdoc);
-            crawlDoc.recycle();
-          } else {
-            // There is no crawldoc with reader lists
-            // restrictions so nothing to do
+              "Count for viewNavigator is  " + securityCount);
+
+          boolean dballow = checkDatabaseAccess(NotesName, dbdoc, UserGroups);
+
+          // Only check document level security if it exists
+          if (dballow && (securityCount > 1)) {
+            Vector<String> searchKey = new Vector<String>(3);
+            searchKey.addElement(repId);
+            // Database documents are type '1' in this view.
+            // Crawler documents are type '2'
+            searchKey.addElement("2");
+            searchKey.addElement(unid);
             LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD,
-                "No document level security for " + unid);
+                "Search key is  " + searchKey.toString());
+            NotesDocument crawlDoc =
+                securityView.getDocumentByKey(searchKey, true);
+            if (crawlDoc != null) {
+              // Found a crawldoc, so we will need to check document level access
+              docallow = checkDocumentReaders(NotesName, UserGroups, crawlDoc,
+                  dbdoc);
+              crawlDoc.recycle();
+            } else {
+              // There is no crawldoc with reader lists
+              // restrictions so nothing to do
+              LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD,
+                  "No document level security for " + unid);
+            }
+          }
+          boolean allow = docallow && dballow;
+          LOGGER.logp(Level.FINER, CLASS_NAME, METHOD,
+              "Final auth decision is " + allow + " " + unid);
+          authorized.add(new AuthorizationResponse(allow, docId));
+        } catch (Throwable t) {
+          LOGGER.logp(Level.WARNING, CLASS_NAME, METHOD,
+              "Failed to complete check for " + docId, t);
+          authorized.add(new AuthorizationResponse(
+              AuthorizationResponse.Status.INDETERMINATE, docId));
+        } finally {
+          if (null != secVN) {
+            secVN.recycle();
+          }
+          if (null != dbdoc) {
+            dbdoc.recycle();
           }
         }
-        secVN.recycle();
-        dbdoc.recycle();
-        boolean allow = docallow && dballow;
-        LOGGER.logp(Level.FINER, CLASS_NAME, METHOD,
-            "Final auth decision is " + allow + " " + unid);
-        authorized.add(new AuthorizationResponse(allow, docId));
       }
-
       if (null != personDoc) {
         personDoc.recycle();
       }

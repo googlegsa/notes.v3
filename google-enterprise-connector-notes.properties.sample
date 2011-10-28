@@ -28,3 +28,5 @@ javatest.database = gsaconfig.nsf
 javatest.idpassword = password
 javatest.authentication.username = User Name
 javatest.authentication.password = password
+# Set this user name to the name of the traversal user
+javatest.authorization.username = User Name
