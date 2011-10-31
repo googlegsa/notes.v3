@@ -114,4 +114,50 @@ public interface NotesView extends NotesBase {
    * @throws RepositoryException
    */
   void refresh() throws RepositoryException;
+
+  /**
+   * Finds document entries in this view by key value.
+   *
+   * @param keys the column keys; each object may be a string,
+   * number, NotesDateTime, or NotesDateRange
+   * @return the matching entries, or an empty vector
+   * @throws RepositoryException
+   */
+  NotesViewEntryCollection getAllEntriesByKey(Vector keys)
+      throws RepositoryException;
+
+  /**
+   * Finds document entries in this view by key value.
+   *
+   * @param key the column key; may be a string,
+   * number, NotesDateTime, or NotesDateRange
+   * @return the matching entries, or an empty vector
+   * @throws RepositoryException
+   */
+  NotesViewEntryCollection getAllEntriesByKey(Object key)
+      throws RepositoryException;
+
+  /**
+   * Finds document entries in this view by key value.
+   *
+   * @param keys the column keys; each object may be a string,
+   * number, NotesDateTime, or NotesDateRange
+   * @param exact requires an exact match
+   * @return the matching entries, or an empty vector
+   * @throws RepositoryException
+   */
+  NotesViewEntryCollection getAllEntriesByKey(Vector keys, boolean exact)
+      throws RepositoryException;
+
+  /**
+   * Finds document entries in this view by key value.
+   *
+   * @param key the column key; may be a string,
+   * number, NotesDateTime, or NotesDateRange
+   * @param exact requires an exact match
+   * @return the matching entries, or an empty vector
+   * @throws RepositoryException
+   */
+  NotesViewEntryCollection getAllEntriesByKey(Object key, boolean exact)
+      throws RepositoryException;
 }

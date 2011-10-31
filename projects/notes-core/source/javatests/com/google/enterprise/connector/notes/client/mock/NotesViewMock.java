@@ -14,9 +14,10 @@
 
 package com.google.enterprise.connector.notes.client.mock;
 
-import com.google.enterprise.connector.notes.client.NotesView;
-import com.google.enterprise.connector.notes.client.NotesViewNavigator;
 import com.google.enterprise.connector.notes.client.NotesDocument;
+import com.google.enterprise.connector.notes.client.NotesView;
+import com.google.enterprise.connector.notes.client.NotesViewEntryCollection;
+import com.google.enterprise.connector.notes.client.NotesViewNavigator;
 import com.google.enterprise.connector.spi.RepositoryException;
 
 import java.util.Vector;
@@ -107,6 +108,38 @@ class NotesViewMock extends NotesBaseMock implements NotesView {
   /* @Override */
   public void refresh() throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "refresh");
+  }
+
+  /** {@inheritDoc} */
+  /* @Override */
+  public NotesViewEntryCollection getAllEntriesByKey(Vector keys)
+      throws RepositoryException {
+    LOGGER.entering(CLASS_NAME, "getAllEntriesByKey");
+    return null;
+  }
+
+  /** {@inheritDoc} */
+  /* @Override */
+  public NotesViewEntryCollection getAllEntriesByKey(Object key)
+      throws RepositoryException {
+    LOGGER.entering(CLASS_NAME, "getAllEntriesByKey");
+    return null;
+  }
+
+  /** {@inheritDoc} */
+  /* @Override */
+  public NotesViewEntryCollection getAllEntriesByKey(Vector keys, boolean exact)
+      throws RepositoryException {
+    LOGGER.entering(CLASS_NAME, "getAllEntriesByKey");
+    return null;
+  }
+
+  /** {@inheritDoc} */
+  /* @Override */
+  public NotesViewEntryCollection getAllEntriesByKey(Object key, boolean exact)
+      throws RepositoryException {
+    LOGGER.entering(CLASS_NAME, "getAllEntriesByKey");
+    return null;
   }
 
   /* TODO: implement getName

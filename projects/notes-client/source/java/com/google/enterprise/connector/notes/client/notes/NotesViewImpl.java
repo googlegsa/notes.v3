@@ -16,11 +16,13 @@ package com.google.enterprise.connector.notes.client.notes;
 
 import com.google.enterprise.connector.notes.client.NotesDocument;
 import com.google.enterprise.connector.notes.client.NotesView;
+import com.google.enterprise.connector.notes.client.NotesViewEntryCollection;
 import com.google.enterprise.connector.notes.client.NotesViewNavigator;
 
 import lotus.domino.Document;
 import lotus.domino.NotesException;
 import lotus.domino.View;
+import lotus.domino.ViewEntryCollection;
 
 import java.util.Vector;
 
@@ -160,6 +162,58 @@ class NotesViewImpl extends NotesBaseImpl<View> implements NotesView {
   public void refresh() throws NotesConnectorExceptionImpl {
     try {
       getNotesObject().refresh();
+    } catch (NotesException e) {
+      throw new NotesConnectorExceptionImpl(e);
+    }
+  }
+
+  /** {@inheritDoc} */
+  /* @Override */
+  public NotesViewEntryCollection getAllEntriesByKey(Vector keys)
+      throws NotesConnectorExceptionImpl {
+    try {
+      ViewEntryCollection results = getNotesObject().getAllEntriesByKey(
+          TypeConverter.toNotesItemValue(keys));
+      return new NotesViewEntryCollectionImpl(results);
+    } catch (NotesException e) {
+      throw new NotesConnectorExceptionImpl(e);
+    }
+  }
+
+  /** {@inheritDoc} */
+  /* @Override */
+  public NotesViewEntryCollection getAllEntriesByKey(Object key)
+      throws NotesConnectorExceptionImpl {
+    try {
+      ViewEntryCollection results = getNotesObject().getAllEntriesByKey(
+          TypeConverter.toNotesItemValue(key));
+      return new NotesViewEntryCollectionImpl(results);
+    } catch (NotesException e) {
+      throw new NotesConnectorExceptionImpl(e);
+    }
+  }
+
+  /** {@inheritDoc} */
+  /* @Override */
+  public NotesViewEntryCollection getAllEntriesByKey(Vector keys, boolean exact)
+      throws NotesConnectorExceptionImpl {
+    try {
+      ViewEntryCollection results = getNotesObject().getAllEntriesByKey(
+          TypeConverter.toNotesItemValue(keys), exact);
+      return new NotesViewEntryCollectionImpl(results);
+    } catch (NotesException e) {
+      throw new NotesConnectorExceptionImpl(e);
+    }
+  }
+
+  /** {@inheritDoc} */
+  /* @Override */
+  public NotesViewEntryCollection getAllEntriesByKey(Object key, boolean exact)
+      throws NotesConnectorExceptionImpl {
+    try {
+      ViewEntryCollection results = getNotesObject().getAllEntriesByKey(
+          TypeConverter.toNotesItemValue(key), exact);
+      return new NotesViewEntryCollectionImpl(results);
     } catch (NotesException e) {
       throw new NotesConnectorExceptionImpl(e);
     }
