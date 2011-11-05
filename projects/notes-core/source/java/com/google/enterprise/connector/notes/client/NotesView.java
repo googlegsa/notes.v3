@@ -16,6 +16,8 @@ package com.google.enterprise.connector.notes.client;
 
 import com.google.enterprise.connector.spi.RepositoryException;
 
+import java.util.Vector;
+
 public interface NotesView extends NotesBase {
   /**
    * Returns the number of documents in the view.
@@ -54,6 +56,17 @@ public interface NotesView extends NotesBase {
       throws RepositoryException;
 
   /**
+   * Gets a document using a key vector. The vector may contain
+   * string, number, DateTime, or DateRange objects.
+   *
+   * @param key the key
+   * @return the matching document, or null
+   * @throws RepositoryException
+   */
+  NotesDocument getDocumentByKey(Vector key)
+      throws RepositoryException;
+
+  /**
    * Gets a document using a key.
    *
    * @param key the key
@@ -62,6 +75,18 @@ public interface NotesView extends NotesBase {
    * @throws RepositoryException
    */
   NotesDocument getDocumentByKey(Object key, boolean exact)
+      throws RepositoryException;
+
+  /**
+   * Gets a document using a key vector. The vector may contain
+   * string, number, DateTime, or DateRange objects.
+   *
+   * @param key the key
+   * @param exact true if the match must be exact
+   * @return the matching document, or null
+   * @throws RepositoryException
+   */
+  NotesDocument getDocumentByKey(Vector key, boolean exact)
       throws RepositoryException;
 
   /**
@@ -89,4 +114,50 @@ public interface NotesView extends NotesBase {
    * @throws RepositoryException
    */
   void refresh() throws RepositoryException;
+
+  /**
+   * Finds document entries in this view by key value.
+   *
+   * @param keys the column keys; each object may be a string,
+   * number, NotesDateTime, or NotesDateRange
+   * @return the matching entries, or an empty vector
+   * @throws RepositoryException
+   */
+  NotesViewEntryCollection getAllEntriesByKey(Vector keys)
+      throws RepositoryException;
+
+  /**
+   * Finds document entries in this view by key value.
+   *
+   * @param key the column key; may be a string,
+   * number, NotesDateTime, or NotesDateRange
+   * @return the matching entries, or an empty vector
+   * @throws RepositoryException
+   */
+  NotesViewEntryCollection getAllEntriesByKey(Object key)
+      throws RepositoryException;
+
+  /**
+   * Finds document entries in this view by key value.
+   *
+   * @param keys the column keys; each object may be a string,
+   * number, NotesDateTime, or NotesDateRange
+   * @param exact requires an exact match
+   * @return the matching entries, or an empty vector
+   * @throws RepositoryException
+   */
+  NotesViewEntryCollection getAllEntriesByKey(Vector keys, boolean exact)
+      throws RepositoryException;
+
+  /**
+   * Finds document entries in this view by key value.
+   *
+   * @param key the column key; may be a string,
+   * number, NotesDateTime, or NotesDateRange
+   * @param exact requires an exact match
+   * @return the matching entries, or an empty vector
+   * @throws RepositoryException
+   */
+  NotesViewEntryCollection getAllEntriesByKey(Object key, boolean exact)
+      throws RepositoryException;
 }

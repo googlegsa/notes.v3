@@ -78,13 +78,16 @@
     <zip destfile="${build.dir}/${bin.archive}.zip">
       <zipfileset dir="${install.dir}/notes-client/jar"
         prefix="${bin.archive}" />
-      <zipfileset file="../README" prefix="${bin.archive}" />
+      <zipfileset file="../README"
+        prefix="${bin.archive}" />
       <zipfileset file="../RELEASE_NOTES"
         prefix="${bin.archive}" />
       <zipfileset file="notes-core/config/logging.properties"
         prefix="${bin.archive}/Config" />
       <zipfileset file="../COPYING"
         prefix="${bin.archive}/License" />
+      <zipfileset file="notes-database/gsa-config-2_8_1.ntf"
+        prefix="${bin.archive}/Etc" />
     </zip>
     <tar destfile="${build.dir}/${bin.archive}.tar.gz"
       compression="gzip">

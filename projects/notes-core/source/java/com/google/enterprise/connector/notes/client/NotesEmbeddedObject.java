@@ -17,9 +17,9 @@ package com.google.enterprise.connector.notes.client;
 import com.google.enterprise.connector.spi.RepositoryException;
 
 public interface NotesEmbeddedObject extends NotesBase {
-  final int EMBED_ATTACHMENT = -1;
-  final int EMBED_OBJECT = 1;
-  final int EMBED_OBJECTLINK=1;
+  final int EMBED_ATTACHMENT = 1454;
+  final int EMBED_OBJECT = 1453;
+  final int EMBED_OBJECTLINK = 1452;
 
   /**
    * Returns the type: object, object link, attachment.

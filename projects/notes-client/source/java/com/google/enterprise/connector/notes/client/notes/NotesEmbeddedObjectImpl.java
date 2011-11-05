@@ -24,6 +24,12 @@ import java.util.Date;
 class NotesEmbeddedObjectImpl extends NotesBaseImpl<EmbeddedObject>
     implements NotesEmbeddedObject {
 
+  static {
+    assert EMBED_ATTACHMENT == EmbeddedObject.EMBED_ATTACHMENT;
+    assert EMBED_OBJECT == EmbeddedObject.EMBED_OBJECT;
+    assert EMBED_OBJECTLINK == EmbeddedObject.EMBED_OBJECTLINK;
+  }
+
   NotesEmbeddedObjectImpl(EmbeddedObject embeddedObject) {
     super(embeddedObject);
   }
