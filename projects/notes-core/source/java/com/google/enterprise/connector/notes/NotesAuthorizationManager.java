@@ -79,6 +79,9 @@ class NotesAuthorizationManager implements AuthorizationManager {
   public Collection<AuthorizationResponse> authorizeDocids(
       Collection<String> docIds, AuthenticationIdentity id) {
     final String METHOD = "authorizeDocids";
+    long elapsedTimeMillis = 0;
+    long startTime = System.currentTimeMillis();
+
     String NotesName = null;
     Vector<String> UserGroups = null;
     ArrayList<AuthorizationResponse> authorized =
@@ -96,13 +99,8 @@ class NotesAuthorizationManager implements AuthorizationManager {
       // elsewhere (esp.  NotesAuthenticationManager), with the
       // exception of the securityView in the middle (but unused
       // until later). Extract a helper method somewhere?
-      NotesDatabase acdb = ns.getDatabase(null, null);
-      LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD, "Opening ACL database " +
-          ncs.getServer() + " : " + ncs.getACLDbReplicaId());
-
-      acdb.openByReplicaID(ncs.getServer(), ncs.getACLDbReplicaId());
       NotesView securityView = cdb.getView(NCCONST.VIEWSECURITY);
-      NotesView people = acdb.getView(NCCONST.VIEWACPEOPLE);
+      NotesView people = cdb.getView(NCCONST.VIEWPEOPLECACHE);
 
       // Resolve the PVI to their Notes names and groups
       NotesDocument personDoc =
@@ -198,6 +196,12 @@ class NotesAuthorizationManager implements AuthorizationManager {
           authorized.add(new AuthorizationResponse(
               AuthorizationResponse.Status.INDETERMINATE, docId));
         } finally {
+          if (LOGGER.isLoggable(Level.FINER)) {
+          elapsedTimeMillis = System.currentTimeMillis()-startTime;
+          LOGGER.logp(Level.FINER, CLASS_NAME, METHOD,
+              "ElapsedAuthorizationResponseTime: " + elapsedTimeMillis + 
+              " Documents authorized: " + authorized.size());
+          }
           if (null != secVN) {
             secVN.recycle();
           }
@@ -218,9 +222,6 @@ class NotesAuthorizationManager implements AuthorizationManager {
       if (null != cdb) {
         cdb.recycle();
       }
-      if (null != acdb) {
-        acdb.recycle();
-      }
     } catch (Exception e) {
       // TODO: what Notes exceptions can be caught here? Should
       // we be catching exceptions within the method on a
@@ -238,10 +239,16 @@ class NotesAuthorizationManager implements AuthorizationManager {
             "AuthorizationResponse: " + ar.getDocid() + " : " + ar.isValid());
       }
     }
+    // Get elapsed time in milliseconds
+    elapsedTimeMillis = System.currentTimeMillis()-startTime;
+    LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
+        "TotalAuthorizationResponseTime: " + elapsedTimeMillis + 
+        " milliseconds.  Documents in batch: " + docIds.size() +
+        " Documents authorized: " + authorized.size());
     return authorized;
   }
 
-  protected String getCommonName(String NotesName) {
+  protected static String getCommonName(String NotesName) {
     if (NotesName.startsWith("cn=")) {
       int index = NotesName.indexOf('/');
       if (index > 0)

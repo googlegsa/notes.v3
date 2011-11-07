@@ -163,4 +163,15 @@ class NotesDatabaseImpl extends NotesBaseImpl<Database>
       throw new NotesConnectorExceptionImpl(e);
     }
   }
+
+  /** {@inheritDoc} */
+  /* @Override */
+  public boolean isOpen() throws NotesConnectorExceptionImpl {
+    try {
+      return getNotesObject().isOpen();
+    } catch (NotesException e) {
+      throw new NotesConnectorExceptionImpl(e);
+    }
+  }
+
 }

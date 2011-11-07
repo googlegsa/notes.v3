@@ -40,7 +40,6 @@ public class NotesConnectorSession implements Session {
   private String database = null;
   private String password = "";
   private NotesConnector connector = null;
-  private String ACLDbReplicaId;
   private Vector<String> ExcludedExtns = null;
   private int MaxFileSize;
   private String SpoolDir = null;
@@ -50,6 +49,10 @@ public class NotesConnectorSession implements Session {
   private int maxCrawlQDepth;
   private int deletionBatchSize;
   private int numCrawlerThreads;
+  private int cacheUpdateInterval;
+  private String directory = null;
+  private String userNameFormula = null;
+  private String userSelectionFormula = null;
 
   public NotesConnectorSession(NotesConnector Connector,
       NotesPollerNotifier connectorNpn, String Password,
@@ -133,18 +136,6 @@ public class NotesConnectorSession implements Session {
         return false;
       }
 
-      ACLDbReplicaId = systemDoc.getItemValueString(NCCONST.SITM_ACLDBREPLICAID);
-      if (null == ACLDbReplicaId) {
-        LOGGER.logp(Level.SEVERE, CLASS_NAME, METHOD,
-            "Access Control Database has not been set up.");
-        return false;
-      }
-      if (ACLDbReplicaId.length() == 0) {
-        LOGGER.logp(Level.SEVERE, CLASS_NAME, METHOD,
-            "Access Control Database has not been set up.");
-        return false;
-      }
-
       // "." means no file extension.  Replace with an empty string if it exists.
       ExcludedExtns = (Vector<String>)
           systemDoc.getItemValue(NCCONST.SITM_EXCLUDEDEXTENSIONS);
@@ -196,6 +187,46 @@ public class NotesConnectorSession implements Session {
       LOGGER.logp(Level.CONFIG, CLASS_NAME, METHOD,
           "maxCrawlQDepth is " + maxCrawlQDepth);
 
+      // Number of docs to check when deleting
+      cacheUpdateInterval = systemDoc.getItemValueInteger(
+          NCCONST.SITM_CACHEUPDATEINTERVAL);
+      if (cacheUpdateInterval < 1)  {
+        LOGGER.logp(Level.SEVERE, CLASS_NAME, METHOD,
+            "Invalid setting for cache update interval: " + cacheUpdateInterval);
+        return false;
+      }
+      LOGGER.logp(Level.CONFIG, CLASS_NAME, METHOD,
+          "cacheUpdateInterval is " + cacheUpdateInterval);
+
+      
+      // Get the directory and see if we can open it
+      directory = systemDoc.getItemValueString(
+    		  NCCONST.SITM_DIRECTORY);
+      LOGGER.logp(Level.CONFIG, CLASS_NAME, METHOD,
+              "Path to Domino directory: " + directory);
+
+      NotesDatabase dirDb = ns.getDatabase(this.getServer(), directory);
+      dirDb.recycle();
+      
+      userNameFormula = systemDoc.getItemValueString(
+    		  NCCONST.SITM_USERNAMEFORMULA);
+      if (0 == userNameFormula.length()) {
+    	  LOGGER.logp(Level.CONFIG, CLASS_NAME, METHOD,
+    	      "User Name formula is empty - using default");
+    	  userNameFormula = NCCONST.DEFAULT_USERNAMEFORMULA;
+      }
+      LOGGER.logp(Level.CONFIG, CLASS_NAME, METHOD,
+            "User Name formula: " + userNameFormula);
+
+      userSelectionFormula = systemDoc.getItemValueString(NCCONST.SITM_USERSELECTIONFORMULA);
+      if (0 == userSelectionFormula.length()) {
+        LOGGER.logp(Level.CONFIG, CLASS_NAME, METHOD,
+            "User Selection formula is empty - using default");
+    	  userSelectionFormula = NCCONST.DEFAULT_USERSELECTIONFORMULA;
+      }
+      LOGGER.logp(Level.CONFIG, CLASS_NAME, METHOD,
+          "User Selection formula: " + userSelectionFormula);
+      
       // Number of docs to check when deleting
       deletionBatchSize = systemDoc.getItemValueInteger(
           NCCONST.SITM_DELETIONBATCHSIZE);
@@ -329,6 +360,22 @@ public class NotesConnectorSession implements Session {
     }
   }
 
+  public int getCacheUpdateInterval() {
+    return cacheUpdateInterval;
+  }
+
+  public String getDirectory() {
+    return directory;
+  }
+
+  public String getUserNameFormula() {
+    return userNameFormula;
+  }
+
+  public String getUserSelectionFormula() {
+    return userSelectionFormula;
+  }
+
   public String getPassword() {
     return password;
   }
@@ -339,10 +386,6 @@ public class NotesConnectorSession implements Session {
 
   public int getMaxFileSize() {
     return MaxFileSize;
-  }
-
-  public String getACLDbReplicaId() {
-    return ACLDbReplicaId;
   }
 
   public String getDatabase() {

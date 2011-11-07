@@ -349,6 +349,16 @@ public class NotesDatabasePoller {
       srcdb.openByReplicaID(
           srcdbDoc.getItemValueString(NCCONST.DITM_SERVER),
           srcdbDoc.getItemValueString(NCCONST.DITM_REPLICAID));
+      
+      // Did the database open succeed? If not exit
+      if (!srcdb.isOpen()) {
+        LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
+            "Skipping database - Database could not be opened.");
+        lastUpdated.recycle();
+        ns.recycle(lastUpdatedV);
+      	srcdb.recycle();
+      	return;
+      }
 
       if (processACL(srcdb, srcdbDoc)) {
         // If the ACL has changed and we are using per Document

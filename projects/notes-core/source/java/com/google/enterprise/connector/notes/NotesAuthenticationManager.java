@@ -88,14 +88,10 @@ class NotesAuthenticationManager implements AuthenticationManager {
       nSession = ncs.createNotesSession();
 
       // TODO: Check what we need to support here
-      namesDb = nSession.getDatabase(ncs.getServer(), "names.nsf");
+      namesDb = nSession.getDatabase(ncs.getServer(), ncs.getDirectory());
+      NotesDatabase acDb = nSession.getDatabase(ncs.getServer(), ncs.getDatabase());
 
-      acDb = nSession.getDatabase(null, null);
-      LOGGER.logp(Level.FINER, CLASS_NAME, METHOD, "Opening ACL database " +
-          ncs.getServer() + " : " + ncs.getACLDbReplicaId());
-      acDb.openByReplicaID(ncs.getServer(), ncs.getACLDbReplicaId());
-
-      peopleVw = acDb.getView(NCCONST.VIEWACPEOPLE);
+      peopleVw = acDb.getView(NCCONST.VIEWPEOPLECACHE);
 
       // Resolve the PVI to their Notes names and groups
       personDoc = peopleVw.getDocumentByKey(pvi, true);
