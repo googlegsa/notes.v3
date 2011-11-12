@@ -125,7 +125,8 @@ public interface NotesDatabase extends NotesBase {
   /**
    * Checks whether a database is open or not
    *
+   * @return true if the database is open
+   * @throws RepositoryException
    */
-
   boolean isOpen() throws RepositoryException;
 }

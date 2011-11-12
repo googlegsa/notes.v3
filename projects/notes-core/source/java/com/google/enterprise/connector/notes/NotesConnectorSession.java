@@ -187,7 +187,7 @@ public class NotesConnectorSession implements Session {
       LOGGER.logp(Level.CONFIG, CLASS_NAME, METHOD,
           "maxCrawlQDepth is " + maxCrawlQDepth);
 
-      // Number of docs to check when deleting
+      // Time between user/group cache updates
       cacheUpdateInterval = systemDoc.getItemValueInteger(
           NCCONST.SITM_CACHEUPDATEINTERVAL);
       if (cacheUpdateInterval < 1)  {
@@ -198,7 +198,6 @@ public class NotesConnectorSession implements Session {
       LOGGER.logp(Level.CONFIG, CLASS_NAME, METHOD,
           "cacheUpdateInterval is " + cacheUpdateInterval);
 
-      
       // Get the directory and see if we can open it
       directory = systemDoc.getItemValueString(
     		  NCCONST.SITM_DIRECTORY);
@@ -207,7 +206,7 @@ public class NotesConnectorSession implements Session {
 
       NotesDatabase dirDb = ns.getDatabase(this.getServer(), directory);
       dirDb.recycle();
-      
+
       userNameFormula = systemDoc.getItemValueString(
     		  NCCONST.SITM_USERNAMEFORMULA);
       if (0 == userNameFormula.length()) {
@@ -218,7 +217,8 @@ public class NotesConnectorSession implements Session {
       LOGGER.logp(Level.CONFIG, CLASS_NAME, METHOD,
             "User Name formula: " + userNameFormula);
 
-      userSelectionFormula = systemDoc.getItemValueString(NCCONST.SITM_USERSELECTIONFORMULA);
+      userSelectionFormula = systemDoc.getItemValueString(
+          NCCONST.SITM_USERSELECTIONFORMULA);
       if (0 == userSelectionFormula.length()) {
         LOGGER.logp(Level.CONFIG, CLASS_NAME, METHOD,
             "User Selection formula is empty - using default");
@@ -226,7 +226,7 @@ public class NotesConnectorSession implements Session {
       }
       LOGGER.logp(Level.CONFIG, CLASS_NAME, METHOD,
           "User Selection formula: " + userSelectionFormula);
-      
+
       // Number of docs to check when deleting
       deletionBatchSize = systemDoc.getItemValueInteger(
           NCCONST.SITM_DELETIONBATCHSIZE);

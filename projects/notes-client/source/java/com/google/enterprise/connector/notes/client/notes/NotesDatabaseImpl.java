@@ -173,5 +173,4 @@ class NotesDatabaseImpl extends NotesBaseImpl<Database>
       throw new NotesConnectorExceptionImpl(e);
     }
   }
-
 }

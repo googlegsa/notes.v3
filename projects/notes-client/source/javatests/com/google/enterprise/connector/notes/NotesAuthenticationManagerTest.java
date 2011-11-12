@@ -61,6 +61,11 @@ public class NotesAuthenticationManagerTest extends TestCase {
 
     username = getProperty("javatest.authentication.username");
     password = getProperty("javatest.authentication.password");
+
+    // Temporary fix for the need to create user/group cache.
+    Session session = connector.login();
+    NotesUserGroupManager ug = new NotesUserGroupManager();
+    ug.updatePeopleGroups((NotesConnectorSession) session, true);
   }
 
   @Override

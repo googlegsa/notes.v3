@@ -118,6 +118,13 @@ class NotesDatabaseMock extends NotesBaseMock
     return null;
   }
 
+  /** {@inheritDoc} */
+  /* @Override */
+  public boolean isOpen() throws RepositoryException {
+    LOGGER.entering(CLASS_NAME, "isOpen");
+    return false;
+  }
+
   public String toString() {
     try {
       return getFilePath();

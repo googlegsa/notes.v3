@@ -93,8 +93,8 @@ public class NotesDatabasePoller {
       NotesDocument srcdbDoc = srcdbView.getFirstDocument();
       while (null != srcdbDoc) {
         LOGGER.logp(Level.FINER, CLASS_NAME, METHOD,
-            "Connector reset - Resetting database last update date for " +
-            srcdbDoc.getItemValue(NCCONST.DITM_DBNAME));
+            "Connector reset - Resetting database last update date for "
+            + srcdbDoc.getItemValue(NCCONST.DITM_DBNAME));
         srcdbDoc.removeItem(NCCONST.DITM_LASTUPDATE);
         srcdbDoc.save(true);
         NotesDocument prevDoc = srcdbDoc;
@@ -139,8 +139,8 @@ public class NotesDatabasePoller {
             "Total documents in crawl and submit queues is: " + qDepth);
         if (vwSubmitQ.getEntryCount() + vwCrawlQ.getEntryCount() > maxDepth) {
           LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
-              "Queue threshold reached.  Suspending polling. size/max=" +
-              qDepth + "/" + maxDepth);
+              "Queue threshold reached.  Suspending polling. size/max="
+              + qDepth + "/" + maxDepth);
           srcdbDoc.recycle();
           break;
         }
@@ -349,7 +349,7 @@ public class NotesDatabasePoller {
       srcdb.openByReplicaID(
           srcdbDoc.getItemValueString(NCCONST.DITM_SERVER),
           srcdbDoc.getItemValueString(NCCONST.DITM_REPLICAID));
-      
+
       // Did the database open succeed? If not exit
       if (!srcdb.isOpen()) {
         LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
@@ -366,8 +366,8 @@ public class NotesDatabasePoller {
         if (srcdbDoc.getItemValueString(NCCONST.DITM_AUTHTYPE)
             .contentEquals(NCCONST.AUTH_ACL)) {
           LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
-              "Database ACL has changed - Resetting last update " +
-              "to reindex all document ACLs.");
+              "Database ACL has changed - Resetting last update "
+              + "to reindex all document ACLs.");
           lastUpdated = ns.createDateTime("1/1/1980");
         }
       }
@@ -387,8 +387,8 @@ public class NotesDatabasePoller {
 
       NotesDocumentCollection dc = srcdb.search(searchString, null, 0);
       LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
-          srcdb.getFilePath() + " Number of documents to be processed: " +
-          dc.getCount());
+          srcdb.getFilePath() + " Number of documents to be processed: "
+          + dc.getCount());
       NotesDocument curDoc = dc.getFirstDocument();
       while (null != curDoc) {
         String NotesURL = curDoc.getNotesURL();

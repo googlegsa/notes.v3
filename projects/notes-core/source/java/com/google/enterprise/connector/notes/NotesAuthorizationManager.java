@@ -197,10 +197,10 @@ class NotesAuthorizationManager implements AuthorizationManager {
               AuthorizationResponse.Status.INDETERMINATE, docId));
         } finally {
           if (LOGGER.isLoggable(Level.FINER)) {
-          elapsedTimeMillis = System.currentTimeMillis()-startTime;
+          elapsedTimeMillis = System.currentTimeMillis() - startTime;
           LOGGER.logp(Level.FINER, CLASS_NAME, METHOD,
-              "ElapsedAuthorizationResponseTime: " + elapsedTimeMillis + 
-              " Documents authorized: " + authorized.size());
+              "ElapsedAuthorizationResponseTime: " + elapsedTimeMillis
+              + " Documents authorized: " + authorized.size());
           }
           if (null != secVN) {
             secVN.recycle();
@@ -240,10 +240,10 @@ class NotesAuthorizationManager implements AuthorizationManager {
       }
     }
     // Get elapsed time in milliseconds
-    elapsedTimeMillis = System.currentTimeMillis()-startTime;
+    elapsedTimeMillis = System.currentTimeMillis() - startTime;
     LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
-        "TotalAuthorizationResponseTime: " + elapsedTimeMillis + 
-        " milliseconds.  Documents in batch: " + docIds.size() +
+        "TotalAuthorizationResponseTime: " + elapsedTimeMillis
+        + " milliseconds.  Documents in batch: " + docIds.size() +
         " Documents authorized: " + authorized.size());
     return authorized;
   }

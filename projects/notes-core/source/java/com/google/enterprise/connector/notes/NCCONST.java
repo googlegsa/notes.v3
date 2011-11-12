@@ -83,35 +83,35 @@ public class NCCONST {
   // Access Control Database Views
   public static final String ACITM_GROUPS = "Groups";
   public static final String ACITM_NOTESNAME = "NotesName";
-  
+
   // Directory View
   /** These are default views in the Domino directory and must exist */
   public static final String DIRVIEW_PEOPLEGROUPFLAT = "($PeopleGroupsFlat)";
   public static final String DIRVIEW_SERVERACCESS = "($ServerAccess)";
   public static final String DIRVIEW_VIMUSERS = "($VimPeople)";
   public static final String DIRVIEW_VIMGROUPS = "($VimGroups)";
-  
+
   public static final String DIRFORM_PERSON = "Person";
   public static final String DIRFORM_GROUP = "Group";
-  
+
   // Group Items from Domino Directory
   public static final String GITM_LISTNAME = "ListName";
   public static final String GITM_GROUPTYPE = "GroupType";
   public static final String GITM_MEMBERS = "Members";
   public static final String DIR_ACCESSCONTROLGROUPTYPES = "02";
-  
+
   // Person Items from Domino Directory
   public static final String PITM_FULLNAME = "FullName";
-  
+
   // Item names used in the group cache documents
   public static final String GCITM_GROUPNAME = "GroupName";
   public static final String GCITM_CHILDGROUPS = "ChildGroups";
-  
+
   // Item names used in the person cache documents
   public static final String PCITM_USERNAME = "UserName";
   public static final String PCITM_NOTESNAME = "NotesName";
   public static final String PCITM_GROUPS = "Groups";
-  
+
 
   //Item names used by the connector for crawling documents
 
@@ -276,13 +276,13 @@ public class NCCONST {
   public static final String SITM_NUMCRAWLERTHREADS = "NumCrawlerThreads";
   public static final String SITM_CACHEUPDATEINTERVAL = "CacheUpdateInterval";
   public static final String SITM_LASTCACHEUPDATE = "LastCacheUpdate";
-  
+
   /** Path to the Domino directory on the server */
   public static final String SITM_DIRECTORY = "Directory";
-  
+
   /** Selection formula to determine which users will get processed */
   public static final String SITM_USERSELECTIONFORMULA = "UserSelectionFormula";
- 
+
   /** Formula to generate GSA Identity (PVI) for authN and authZ */
   public static final String SITM_USERNAMEFORMULA = "UserNameFormula";
 

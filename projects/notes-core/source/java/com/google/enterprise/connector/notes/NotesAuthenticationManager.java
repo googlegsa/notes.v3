@@ -89,7 +89,8 @@ class NotesAuthenticationManager implements AuthenticationManager {
 
       // TODO: Check what we need to support here
       namesDb = nSession.getDatabase(ncs.getServer(), ncs.getDirectory());
-      NotesDatabase acDb = nSession.getDatabase(ncs.getServer(), ncs.getDatabase());
+      NotesDatabase acDb = nSession.getDatabase(ncs.getServer(),
+          ncs.getDatabase());
 
       peopleVw = acDb.getView(NCCONST.VIEWPEOPLECACHE);
 
