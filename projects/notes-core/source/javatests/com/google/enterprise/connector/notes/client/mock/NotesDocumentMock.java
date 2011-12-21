@@ -113,7 +113,16 @@ public class NotesDocumentMock extends NotesBaseMock
   /* @Override */
   public int getItemValueInteger(String name) throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "getItemValueInteger");
-    return -1;
+    NotesItemMock item = items.get(name.toLowerCase());
+    if (null == item) {
+      throw new RepositoryException("No such item: " + name);
+    }
+    Vector values = item.getValues();
+    if (null == values) {
+      throw new RepositoryException("No values for item: " + name);
+    }
+
+    return ((Double) values.get(0)).intValue();
   }
 
   /** {@inheritDoc} */

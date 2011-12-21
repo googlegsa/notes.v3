@@ -26,45 +26,15 @@ import com.google.enterprise.connector.spi.Session;
 import com.google.enterprise.connector.spi.SpiConstants;
 import com.google.enterprise.connector.spi.TraversalManager;
 
-import junit.framework.TestCase;
-
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-public class NotesConnectorSessionTest extends TestCase {
-
-  private String server;
-  private String database;
-  private String idpassword;
-  private NotesConnector connector;
+public class NotesConnectorSessionTest extends ConnectorFixture {
 
   public NotesConnectorSessionTest() {
-  }
-
-  private String getProperty(String key) {
-    String value = System.getProperty(key);
-    assertNotNull(key, value);
-    return value;
-  }
-
-  @Override
-  protected void setUp() throws Exception {
-    super.setUp();
-    server = getProperty("javatest.server");
-    database = getProperty("javatest.database");
-    idpassword = getProperty("javatest.idpassword");
-    connector = new NotesConnector();
-    connector.setServer(server);
-    connector.setDatabase(database);
-    connector.setIdPassword(idpassword);
-  }
-
-  @Override
-  protected void tearDown() throws Exception {
-    connector.shutdown();
-    super.tearDown();
+    super();
   }
 
   /**

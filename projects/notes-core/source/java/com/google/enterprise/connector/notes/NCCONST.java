@@ -33,7 +33,10 @@ public class NCCONST {
   public static final String VIEWSECURITY = "NCSecurity";
   public static final String VIEWGROUPCACHE = "NCGroupCache";
   public static final String VIEWPEOPLECACHE = "NCPeopleCache";
+
   public static final String VIEWNOTESNAMELOOKUP = "NCNotesNameLookup";
+  public static final String VIEWPEOPLENAMELOOKUP = "NCPeopleNameLookup";
+
   public static final String VIEWPARENTGROUPS = "NCParentGroups";
 
   // Form Names
@@ -286,6 +289,9 @@ public class NCCONST {
   /** Formula to generate GSA Identity (PVI) for authN and authZ */
   public static final String SITM_USERNAMEFORMULA = "UserNameFormula";
 
+  /** Group prefix for group names sent to the GSA. */
+  public static final String SITM_GSAGROUPPREFIX = "GSAGroupPrefix";
+
 
   // Default configuration for the connector
 
@@ -300,7 +306,8 @@ public class NCCONST {
   public static final String DEFAULT_DESCRIPTION =
       "Document description not found";
   public static final String DEFAULT_USERNAMEFORMULA = "ShortName";
-  public static final String DEFAULT_USERSELECTIONFORMULA = "Select Form = \"Person\"";
+  public static final String DEFAULT_USERSELECTIONFORMULA =
+      "Select Form = \"Person\"";
 
   // Domino properties
   public static final String PROPNAME_DESCRIPTION = "Description";

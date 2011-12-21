@@ -28,50 +28,29 @@ import com.google.enterprise.connector.spi.Session;
 import com.google.enterprise.connector.spi.SimpleAuthenticationIdentity;
 import com.google.enterprise.connector.spi.SpiConstants;
 
-import junit.framework.TestCase;
+import java.util.Collection;
 
-public class NotesAuthenticationManagerTest extends TestCase {
+public class NotesAuthenticationManagerTest extends ConnectorFixture {
 
-  private String server;
-  private String database;
-  private String idpassword;
-  private NotesConnector connector;
   private String username;
   private String password;
 
   public NotesAuthenticationManagerTest() {
-  }
-
-  private String getProperty(String key) {
-    String value = System.getProperty(key);
-    assertNotNull(key, value);
-    return value;
+    super();
   }
 
   @Override
   protected void setUp() throws Exception {
     super.setUp();
-    server = getProperty("javatest.server");
-    database = getProperty("javatest.database");
-    idpassword = getProperty("javatest.idpassword");
-    connector = new NotesConnector();
-    connector.setServer(server);
-    connector.setDatabase(database);
-    connector.setIdPassword(idpassword);
-
-    username = getProperty("javatest.authentication.username");
-    password = getProperty("javatest.authentication.password");
+    username = ConnectorFixture.getRequiredProperty(
+        "javatest.authentication.username");
+    password = ConnectorFixture.getRequiredProperty(
+        "javatest.authentication.password");
 
     // Temporary fix for the need to create user/group cache.
     Session session = connector.login();
     NotesUserGroupManager ug = new NotesUserGroupManager();
     ug.updatePeopleGroups((NotesConnectorSession) session, true);
-  }
-
-  @Override
-  protected void tearDown() throws Exception {
-    connector.shutdown();
-    super.tearDown();
   }
 
   /**
@@ -98,6 +77,15 @@ public class NotesAuthenticationManagerTest extends TestCase {
     AuthenticationResponse response = manager.authenticate(
         new SimpleAuthenticationIdentity(username, password));
     assertTrue("Failed to authenticate: " + username, response.isValid());
+    Collection<String> groups = response.getGroups();
+    if (groups != null) {
+      String groupPrefix = ((NotesConnectorSession) session)
+          .getGsaGroupPrefix();
+      for (String group : groups) {
+        assertTrue(group, group.startsWith(groupPrefix));
+        assertTrue(group, group.indexOf(" ") < 0);
+      }
+    }
   }
 }
 

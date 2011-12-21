@@ -45,6 +45,16 @@ class NotesSessionImpl extends NotesBaseImpl<Session>
 
   /** {@inheritDoc} */
   /* @Override */
+  public String getCommonUserName() throws NotesConnectorExceptionImpl {
+    try {
+      return getNotesObject().getCommonUserName();
+    } catch (NotesException e) {
+      throw new NotesConnectorExceptionImpl(e);
+    }
+  }
+
+  /** {@inheritDoc} */
+  /* @Override */
   public boolean verifyPassword(String password, String hashedPassword)
       throws NotesConnectorExceptionImpl {
     try {

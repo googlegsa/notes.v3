@@ -28,46 +28,23 @@ import com.google.enterprise.connector.spi.SimpleAuthenticationIdentity;
 import com.google.enterprise.connector.spi.SpiConstants;
 import com.google.enterprise.connector.spi.TraversalManager;
 
-import junit.framework.TestCase;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-public class NotesAuthorizationManagerTest extends TestCase {
+public class NotesAuthorizationManagerTest extends ConnectorFixture {
 
-  private String server;
-  private String database;
-  private String idpassword;
   private String username;
-  private NotesConnector connector;
 
   public NotesAuthorizationManagerTest() {
-  }
-
-  private String getProperty(String key) {
-    String value = System.getProperty(key);
-    assertNotNull(key, value);
-    return value;
+    super();
   }
 
   @Override
   protected void setUp() throws Exception {
     super.setUp();
-    server = getProperty("javatest.server");
-    database = getProperty("javatest.database");
-    idpassword = getProperty("javatest.idpassword");
-    username = getProperty("javatest.authorization.username");
-    connector = new NotesConnector();
-    connector.setServer(server);
-    connector.setDatabase(database);
-    connector.setIdPassword(idpassword);
-  }
-
-  @Override
-  protected void tearDown() throws Exception {
-    connector.shutdown();
-    super.tearDown();
+    username = ConnectorFixture.getRequiredProperty(
+        "javatest.authorization.username");
   }
 
   /**
@@ -172,6 +149,23 @@ public class NotesAuthorizationManagerTest extends TestCase {
       } else {
         assertTrue(response.getDocid(), response.isValid());
       }
+    }
+  }
+
+  public void testNullUserId() throws RepositoryException {
+    Session session = connector.login();
+    List<String> docIds = new ArrayList<String>();
+    docIds.add("id 1");
+    docIds.add("id 2");
+    docIds.add("id 3");
+    NotesAuthorizationManager manager =
+        (NotesAuthorizationManager) session.getAuthorizationManager();
+    Collection<AuthorizationResponse> responseList = manager.authorizeDocids(
+        docIds, new SimpleAuthenticationIdentity(null));
+    assertEquals(3, responseList.size());
+    for (AuthorizationResponse response : responseList) {
+      assertEquals(AuthorizationResponse.Status.INDETERMINATE,
+          response.getStatus());
     }
   }
 

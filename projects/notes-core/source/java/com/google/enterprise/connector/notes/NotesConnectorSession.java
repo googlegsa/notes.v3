@@ -53,6 +53,7 @@ public class NotesConnectorSession implements Session {
   private String directory = null;
   private String userNameFormula = null;
   private String userSelectionFormula = null;
+  private String gsaGroupPrefix;
 
   public NotesConnectorSession(NotesConnector Connector,
       NotesPollerNotifier connectorNpn, String Password,
@@ -73,6 +74,7 @@ public class NotesConnectorSession implements Session {
       // Init the thread and try to login to validate credentials are correct
       npn = connectorNpn;
       ns = createNotesSession();
+
       LOGGER.logp(Level.CONFIG, CLASS_NAME, METHOD,
           "Connector platform is " + ns.getPlatform());
       LOGGER.logp(Level.CONFIG, CLASS_NAME, METHOD,
@@ -88,6 +90,9 @@ public class NotesConnectorSession implements Session {
       LOGGER.logp(Level.CONFIG, CLASS_NAME, METHOD,
           "Connector keyfilename: " +
           ns.getEnvironmentString(NCCONST.INIKEYFILENAME, true));
+      LOGGER.logp(Level.CONFIG, CLASS_NAME, METHOD,
+          "Connector user: " +
+          ns.getCommonUserName());
       LOGGER.logp(Level.CONFIG, CLASS_NAME, METHOD,
           "Connector serverkeyfilename: " +
           ns.getEnvironmentString(NCCONST.INISERVERKEYFILENAME, true));
@@ -192,7 +197,8 @@ public class NotesConnectorSession implements Session {
           NCCONST.SITM_CACHEUPDATEINTERVAL);
       if (cacheUpdateInterval < 1)  {
         LOGGER.logp(Level.SEVERE, CLASS_NAME, METHOD,
-            "Invalid setting for cache update interval: " + cacheUpdateInterval);
+            "Invalid setting for cache update interval: "
+            + cacheUpdateInterval);
         return false;
       }
       LOGGER.logp(Level.CONFIG, CLASS_NAME, METHOD,
@@ -226,6 +232,14 @@ public class NotesConnectorSession implements Session {
       }
       LOGGER.logp(Level.CONFIG, CLASS_NAME, METHOD,
           "User Selection formula: " + userSelectionFormula);
+
+      gsaGroupPrefix =
+          systemDoc.getItemValueString(NCCONST.SITM_GSAGROUPPREFIX);
+      if (null != gsaGroupPrefix) {
+        gsaGroupPrefix = gsaGroupPrefix.trim();
+      }
+      LOGGER.logp(Level.CONFIG, CLASS_NAME, METHOD,
+          "Group prefix: " + gsaGroupPrefix);
 
       // Number of docs to check when deleting
       deletionBatchSize = systemDoc.getItemValueInteger(
@@ -374,6 +388,10 @@ public class NotesConnectorSession implements Session {
 
   public String getUserSelectionFormula() {
     return userSelectionFormula;
+  }
+
+  public String getGsaGroupPrefix() {
+    return gsaGroupPrefix;
   }
 
   public String getPassword() {

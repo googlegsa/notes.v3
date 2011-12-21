@@ -17,6 +17,9 @@ build.notes.librarydir = /Applications/Notes.app/Contents/MacOS
 # The root of the google-enterprise-connector-manager tree.
 build.connector.manager.home = ${user.home}/gsa/google-enterprise-connector-manager
 
+# Optional; used to copy the connector to an existing Connector Manager.
+connector.manager.webapp.dir = /Tomcat/webapps/connector-manager
+
 # JDK 1.5 bootclasspath.
 build.bootclasspath = /System/Library/Frameworks/JavaVM.framework/Versions/1.5.0/Classes/classes.jar:/System/Library/Frameworks/JavaVM.framework/Versions/1.5.0/Classes/jsse.jar
 
@@ -26,9 +29,14 @@ build.bootclasspath = /System/Library/Frameworks/JavaVM.framework/Versions/1.5.0
 javatest.server =
 javatest.database = gsaconfig.nsf
 javatest.idpassword = password
+javatest.googleFeedHost = gsaHost
+javatest.gsausername = admin
+javatest.gsapassword = adminpassword
+
 # Use the PVI (GSA login name), not the Notes name
-javatest.authentication.username = User Name
+javatest.authentication.username = UserName
 javatest.authentication.password = password
+
 # Set this user name to the name of the traversal user
 # Use the PVI (GSA login name), not the Notes name
-javatest.authorization.username = User Name
+javatest.authorization.username = UserName

@@ -40,18 +40,16 @@ public class NotesConnectorTest extends TestCase {
   private String idpassword;
   private NotesConnector connector;
 
-  private String getProperty(String key) {
-    String value = System.getProperty(key);
-    assertNotNull(key, value);
-    return value;
+  public NotesConnectorTest() {
+    super();
   }
 
   @Override
   protected void setUp() throws Exception {
     super.setUp();
-    server = getProperty("javatest.server");
-    database = getProperty("javatest.database");
-    idpassword = getProperty("javatest.idpassword");
+    server = ConnectorFixture.getRequiredProperty("javatest.server");
+    database = ConnectorFixture.getRequiredProperty("javatest.database");
+    idpassword = ConnectorFixture.getRequiredProperty("javatest.idpassword");
   }
 
   /**
@@ -105,7 +103,7 @@ public class NotesConnectorTest extends TestCase {
    */
   /* TODO: This test resulted in a hanging Java process and the
    * error "The ID file is locked by another process. Try again
-   * later" on other tests. Is there a safe way to set up this test?
+   * later" on other tests.
    */
   /*
   public void testLoginMissingIdpassword() throws RepositoryException {
@@ -135,7 +133,8 @@ public class NotesConnectorTest extends TestCase {
    * @throws RepositoryLoginException
    * @throws RepositoryException
    */
-  public void testLogin() throws RepositoryLoginException, RepositoryException {
+  public void testLogin() throws RepositoryLoginException,
+      RepositoryException {
     NotesConnector connector = new NotesConnector();
     try {
       connector.setDatabase(database);

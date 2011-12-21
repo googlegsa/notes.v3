@@ -30,6 +30,11 @@ public class NotesConnector implements Connector, ConnectorShutdownAware  {
   private String server = null;
   private String database = null;
   private String workingDir = null;
+  private String connectorName;
+  private String policyAclPattern;
+  private String googleFeedHost;
+  private String gsaUsername;
+  private String gsaPassword;
   private boolean shutdown = false;
   private boolean deleted = false;
   NotesConnectorSession ncs = null;
@@ -38,6 +43,7 @@ public class NotesConnector implements Connector, ConnectorShutdownAware  {
   NotesPollerNotifier npn = null;
   Vector<NotesCrawlerThread> vecCrawlerThreads = null;
   SessionFactory sessionFactory;
+  private final Object peopleCacheLock = new Object();
 
   NotesConnector() {
     this(
@@ -120,22 +126,57 @@ public class NotesConnector implements Connector, ConnectorShutdownAware  {
   public void setServer(String server) {
     final String METHOD = "setServer";
     LOGGER.logp(Level.CONFIG, CLASS_NAME, METHOD,
-        "Connector config Server=" + server);
+        "Connector config Server = " + server);
     this.server = server;
   }
 
   public void setDatabase(String database) {
     final String METHOD = "setDatabase";
     LOGGER.logp(Level.CONFIG, CLASS_NAME, METHOD,
-        "Connector config Database=" + database);
+        "Connector config Database = " + database);
     this.database = database;
   }
 
   public void setGoogleConnectorWorkDir(String googleConnectorWorkDir) {
     final String METHOD = "setGoogleConnectorWorkDir";
     LOGGER.logp(Level.CONFIG, CLASS_NAME, METHOD,
-        "Connector config GoogleConnectorWorkDir=" + googleConnectorWorkDir);
+        "Connector config GoogleConnectorWorkDir = " + googleConnectorWorkDir);
     workingDir = googleConnectorWorkDir;
+  }
+
+  public void setGoogleConnectorName(String googleConnectorName) {
+    final String METHOD = "setGoogleConnectorName";
+    LOGGER.logp(Level.CONFIG, CLASS_NAME, METHOD,
+        "Connector config GoogleConnectorName = " + googleConnectorName);
+    connectorName = googleConnectorName;
+  }
+
+  public void setPolicyAclPattern(String policyAclPattern) {
+    final String METHOD = "setPolicyAclPattern";
+    LOGGER.logp(Level.CONFIG, CLASS_NAME, METHOD,
+        "Connector config policyAclPattern = " + policyAclPattern);
+    this.policyAclPattern = policyAclPattern;
+  }
+
+  public void setGoogleFeedHost(String googleFeedHost) {
+    final String METHOD = "setGoogleFeedHost";
+    LOGGER.logp(Level.CONFIG, CLASS_NAME, METHOD,
+        "Connector config Google feed host = " + googleFeedHost);
+    this.googleFeedHost = googleFeedHost;
+  }
+
+  public void setGsaUsername(String gsaUsername) {
+    final String METHOD = "setGsaUsername";
+    LOGGER.logp(Level.CONFIG, CLASS_NAME, METHOD,
+        "Connector config gsaUsername = " + gsaUsername);
+    this.gsaUsername = gsaUsername;
+  }
+
+  public void setGsaPassword(String gsaPassword) {
+    final String METHOD = "setGsaPassword";
+    LOGGER.logp(Level.CONFIG, CLASS_NAME, METHOD,
+        "Connector config gsaPassword set");
+    this.gsaPassword = gsaPassword;
   }
 
   public String getIdPassword() {
@@ -154,6 +195,34 @@ public class NotesConnector implements Connector, ConnectorShutdownAware  {
     return workingDir;
   }
 
+  public String getGoogleConnectorName() {
+    return connectorName;
+  }
+
+  public String getPolicyAclPattern() {
+    return policyAclPattern;
+  }
+
+  public String getGsaProtocol() {
+    return "http";
+  }
+
+  public String getGoogleFeedHost() {
+    return googleFeedHost;
+  }
+
+  public int getGsaPort() {
+    return 8000;
+  }
+
+  public String getGsaUsername() {
+    return gsaUsername;
+  }
+
+  public String getGsaPassword() {
+    return gsaPassword;
+  }
+
   /**
    * Gets the <code>SessionFactory</code> for this Connector.
    *
@@ -161,6 +230,10 @@ public class NotesConnector implements Connector, ConnectorShutdownAware  {
    */
   SessionFactory getSessionFactory() {
     return sessionFactory;
+  }
+
+  Object getPeopleCacheLock() {
+    return peopleCacheLock;
   }
 
   /* @Override */

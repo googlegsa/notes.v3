@@ -33,6 +33,16 @@ import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+/* Synchronization blocks in this class are intended to take
+ * advantage of the current implemenation strategy in which
+ * there's a single instance of this class in a single
+ * thread. This class is the only part of the connector
+ * performing update/deletion operations on the user and group
+ * cache. The authn and authz threads may read from the user and
+ * group cache, but they don't update it. This class only locks
+ * the database changes, not reads, because nothing else should
+ * be changing the database.
+ */
 public class NotesUserGroupManager {
   private static final String CLASS_NAME = NotesUserGroupManager.class
       .getName();
@@ -97,20 +107,22 @@ public class NotesUserGroupManager {
     LOGGER.entering(CLASS_NAME, METHOD);
     LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD,
         "Starting People Group Cache update.");
-
     try {
       ns = ncs.createNotesSession();
       cdb = ns.getDatabase(ncs.getServer(), ncs.getDatabase());
-
-      // Check our update interval
-      if (!force && !checkCachePollInterval(cdb, ncs)) {
+      vwPeopleCache = cdb.getView(NCCONST.VIEWPEOPLECACHE);
+      vwPeopleCache.refresh();
+      // Check our update interval. If the cache is empty, assume
+      // we ought to update it.
+      if (!force
+          && vwPeopleCache.getEntryCount() > 0
+          && !checkCachePollInterval(cdb, ncs)) {
         return;
       }
 
       dirdb = ns.getDatabase(ncs.getServer(), ncs.getDirectory());
       vwPG = dirdb.getView(NCCONST.DIRVIEW_PEOPLEGROUPFLAT);
       vwGroupCache = cdb.getView(NCCONST.VIEWGROUPCACHE);
-      vwPeopleCache = cdb.getView(NCCONST.VIEWPEOPLECACHE);
       vwServerAccess = dirdb.getView(NCCONST.DIRVIEW_SERVERACCESS);
       vwParentGroups = cdb.getView(NCCONST.VIEWPARENTGROUPS);
       vwPG.refresh();
@@ -278,7 +290,9 @@ public class NotesUserGroupManager {
         }
 
         if (remove) {
-          doc.remove(true);
+          synchronized(ncs.getConnector().getPeopleCacheLock()) {
+            doc.remove(true);
+          }
         }
         doc = checkView.getNextDocument(prevDoc);
         prevDoc.recycle();
@@ -385,15 +399,17 @@ public class NotesUserGroupManager {
             "Nested group members for '" + groupName + "' are: "
             + existingMembers);
         groupDoc = vwParentGroups.getDocumentByKey(groupName, true);
-        if (null == groupDoc) {
-          LOGGER.logp(Level.INFO, CLASS_NAME, METHOD, "Creating group "
-              + groupName);
-          groupDoc = cdb.createDocument();
-          groupDoc.replaceItemValue(NCCONST.ITMFORM, NCCONST.DIRFORM_GROUP);
-          groupDoc.replaceItemValue(NCCONST.GCITM_GROUPNAME, groupName);
+        synchronized(ncs.getConnector().getPeopleCacheLock()) {
+          if (null == groupDoc) {
+            LOGGER.logp(Level.INFO, CLASS_NAME, METHOD, "Creating group "
+                + groupName);
+            groupDoc = cdb.createDocument();
+            groupDoc.replaceItemValue(NCCONST.ITMFORM, NCCONST.DIRFORM_GROUP);
+            groupDoc.replaceItemValue(NCCONST.GCITM_GROUPNAME, groupName);
+          }
+          groupDoc.replaceItemValue(NCCONST.GCITM_CHILDGROUPS, existingMembers);
+          groupDoc.save(true);
         }
-        groupDoc.replaceItemValue(NCCONST.GCITM_CHILDGROUPS, existingMembers);
-        groupDoc.save(true);
         groupDoc.recycle();
         groupDoc = null;
         doc = vwPG.getNextDocument(prevDoc);
@@ -410,7 +426,7 @@ public class NotesUserGroupManager {
     LOGGER.exiting(CLASS_NAME, METHOD);
   }
 
-  public String evaluatePVI(String userNameFormula, NotesDocument doc)
+  private String evaluatePVI(String userNameFormula, NotesDocument doc)
       throws RepositoryException {
     Vector<?> vecEvalResult = ns.evaluate(userNameFormula, doc);
     // Make sure we dont' get an empty vector or an empty string
@@ -480,7 +496,9 @@ public class NotesUserGroupManager {
               "Removing user as they no longer fit selection criteria: "
               + fullName);
           doc = vwPG.getNextDocument(prevDoc);
-          personDoc.remove(true);
+          synchronized(ncs.getConnector().getPeopleCacheLock()) {
+            personDoc.remove(true);
+          }
           prevDoc.recycle();
           continue;
         }
@@ -493,44 +511,50 @@ public class NotesUserGroupManager {
           continue;
         }
 
-        // This person doesn't exist yet, create them
-        if (null == personDoc) {
-          LOGGER.logp(Level.INFO, CLASS_NAME, METHOD, "Creating user: "
+        // TODO: if it's guaranteed that createDocument and
+        // replaceItemValue don't affect the server, then we
+        // could further restrict the scope of the synchronized
+        // block, but I don't know that.
+        synchronized(ncs.getConnector().getPeopleCacheLock()) {
+          // This person doesn't exist yet, create them
+          if (null == personDoc) {
+            LOGGER.logp(Level.INFO, CLASS_NAME, METHOD, "Creating user: "
+                + fullName + " using PVI: " + pvi);
+            personDoc = cdb.createDocument();
+            personDoc.replaceItemValue(NCCONST.ITMFORM, NCCONST.DIRFORM_PERSON);
+            personDoc.replaceItemValue(NCCONST.PCITM_USERNAME, pvi);
+          }
+
+          // Update their fullname and groups
+          LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD, "Updating user: "
               + fullName + " using PVI: " + pvi);
-          personDoc = cdb.createDocument();
-          personDoc.replaceItemValue(NCCONST.ITMFORM, NCCONST.DIRFORM_PERSON);
-          personDoc.replaceItemValue(NCCONST.PCITM_USERNAME, pvi);
+          personDoc.replaceItemValue(NCCONST.PCITM_NOTESNAME,
+              doc.getItemValue(NCCONST.PITM_FULLNAME).firstElement().toString()
+              .toLowerCase());
+
+          vwServerAccess.refresh();
+          userNestedGroups = new Vector<String>(100);
+          // Get groups for full name
+          getParentGroups(fullName, vwServerAccess, vwGroupCache);
+
+          // Get groups from common name
+          getParentGroups(NotesAuthorizationManager.getCommonName(fullName),
+              vwServerAccess, vwGroupCache);
+
+          // Get groups from DN hierarchy
+          getGroupsFromDN(fullName);
+
+          // Sort and eliminate duplicates
+          LinkedHashSet<String> uniqueGroups = new LinkedHashSet<String>(
+              userNestedGroups);
+          userNestedGroups.clear();
+          userNestedGroups.addAll(uniqueGroups);
+
+          LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD, "Group list for user "
+              + fullName + " are " + userNestedGroups);
+          personDoc.replaceItemValue(NCCONST.PCITM_GROUPS, userNestedGroups);
+          personDoc.save(true);
         }
-
-        // Update their fullname and groups
-        LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD, "Updating user: "
-            + fullName + " using PVI: " + pvi);
-        personDoc.replaceItemValue(NCCONST.PCITM_NOTESNAME,
-            doc.getItemValue(NCCONST.PITM_FULLNAME).firstElement().toString()
-            .toLowerCase());
-
-        vwServerAccess.refresh();
-        userNestedGroups = new Vector<String>(100);
-        // Get groups for full name
-        getParentGroups(fullName, vwServerAccess, vwGroupCache);
-
-        // Get groups from common name
-        getParentGroups(NotesAuthorizationManager.getCommonName(fullName),
-            vwServerAccess, vwGroupCache);
-
-        // Get groups from DN hierarchy
-        getGroupsFromDN(fullName);
-
-        // Sort and eliminate duplicates
-        LinkedHashSet<String> uniqueGroups = new LinkedHashSet<String>(
-            userNestedGroups);
-        userNestedGroups.clear();
-        userNestedGroups.addAll(uniqueGroups);
-
-        LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD, "Group list for user "
-            + fullName + " are " + userNestedGroups);
-        personDoc.replaceItemValue(NCCONST.PCITM_GROUPS, userNestedGroups);
-        personDoc.save(true);
         personDoc.recycle();
         personDoc = null;
         doc = vwPG.getNextDocument(prevDoc);
@@ -551,7 +575,7 @@ public class NotesUserGroupManager {
 
   private void getGroupsFromDN(String dn) {
     final String METHOD = "getGroupsFromDN";
-
+    // TODO: use the Name class to parse the name?
     while (true) {
       int index = dn.indexOf('/');
       if (-1 == index)

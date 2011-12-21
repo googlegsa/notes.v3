@@ -25,6 +25,9 @@ import com.google.enterprise.connector.spi.AuthenticationIdentity;
 import com.google.enterprise.connector.spi.AuthenticationManager;
 import com.google.enterprise.connector.spi.AuthenticationResponse;
 
+import java.net.URLEncoder;
+import java.util.ArrayList;
+import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -92,34 +95,56 @@ class NotesAuthenticationManager implements AuthenticationManager {
       NotesDatabase acDb = nSession.getDatabase(ncs.getServer(),
           ncs.getDatabase());
 
-      peopleVw = acDb.getView(NCCONST.VIEWPEOPLECACHE);
-
-      // Resolve the PVI to their Notes names and groups
-      personDoc = peopleVw.getDocumentByKey(pvi, true);
+      String notesName = null;
+      Vector groups = null;
+      synchronized(ncs.getConnector().getPeopleCacheLock()) {
+        peopleVw = acDb.getView(NCCONST.VIEWPEOPLECACHE);
+        peopleVw.refresh();
+        // Resolve the PVI to their Notes names and groups
+        personDoc = peopleVw.getDocumentByKey(pvi, true);
+        if (null != personDoc) {
+          notesName = personDoc.getItemValueString(NCCONST.PCITM_NOTESNAME)
+          .toLowerCase();
+          groups = personDoc.getItemValue(NCCONST.PCITM_GROUPS);
+        }
+      }
       if (null == personDoc) {
         LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
             "Person not found in ACL database " + pvi);
         return new AuthenticationResponse(false, null);
       }
-      String NotesName = personDoc.getItemValueString(NCCONST.ACITM_NOTESNAME)
-          .toLowerCase();
       LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
-          "Authentication user using Notes name " + NotesName);
+          "Authentication user using Notes name " + notesName);
       usersVw = namesDb.getView("($Users)");
 
       // Resolve the PVI to their Notes names and groups
-      authDoc = usersVw.getDocumentByKey(NotesName, true);
+      authDoc = usersVw.getDocumentByKey(notesName, true);
       if (null == authDoc) {
         return new AuthenticationResponse(false, null);
       }
       String hashedPassword = authDoc.getItemValueString("HTTPPassword");
       if (nSession.verifyPassword(id.getPassword(), hashedPassword)) {
         LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
-            "User succesfully authenticated " + NotesName);
-        return new AuthenticationResponse(true, null);
+            "User succesfully authenticated " + notesName);
+
+        ArrayList<String> prefixedGroups = null;
+        if (groups.size() > 0) {
+          String groupPrefix = ncs.getGsaGroupPrefix();
+          if (null == groupPrefix || "".equals(groupPrefix)) {
+            groupPrefix = "";
+          } else if (!groupPrefix.endsWith("/")) {
+            groupPrefix += "/";
+          }
+          prefixedGroups = new ArrayList<String>(groups.size());
+          for (Object group : groups) {
+            prefixedGroups.add(
+                URLEncoder.encode(groupPrefix + group.toString(), "UTF-8"));
+          }
+        }
+        return new AuthenticationResponse(true, null, prefixedGroups);
       }
       LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
-          "User failed authentication " + NotesName);
+          "User failed authentication " + notesName);
     } catch (Exception e) {
       // TODO: what kinds of Notes exceptions can be caught here?
       // Should we rethrow an exception (RepositoryException?)
