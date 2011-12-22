@@ -26,45 +26,24 @@ import com.google.enterprise.connector.spi.Session;
 import com.google.enterprise.connector.spi.SpiConstants;
 import com.google.enterprise.connector.spi.TraversalManager;
 
-import junit.framework.TestCase;
-
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-public class NotesTraversalManagerTest extends TestCase {
-
-  private String server;
-  private String database;
-  private String idpassword;
-  private NotesConnector connector;
+public class NotesTraversalManagerTest extends ConnectorFixture {
 
   public NotesTraversalManagerTest() {
-  }
-
-  private String getProperty(String key) {
-    String value = System.getProperty(key);
-    assertNotNull(key, value);
-    return value;
+    super();
   }
 
   @Override
   protected void setUp() throws Exception {
     super.setUp();
-    server = getProperty("javatest.server");
-    database = getProperty("javatest.database");
-    idpassword = getProperty("javatest.idpassword");
-    connector = new NotesConnector();
-    connector.setServer(server);
-    connector.setDatabase(database);
-    connector.setIdPassword(idpassword);
-  }
-
-  @Override
-  protected void tearDown() throws Exception {
-    connector.shutdown();
-    super.tearDown();
+    // Temporary fix for the need to create user/group cache.
+    Session session = connector.login();
+    NotesUserGroupManager ug = new NotesUserGroupManager();
+    ug.updatePeopleGroups((NotesConnectorSession) session, true);
   }
 
   /**
@@ -124,6 +103,7 @@ public class NotesTraversalManagerTest extends TestCase {
   /* TODO: consider creating a helper to take a TraversalManager
    * and return the list of docid values.
    */
+  /*
   public void testTraverseAllDocuments()
       throws RepositoryLoginException, RepositoryException {
     Session session = connector.login();
@@ -190,5 +170,6 @@ public class NotesTraversalManagerTest extends TestCase {
     //      duplicatesSecondTraversal.size());
     //}
   }
+  */
 }
 

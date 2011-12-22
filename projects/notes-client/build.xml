@@ -36,12 +36,13 @@
   <property name="core.classes" location="../notes-core/build/classes"/>
   <property name="core.tests.classes"
             location="../notes-core/build/tests/classes" />
+  <property name="connector.thirdparty.jar.dir" value="../third_party/lib" />
 
   <property name="connector-manager-projects.dir"
             location="${build.connector.manager.home}/projects" />
   <property name="connector-manager.dir"
             location="${connector-manager-projects.dir}/connector-manager" />
-  <property name="thirdparty.jar.dir"
+  <property name="connector-manager.thirdparty.jar.dir"
             location="${connector-manager-projects.dir}/connector-manager/third-party" />
   <property name="spi.jar.dir" value="${connector-manager.dir}/dist/jarfile" />
   <property name="spi.jarfile" value="${spi.jar.dir}/connector-spi.jar" />
@@ -87,6 +88,7 @@
   </target>
 
   <target name="compile" depends="init">
+    <ant dir="${core.dir}" />
     <!-- compile java source files -->
     <javac srcdir="${src}" destdir="${classes}"
            debug="${COMPILE_DEBUG_FLAG}"
@@ -112,7 +114,7 @@
   </path>
 
   <path id="compile_tests_path">
-        <fileset dir="${thirdparty.jar.dir}">
+        <fileset dir="${connector-manager.thirdparty.jar.dir}">
           <include name="prod/*.jar" />
           <include name="tests/junit.jar" />
         </fileset>
@@ -134,7 +136,10 @@
   </target>
 
   <path id="run_tests_path">
-        <fileset dir="${thirdparty.jar.dir}">
+        <fileset dir="${connector.thirdparty.jar.dir}">
+          <include name="*.jar" />
+        </fileset>
+        <fileset dir="${connector-manager.thirdparty.jar.dir}">
           <include name="prod/*.jar" />
           <include name="tests/junit.jar" />
         </fileset>
@@ -219,6 +224,17 @@
     </jar>
   </target>
 
+  <target name="install-tomcat" depends="jar">
+    <copy file="${jarfile}"
+          todir="${connector.manager.webapp.dir}/WEB-INF/lib"
+          overwrite="true" />
+    <copy todir="${connector.manager.webapp.dir}/WEB-INF/lib">
+      <fileset dir="${connector.thirdparty.jar.dir}">
+        <include name="*.jar" />
+      </fileset>
+    </copy>
+  </target>
+
   <target name="clean" depends="clean_coverage"
           description="Deletes all build files.">
     <delete dir="${build}" />
@@ -240,7 +256,7 @@
 
   <!-- Where Cobertura can find itself and its dependencies. -->
   <path id="cobertura.classpath">
-    <fileset dir="${thirdparty.jar.dir}/cobertura" includes="**/*.jar" />
+    <fileset dir="${connector-manager.thirdparty.jar.dir}/cobertura" includes="**/*.jar" />
   </path>
   <taskdef classpathref="cobertura.classpath" resource="tasks.properties" />
 
