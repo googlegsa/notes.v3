@@ -84,10 +84,12 @@
         prefix="${bin.archive}" />
       <zipfileset file="notes-core/config/logging.properties"
         prefix="${bin.archive}/Config" />
+      <zipfileset dir="third_party/lib"
+        prefix="${bin.archive}/Lib" />
       <zipfileset file="../COPYING"
         prefix="${bin.archive}/License" />
-      <zipfileset file="notes-database/gsa-config-2_8_1.ntf"
-        prefix="${bin.archive}/Etc" />
+      <zipfileset file="notes-database/gsa-connector.ntf"
+        fullpath="${bin.archive}/Etc/gsa-connector-${version}.ntf" />
     </zip>
     <tar destfile="${build.dir}/${bin.archive}.tar.gz"
       compression="gzip">

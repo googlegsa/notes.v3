@@ -21,6 +21,7 @@
   <property name="classes" value="${build}/classes" />
   <property name="config" value="config" />
   <property name="config.build" value="${build}/config" />
+  <property name="connector.thirdparty.jar.dir" value="../third_party/lib" />
 
   <property name="tests.src" value="source/javatests" />
   <property name="tests.build" value="build/tests" />
@@ -35,7 +36,7 @@
             location="${build.connector.manager.home}/projects" />
   <property name="connector-manager.dir"
             location="${connector-manager-projects.dir}/connector-manager" />
-  <property name="thirdparty.jar.dir"
+  <property name="connector-manager.thirdparty.jar.dir"
             location="${connector-manager-projects.dir}/connector-manager/third-party" />
   <property name="spi.jar.dir" value="${connector-manager.dir}/dist/jarfile" />
   <property name="spi.jarfile" value="${spi.jar.dir}/connector-spi.jar" />
@@ -95,7 +96,10 @@
       <bootclasspath path="${COMPILE_BOOTCLASSPATH}" />
       <classpath>
         <pathelement location="${spi.jarfile}" />
-        <fileset dir="${thirdparty.jar.dir}">
+        <fileset dir="${connector.thirdparty.jar.dir}">
+          <include name="*.jar" />
+        </fileset>
+        <fileset dir="${connector-manager.thirdparty.jar.dir}">
           <include name="prod/*.jar" />
         </fileset>
       </classpath>
@@ -110,7 +114,7 @@
   </path>
 
   <path id="compile_tests_path">
-        <fileset dir="${thirdparty.jar.dir}">
+        <fileset dir="${connector-manager.thirdparty.jar.dir}">
           <include name="prod/*.jar" />
           <include name="tests/junit.jar" />
         </fileset>
@@ -132,7 +136,10 @@
   </target>
 
   <path id="run_tests_path">
-        <fileset dir="${thirdparty.jar.dir}">
+        <fileset dir="${connector.thirdparty.jar.dir}">
+          <include name="*.jar" />
+        </fileset>
+        <fileset dir="${connector-manager.thirdparty.jar.dir}">
           <include name="prod/*.jar" />
           <include name="tests/*.jar" />
         </fileset>
@@ -230,7 +237,7 @@
 
   <!-- Where Cobertura can find itself and its dependencies. -->
   <path id="cobertura.classpath">
-    <fileset dir="${thirdparty.jar.dir}/cobertura" includes="**/*.jar" />
+    <fileset dir="${connector-manager.thirdparty.jar.dir}/cobertura" includes="**/*.jar" />
   </path>
   <taskdef classpathref="cobertura.classpath" resource="tasks.properties" />
 

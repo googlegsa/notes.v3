@@ -40,7 +40,6 @@ public class NotesConnectorSession implements Session {
   private String database = null;
   private String password = "";
   private NotesConnector connector = null;
-  private String ACLDbReplicaId;
   private Vector<String> ExcludedExtns = null;
   private int MaxFileSize;
   private String SpoolDir = null;
@@ -50,6 +49,11 @@ public class NotesConnectorSession implements Session {
   private int maxCrawlQDepth;
   private int deletionBatchSize;
   private int numCrawlerThreads;
+  private int cacheUpdateInterval;
+  private String directory = null;
+  private String userNameFormula = null;
+  private String userSelectionFormula = null;
+  private String gsaGroupPrefix;
 
   public NotesConnectorSession(NotesConnector Connector,
       NotesPollerNotifier connectorNpn, String Password,
@@ -70,6 +74,7 @@ public class NotesConnectorSession implements Session {
       // Init the thread and try to login to validate credentials are correct
       npn = connectorNpn;
       ns = createNotesSession();
+
       LOGGER.logp(Level.CONFIG, CLASS_NAME, METHOD,
           "Connector platform is " + ns.getPlatform());
       LOGGER.logp(Level.CONFIG, CLASS_NAME, METHOD,
@@ -85,6 +90,9 @@ public class NotesConnectorSession implements Session {
       LOGGER.logp(Level.CONFIG, CLASS_NAME, METHOD,
           "Connector keyfilename: " +
           ns.getEnvironmentString(NCCONST.INIKEYFILENAME, true));
+      LOGGER.logp(Level.CONFIG, CLASS_NAME, METHOD,
+          "Connector user: " +
+          ns.getCommonUserName());
       LOGGER.logp(Level.CONFIG, CLASS_NAME, METHOD,
           "Connector serverkeyfilename: " +
           ns.getEnvironmentString(NCCONST.INISERVERKEYFILENAME, true));
@@ -130,18 +138,6 @@ public class NotesConnectorSession implements Session {
       if (null == systemDoc) {
         LOGGER.logp(Level.SEVERE, CLASS_NAME, METHOD,
             "System configuration document not found.");
-        return false;
-      }
-
-      ACLDbReplicaId = systemDoc.getItemValueString(NCCONST.SITM_ACLDBREPLICAID);
-      if (null == ACLDbReplicaId) {
-        LOGGER.logp(Level.SEVERE, CLASS_NAME, METHOD,
-            "Access Control Database has not been set up.");
-        return false;
-      }
-      if (ACLDbReplicaId.length() == 0) {
-        LOGGER.logp(Level.SEVERE, CLASS_NAME, METHOD,
-            "Access Control Database has not been set up.");
         return false;
       }
 
@@ -195,6 +191,55 @@ public class NotesConnectorSession implements Session {
       }
       LOGGER.logp(Level.CONFIG, CLASS_NAME, METHOD,
           "maxCrawlQDepth is " + maxCrawlQDepth);
+
+      // Time between user/group cache updates
+      cacheUpdateInterval = systemDoc.getItemValueInteger(
+          NCCONST.SITM_CACHEUPDATEINTERVAL);
+      if (cacheUpdateInterval < 1)  {
+        LOGGER.logp(Level.SEVERE, CLASS_NAME, METHOD,
+            "Invalid setting for cache update interval: "
+            + cacheUpdateInterval);
+        return false;
+      }
+      LOGGER.logp(Level.CONFIG, CLASS_NAME, METHOD,
+          "cacheUpdateInterval is " + cacheUpdateInterval);
+
+      // Get the directory and see if we can open it
+      directory = systemDoc.getItemValueString(
+    		  NCCONST.SITM_DIRECTORY);
+      LOGGER.logp(Level.CONFIG, CLASS_NAME, METHOD,
+              "Path to Domino directory: " + directory);
+
+      NotesDatabase dirDb = ns.getDatabase(this.getServer(), directory);
+      dirDb.recycle();
+
+      userNameFormula = systemDoc.getItemValueString(
+    		  NCCONST.SITM_USERNAMEFORMULA);
+      if (0 == userNameFormula.length()) {
+    	  LOGGER.logp(Level.CONFIG, CLASS_NAME, METHOD,
+    	      "User Name formula is empty - using default");
+    	  userNameFormula = NCCONST.DEFAULT_USERNAMEFORMULA;
+      }
+      LOGGER.logp(Level.CONFIG, CLASS_NAME, METHOD,
+            "User Name formula: " + userNameFormula);
+
+      userSelectionFormula = systemDoc.getItemValueString(
+          NCCONST.SITM_USERSELECTIONFORMULA);
+      if (0 == userSelectionFormula.length()) {
+        LOGGER.logp(Level.CONFIG, CLASS_NAME, METHOD,
+            "User Selection formula is empty - using default");
+    	  userSelectionFormula = NCCONST.DEFAULT_USERSELECTIONFORMULA;
+      }
+      LOGGER.logp(Level.CONFIG, CLASS_NAME, METHOD,
+          "User Selection formula: " + userSelectionFormula);
+
+      gsaGroupPrefix =
+          systemDoc.getItemValueString(NCCONST.SITM_GSAGROUPPREFIX);
+      if (null != gsaGroupPrefix) {
+        gsaGroupPrefix = gsaGroupPrefix.trim();
+      }
+      LOGGER.logp(Level.CONFIG, CLASS_NAME, METHOD,
+          "Group prefix: " + gsaGroupPrefix);
 
       // Number of docs to check when deleting
       deletionBatchSize = systemDoc.getItemValueInteger(
@@ -329,6 +374,26 @@ public class NotesConnectorSession implements Session {
     }
   }
 
+  public int getCacheUpdateInterval() {
+    return cacheUpdateInterval;
+  }
+
+  public String getDirectory() {
+    return directory;
+  }
+
+  public String getUserNameFormula() {
+    return userNameFormula;
+  }
+
+  public String getUserSelectionFormula() {
+    return userSelectionFormula;
+  }
+
+  public String getGsaGroupPrefix() {
+    return gsaGroupPrefix;
+  }
+
   public String getPassword() {
     return password;
   }
@@ -339,10 +404,6 @@ public class NotesConnectorSession implements Session {
 
   public int getMaxFileSize() {
     return MaxFileSize;
-  }
-
-  public String getACLDbReplicaId() {
-    return ACLDbReplicaId;
   }
 
   public String getDatabase() {

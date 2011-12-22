@@ -24,8 +24,16 @@ public interface NotesSession extends NotesBase {
    * Returns the name of the platform the session is running on.
    *
    * @return the platform name
+   * @throws RepositoryException
    */
   String getPlatform() throws RepositoryException;
+
+  /**
+   * Returns the name of the user who created the session.
+   *
+   * @throws RepositoryException
+   */
+  String getCommonUserName() throws RepositoryException;
 
   /**
    * Verifies the password.

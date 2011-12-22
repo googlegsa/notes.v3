@@ -44,6 +44,12 @@ class NotesSessionMock extends NotesBaseMock
 
   /** {@inheritDoc} */
   /* @Override */
+  public String getCommonUserName() throws RepositoryException {
+    return null;
+  }
+
+  /** {@inheritDoc} */
+  /* @Override */
   public boolean verifyPassword(String password, String hashedPassword)
       throws RepositoryException {
     return false;

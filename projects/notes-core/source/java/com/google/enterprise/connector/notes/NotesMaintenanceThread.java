@@ -71,8 +71,12 @@ public class NotesMaintenanceThread extends Thread {
     int batchsize = ncs.getDeletionBatchSize();
     String lastdocid = "";
     NotesPollerNotifier npn = ncs.getNotifier();
+    NotesUserGroupManager nugm = new NotesUserGroupManager();
     while (nc.getShutdown() == false) {
       try {
+       LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
+            "Maintenance thread is updating User Group Cache.");
+       	nugm.updatePeopleGroups(ncs);
         LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
             "Maintenance thread checking for deletions.");
         checkForDeletions(lastdocid, batchsize);

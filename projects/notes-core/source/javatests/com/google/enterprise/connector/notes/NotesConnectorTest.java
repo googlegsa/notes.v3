@@ -26,7 +26,7 @@ public class NotesConnectorTest extends TestCase {
   /**
    * Tests creating a connector with a mock factory.
    */
-  public void testCreateConnector() {
+  public void testCreateConnector() throws Exception {
     connector = new NotesConnector(
         "com.google.enterprise.connector.notes.client.mock.SessionFactoryMock");
     assertTrue(connector.getSessionFactory() instanceof SessionFactoryMock);

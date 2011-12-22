@@ -31,6 +31,13 @@ public class NCCONST {
   public static final String VIEWSYSTEMSETUP = "NCSystemSetup";
   public static final String VIEWSERVERS = "NCServers";
   public static final String VIEWSECURITY = "NCSecurity";
+  public static final String VIEWGROUPCACHE = "NCGroupCache";
+  public static final String VIEWPEOPLECACHE = "NCPeopleCache";
+
+  public static final String VIEWNOTESNAMELOOKUP = "NCNotesNameLookup";
+  public static final String VIEWPEOPLENAMELOOKUP = "NCPeopleNameLookup";
+
+  public static final String VIEWPARENTGROUPS = "NCParentGroups";
 
   // Form Names
   public static final String ITMFORM = "Form";
@@ -77,9 +84,37 @@ public class NCCONST {
 
 
   // Access Control Database Views
-  public static final String VIEWACPEOPLE = "($People)";
   public static final String ACITM_GROUPS = "Groups";
   public static final String ACITM_NOTESNAME = "NotesName";
+
+  // Directory View
+  /** These are default views in the Domino directory and must exist */
+  public static final String DIRVIEW_PEOPLEGROUPFLAT = "($PeopleGroupsFlat)";
+  public static final String DIRVIEW_SERVERACCESS = "($ServerAccess)";
+  public static final String DIRVIEW_VIMUSERS = "($VimPeople)";
+  public static final String DIRVIEW_VIMGROUPS = "($VimGroups)";
+
+  public static final String DIRFORM_PERSON = "Person";
+  public static final String DIRFORM_GROUP = "Group";
+
+  // Group Items from Domino Directory
+  public static final String GITM_LISTNAME = "ListName";
+  public static final String GITM_GROUPTYPE = "GroupType";
+  public static final String GITM_MEMBERS = "Members";
+  public static final String DIR_ACCESSCONTROLGROUPTYPES = "02";
+
+  // Person Items from Domino Directory
+  public static final String PITM_FULLNAME = "FullName";
+
+  // Item names used in the group cache documents
+  public static final String GCITM_GROUPNAME = "GroupName";
+  public static final String GCITM_CHILDGROUPS = "ChildGroups";
+
+  // Item names used in the person cache documents
+  public static final String PCITM_USERNAME = "UserName";
+  public static final String PCITM_NOTESNAME = "NotesName";
+  public static final String PCITM_GROUPS = "Groups";
+
 
   //Item names used by the connector for crawling documents
 
@@ -235,7 +270,6 @@ public class NCCONST {
   public static final String INIDEBUGOUTFILE="debug_outfile";
 
   // Item names in the system setup configuration
-  public static final String SITM_ACLDBREPLICAID = "AccessDbRepID";
   public static final String SITM_EXCLUDEDEXTENSIONS = "ExcludeFileTypes";
   public static final String SITM_MAXFILESIZE = "MaxFileSize";
   public static final String SITM_MIMETYPES = "MimeTypes";
@@ -243,6 +277,20 @@ public class NCCONST {
   public static final String SITM_MAXCRAWLQDEPTH = "MaxCrawlQDepth";
   public static final String SITM_DELETIONBATCHSIZE = "DeletionBatchSize";
   public static final String SITM_NUMCRAWLERTHREADS = "NumCrawlerThreads";
+  public static final String SITM_CACHEUPDATEINTERVAL = "CacheUpdateInterval";
+  public static final String SITM_LASTCACHEUPDATE = "LastCacheUpdate";
+
+  /** Path to the Domino directory on the server */
+  public static final String SITM_DIRECTORY = "Directory";
+
+  /** Selection formula to determine which users will get processed */
+  public static final String SITM_USERSELECTIONFORMULA = "UserSelectionFormula";
+
+  /** Formula to generate GSA Identity (PVI) for authN and authZ */
+  public static final String SITM_USERNAMEFORMULA = "UserNameFormula";
+
+  /** Group prefix for group names sent to the GSA. */
+  public static final String SITM_GSAGROUPPREFIX = "GSAGroupPrefix";
 
 
   // Default configuration for the connector
@@ -257,6 +305,9 @@ public class NCCONST {
   public static final String DEFAULT_TITLE = "Document title not found";
   public static final String DEFAULT_DESCRIPTION =
       "Document description not found";
+  public static final String DEFAULT_USERNAMEFORMULA = "ShortName";
+  public static final String DEFAULT_USERSELECTIONFORMULA =
+      "Select Form = \"Person\"";
 
   // Domino properties
   public static final String PROPNAME_DESCRIPTION = "Description";

@@ -79,11 +79,26 @@ class NotesAuthorizationManager implements AuthorizationManager {
   public Collection<AuthorizationResponse> authorizeDocids(
       Collection<String> docIds, AuthenticationIdentity id) {
     final String METHOD = "authorizeDocids";
-    String NotesName = null;
-    Vector<String> UserGroups = null;
+    long elapsedTimeMillis = 0;
+    long startTime = System.currentTimeMillis();
+
+    String pvi = id.getUsername();
     ArrayList<AuthorizationResponse> authorized =
         new ArrayList<AuthorizationResponse>(docIds.size());
-    String pvi = id.getUsername();
+
+    // There's a possible GSA issue which can cause a null user id to be sent.
+    if (pvi == null) {
+      LOGGER.logp(Level.WARNING, CLASS_NAME, METHOD,
+          "Received a null user name; returning INDETERMINATE for all docs");
+      for (String docId : docIds) {
+        authorized.add(new AuthorizationResponse(
+            AuthorizationResponse.Status.INDETERMINATE, docId));
+      }
+      return authorized;
+    }
+
+    String notesName = null;
+    Vector<String> userGroups = null;
     NotesSession ns = null;
     try {
       LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
@@ -96,37 +111,41 @@ class NotesAuthorizationManager implements AuthorizationManager {
       // elsewhere (esp.  NotesAuthenticationManager), with the
       // exception of the securityView in the middle (but unused
       // until later). Extract a helper method somewhere?
-      NotesDatabase acdb = ns.getDatabase(null, null);
-      LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD, "Opening ACL database " +
-          ncs.getServer() + " : " + ncs.getACLDbReplicaId());
-
-      acdb.openByReplicaID(ncs.getServer(), ncs.getACLDbReplicaId());
       NotesView securityView = cdb.getView(NCCONST.VIEWSECURITY);
-      NotesView people = acdb.getView(NCCONST.VIEWACPEOPLE);
-
-      // Resolve the PVI to their Notes names and groups
-      NotesDocument personDoc =
-          people.getDocumentByKey(id.getUsername(), true);
+      NotesView people = null;
+      NotesDocument personDoc = null;
+      synchronized(ncs.getConnector().getPeopleCacheLock()) {
+        people = cdb.getView(NCCONST.VIEWPEOPLECACHE);
+        people.refresh();
+        // Resolve the PVI to their Notes names and groups
+        personDoc = people.getDocumentByKey(id.getUsername(), true);
+        if (null != personDoc) {
+          notesName = personDoc.getItemValueString(NCCONST.ACITM_NOTESNAME)
+              .toLowerCase();
+          userGroups = (Vector<String>) personDoc.getItemValue(
+              NCCONST.ACITM_GROUPS);
+        }
+      }
       if (null == personDoc) {
         // Changed log level to FINE as an AuthZ message.
         LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
             "Person not found in ACL database. DENY all docs. " + pvi);
       } else {
-        NotesName = personDoc.getItemValueString(NCCONST.ACITM_NOTESNAME)
+        notesName = personDoc.getItemValueString(NCCONST.ACITM_NOTESNAME)
             .toLowerCase();
 
         // TODO: Logged string differs here and in
         // NotesAuthenticationManager. This could all be part of
         // the helper method.
         LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
-            "PVI:NOTESNAME mapping is " + pvi + ":" + NotesName);
-        UserGroups = (Vector<String>) personDoc.getItemValue(
+            "PVI:NOTESNAME mapping is " + pvi + ":" + notesName);
+        userGroups = (Vector<String>) personDoc.getItemValue(
             NCCONST.ACITM_GROUPS);
-        for (int i = 0; i < UserGroups.size(); i++) {
-          UserGroups.set(i, UserGroups.elementAt(i).toString().toLowerCase());
+        for (int i = 0; i < userGroups.size(); i++) {
+          userGroups.set(i, userGroups.elementAt(i).toString().toLowerCase());
         }
         LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
-            "Groups for " + pvi + " are: " + UserGroups.toString());
+            "Groups for " + pvi + " are: " + userGroups.toString());
       }
 
       // The first document in the category will always be the database document
@@ -162,7 +181,7 @@ class NotesAuthorizationManager implements AuthorizationManager {
           LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD,
               "Count for viewNavigator is  " + securityCount);
 
-          boolean dballow = checkDatabaseAccess(NotesName, dbdoc, UserGroups);
+          boolean dballow = checkDatabaseAccess(notesName, dbdoc, userGroups);
 
           // Only check document level security if it exists
           if (dballow && (securityCount > 1)) {
@@ -178,7 +197,7 @@ class NotesAuthorizationManager implements AuthorizationManager {
                 securityView.getDocumentByKey(searchKey, true);
             if (crawlDoc != null) {
               // Found a crawldoc, so we will need to check document level access
-              docallow = checkDocumentReaders(NotesName, UserGroups, crawlDoc,
+              docallow = checkDocumentReaders(notesName, userGroups, crawlDoc,
                   dbdoc);
               crawlDoc.recycle();
             } else {
@@ -198,6 +217,12 @@ class NotesAuthorizationManager implements AuthorizationManager {
           authorized.add(new AuthorizationResponse(
               AuthorizationResponse.Status.INDETERMINATE, docId));
         } finally {
+          if (LOGGER.isLoggable(Level.FINER)) {
+          elapsedTimeMillis = System.currentTimeMillis() - startTime;
+          LOGGER.logp(Level.FINER, CLASS_NAME, METHOD,
+              "ElapsedAuthorizationResponseTime: " + elapsedTimeMillis
+              + " Documents authorized: " + authorized.size());
+          }
           if (null != secVN) {
             secVN.recycle();
           }
@@ -218,9 +243,6 @@ class NotesAuthorizationManager implements AuthorizationManager {
       if (null != cdb) {
         cdb.recycle();
       }
-      if (null != acdb) {
-        acdb.recycle();
-      }
     } catch (Exception e) {
       // TODO: what Notes exceptions can be caught here? Should
       // we be catching exceptions within the method on a
@@ -238,20 +260,26 @@ class NotesAuthorizationManager implements AuthorizationManager {
             "AuthorizationResponse: " + ar.getDocid() + " : " + ar.isValid());
       }
     }
+    // Get elapsed time in milliseconds
+    elapsedTimeMillis = System.currentTimeMillis() - startTime;
+    LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
+        "TotalAuthorizationResponseTime: " + elapsedTimeMillis
+        + " milliseconds.  Documents in batch: " + docIds.size() +
+        " Documents authorized: " + authorized.size());
     return authorized;
   }
 
-  protected String getCommonName(String NotesName) {
-    if (NotesName.startsWith("cn=")) {
-      int index = NotesName.indexOf('/');
+  protected static String getCommonName(String notesName) {
+    if (notesName.startsWith("cn=")) {
+      int index = notesName.indexOf('/');
       if (index > 0)
-        return NotesName.substring(3, index);
+        return notesName.substring(3, index);
     }
     return null;
   }
 
-  protected boolean checkDocumentReaders(String NotesName,
-      Vector<String> UserGroups, NotesDocument crawldoc,
+  protected boolean checkDocumentReaders(String notesName,
+      Vector<String> userGroups, NotesDocument crawldoc,
       NotesDocument dbdoc) throws RepositoryException {
     final String METHOD = "checkDocumentReaders";
     LOGGER.entering(CLASS_NAME, METHOD);
@@ -263,16 +291,16 @@ class NotesAuthorizationManager implements AuthorizationManager {
 
     // Check using the Notes name
     LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD,
-        "Checking document level access for: " +  NotesName);
-    if  (AllowAuthors.contains(NotesName)) {
+        "Checking document level access for: " +  notesName);
+    if  (AllowAuthors.contains(notesName)) {
        LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD,
-           "ALLOWED: User is in authors " + NotesName);
+           "ALLOWED: User is in authors " + notesName);
        LOGGER.exiting(CLASS_NAME, METHOD);
        return true;
     }
 
     // Check using the common name
-    String CommonName = getCommonName(NotesName);
+    String CommonName = getCommonName(notesName);
     LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD,
         "Checking document level access for user: " +  CommonName);
     if (null != CommonName) {
@@ -285,8 +313,8 @@ class NotesAuthorizationManager implements AuthorizationManager {
     }
 
     // Check using groups
-    for (int i = 0; i < UserGroups.size(); i++) {
-      String group = UserGroups.elementAt(i).toString();
+    for (int i = 0; i < userGroups.size(); i++) {
+      String group = userGroups.elementAt(i).toString();
       LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD,
           "Checking document level access for group: " + group);
       if (AllowAuthors.contains(group)) {
@@ -298,7 +326,7 @@ class NotesAuthorizationManager implements AuthorizationManager {
     }
 
     // Expand roles and check using roles
-    Vector<String> Roles = expandRoles(NotesName, UserGroups, dbdoc);
+    Vector<String> Roles = expandRoles(notesName, userGroups, dbdoc);
     for (int i = 0; i < Roles.size(); i++) {
       String role = Roles.elementAt(i).toString();
       LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD,
@@ -320,8 +348,8 @@ class NotesAuthorizationManager implements AuthorizationManager {
   // You must be a direct member of the group to get the role
   // TODO: Check and validate this with other versions
   @SuppressWarnings("unchecked")
-  protected Vector <String> expandRoles(String NotesName,
-      Vector<String> UserGroups, NotesDocument dbdoc)
+  protected Vector <String> expandRoles(String notesName,
+      Vector<String> userGroups, NotesDocument dbdoc)
       throws RepositoryException {
     final String METHOD = "expandRoles";
     LOGGER.entering(CLASS_NAME, METHOD);
@@ -331,14 +359,14 @@ class NotesAuthorizationManager implements AuthorizationManager {
     Vector<?> dbroles = dbdoc.getItemValue(NCCONST.NCITM_ROLEPREFIX);
     Vector<String> enabledRoles = new Vector<String>();
     LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD, "Checking roles for user: " +
-        NotesName + " using: " + dbroles.toString());
+        notesName + " using: " + dbroles.toString());
     if (dbroles.size() < 1) {
       return enabledRoles;
     }
 
-    Vector<String> credentials = (Vector<String>) UserGroups.clone();
-    credentials.add(NotesName);
-    credentials.add(getCommonName(NotesName));
+    Vector<String> credentials = (Vector<String>) userGroups.clone();
+    credentials.add(notesName);
+    credentials.add(getCommonName(notesName));
     StringBuffer searchstring = new StringBuffer(512);
 
     for (int i = 0; i < dbroles.size(); i++) {
@@ -355,19 +383,19 @@ class NotesAuthorizationManager implements AuthorizationManager {
       }
     }
     LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD, "Roles enabled for user: " +
-        NotesName + " are: " + enabledRoles.toString());
+        notesName + " are: " + enabledRoles.toString());
     LOGGER.exiting(CLASS_NAME, METHOD);
     return enabledRoles;
   }
 
-  protected boolean checkDatabaseAccess(String NotesName,
-      NotesDocument DbDoc, Vector<?> UserGroups)
+  protected boolean checkDatabaseAccess(String notesName,
+      NotesDocument DbDoc, Vector<?> userGroups)
       throws RepositoryException {
     final String METHOD = "checkDatabaseAccess";
     LOGGER.entering(CLASS_NAME, METHOD);
 
-    String CommonName = getCommonName(NotesName);
-    if (checkDenyUser(NotesName, DbDoc)) {
+    String CommonName = getCommonName(notesName);
+    if (checkDenyUser(notesName, DbDoc)) {
       LOGGER.exiting(CLASS_NAME, METHOD);
       return false;
     }
@@ -377,7 +405,7 @@ class NotesAuthorizationManager implements AuthorizationManager {
         return false;
       }
     }
-    if (checkAllowUser(NotesName, DbDoc)) {
+    if (checkAllowUser(notesName, DbDoc)) {
       LOGGER.exiting(CLASS_NAME, METHOD);
       return true;
     }
@@ -387,7 +415,7 @@ class NotesAuthorizationManager implements AuthorizationManager {
         return true;
       }
     }
-    if (checkAllowGroup(UserGroups, DbDoc )) {
+    if (checkAllowGroup(userGroups, DbDoc )) {
       LOGGER.exiting(CLASS_NAME, METHOD);
       return true;
     }
@@ -396,7 +424,7 @@ class NotesAuthorizationManager implements AuthorizationManager {
   }
 
   // TODO:  the access groups may not need to be summary data. to avoid 64k
-  protected boolean checkAllowGroup(Vector<?>UserGroups,
+  protected boolean checkAllowGroup(Vector<?>userGroups,
       NotesDocument dbdoc) throws RepositoryException {
     final String METHOD = "checkAllowGroup";
     LOGGER.entering(CLASS_NAME, METHOD);
@@ -406,8 +434,8 @@ class NotesAuthorizationManager implements AuthorizationManager {
         "Checking database ACL for allow for groups. " +
         "Allow groups are: " + AllowGroups.toString());
 
-    for (int i = 0; i < UserGroups.size(); i++) {
-      String group = UserGroups.elementAt(i).toString();
+    for (int i = 0; i < userGroups.size(); i++) {
+      String group = userGroups.elementAt(i).toString();
       LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD, "Checking group " + group);
       if (AllowGroups.contains(group)) {
         LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD,

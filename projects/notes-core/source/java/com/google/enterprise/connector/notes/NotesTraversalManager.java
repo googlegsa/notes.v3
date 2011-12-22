@@ -85,7 +85,7 @@ public class NotesTraversalManager implements TraversalManager {
       // Since it takes two polling cycles to get documents into the GSA
       // if the system is idle
 
-      NotesDatabasePoller dbpoller = new NotesDatabasePoller();
+      NotesDatabasePoller dbpoller = new NotesDatabasePoller(ncs);
       dbpoller.pollDatabases(ns, cdb, ncs.getMaxCrawlQDepth());
       NotesPollerNotifier npn = ncs.getNotifier();
       npn.wakeWorkers();
