@@ -103,7 +103,6 @@ public class NotesTraversalManagerTest extends ConnectorFixture {
   /* TODO: consider creating a helper to take a TraversalManager
    * and return the list of docid values.
    */
-  /*
   public void testTraverseAllDocuments()
       throws RepositoryLoginException, RepositoryException {
     Session session = connector.login();
@@ -170,6 +169,5 @@ public class NotesTraversalManagerTest extends ConnectorFixture {
     //      duplicatesSecondTraversal.size());
     //}
   }
-  */
 }
 

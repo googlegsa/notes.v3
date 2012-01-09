@@ -165,7 +165,7 @@ public class NotesCrawlerThread extends Thread {
    *   authors fields, but not any non-blank readers fields,
    *   document level security will not be enforced.
    */
-  protected void getDocumentReaderNames(NotesDocument crawlDoc,
+  protected boolean getDocumentReaderNames(NotesDocument crawlDoc,
       NotesDocument srcDoc) throws RepositoryException {
     final String METHOD = "getDocumentReaderNames";
     LOGGER.entering(CLASS_NAME, METHOD);
@@ -175,7 +175,10 @@ public class NotesCrawlerThread extends Thread {
         crawlDoc.replaceItemValue(NCCONST.NCITM_DOCREADERS, null);
     Vector<?> allItems = srcDoc.getItems();
     Vector<String> AuthorReaders = new Vector<String>();
+    boolean hasReaders = false;
 
+    // TODO: Distinguish between Readers and Authors; they have
+    // different security implications.
     for (int i = 0; i < allItems.size(); i++) {
       itm = (NotesItem) allItems.elementAt(i);
       if (itm.isReaders()) {
@@ -184,6 +187,7 @@ public class NotesCrawlerThread extends Thread {
           LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD,
               "Adding readers " + readersVals.toString());
           allReaders.appendToTextList(readersVals);
+          hasReaders = true;
           for (int j = 0; j < readersVals.size(); j++) {
             AuthorReaders.add(readersVals.elementAt(j).toString().toLowerCase());
           }
@@ -205,6 +209,7 @@ public class NotesCrawlerThread extends Thread {
     if (AuthorReaders.size() > 0) {
       crawlDoc.replaceItemValue(NCCONST.NCITM_DOCAUTHORREADERS, AuthorReaders);
     }
+    return hasReaders;
   }
 
   // This function will set google security fields for the document
@@ -520,6 +525,7 @@ public class NotesCrawlerThread extends Thread {
       // Load our source document
       srcDoc = srcdb.getDocumentByUNID(crawlDoc.getItemValueString(
               NCCONST.NCITM_UNID));
+      // Get the form configuration for this document
       loadForm(srcDoc.getItemValueString(NCCONST.ITMFORM));
       if (null == formDoc) {
         LOGGER.logp(Level.FINER, CLASS_NAME, METHOD,
@@ -527,8 +533,17 @@ public class NotesCrawlerThread extends Thread {
             "to process document " + NotesURL);
       }
 
-      // Get the form configuration for this document
-      getDocumentReaderNames(crawlDoc, srcDoc);
+      boolean hasReaders = getDocumentReaderNames(crawlDoc, srcDoc);
+      if (hasReaders) {
+        if (NCCONST.AUTH_ACL.equals(
+            crawlDoc.getItemValueString(NCCONST.NCITM_AUTHTYPE))) {
+          LOGGER.logp(Level.WARNING, CLASS_NAME, METHOD,
+              "Document " + NotesURL + " has document-level security, "
+              + "but the connector is configured to use database-level "
+              + "Policy ACLs. This document will not be indexed.");
+          return false;
+        }
+      }
       setDocumentSecurity(crawlDoc, srcDoc);
 
       mapFields(crawlDoc, srcDoc);
