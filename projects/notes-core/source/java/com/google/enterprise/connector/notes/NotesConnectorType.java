@@ -151,6 +151,7 @@ public class NotesConnectorType implements ConnectorType {
    * @param type the input element type (text or password)
    * @param isRequired true if the field is required
    */
+  /* See Livelink Connector for source for styles used here */
   private void appendTextInputRow(StringBuilder buf,
       Map<String, String> configMap, ResourceBundle labels,
       boolean shouldValidate, String name, String type, boolean isRequired) {
@@ -301,6 +302,7 @@ public class NotesConnectorType implements ConnectorType {
    * @return the ResourceBundle
    * @throws MissingResourceException if the bundle can't be found
    */
+  /* See Livelink Connector */
   private ResourceBundle getResources(Locale locale)
       throws MissingResourceException {
     return ResourceBundle.getBundle("config.NotesConnectorResources", locale);
@@ -313,6 +315,7 @@ public class NotesConnectorType implements ConnectorType {
    * @return a ConfigureResponse consisting of a form snippet
    * with just an error message
    */
+  /* See Livelink Connector */
   private ConfigureResponse getErrorResponse(String error) {
     StringBuilder buffer = new StringBuilder(
         "<tr><td colspan=\"2\"><font color=\"red\">");
@@ -328,6 +331,7 @@ public class NotesConnectorType implements ConnectorType {
    * @param t the exception
    * @return a message
    */
+  /* See Livelink Connector */
   private String getExceptionMessage(Throwable t) {
     String message = t.getLocalizedMessage();
     if (message != null) {
@@ -345,6 +349,7 @@ public class NotesConnectorType implements ConnectorType {
    * @param t the exception
    * @return a message
    */
+  /* See Livelink Connector */
   private String getExceptionMessages(String description, Throwable t) {
     StringBuilder buffer = new StringBuilder();
     if (description != null) {

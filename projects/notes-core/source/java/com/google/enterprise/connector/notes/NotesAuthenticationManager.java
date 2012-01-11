@@ -14,6 +14,7 @@
 
 package com.google.enterprise.connector.notes;
 
+import com.google.common.base.Strings;
 import com.google.enterprise.connector.notes.client.NotesDatabase;
 import com.google.enterprise.connector.notes.client.NotesDocument;
 import com.google.enterprise.connector.notes.client.NotesSession;
@@ -95,8 +96,8 @@ class NotesAuthenticationManager implements AuthenticationManager {
       NotesDatabase acDb = nSession.getDatabase(ncs.getServer(),
           ncs.getDatabase());
 
-      String notesName = null;
-      Vector groups = null;
+      String notesName;
+      Vector groups;
       synchronized(ncs.getConnector().getPeopleCacheLock()) {
         peopleVw = acDb.getView(NCCONST.VIEWPEOPLECACHE);
         peopleVw.refresh();
@@ -104,14 +105,13 @@ class NotesAuthenticationManager implements AuthenticationManager {
         personDoc = peopleVw.getDocumentByKey(pvi, true);
         if (null != personDoc) {
           notesName = personDoc.getItemValueString(NCCONST.PCITM_NOTESNAME)
-          .toLowerCase();
+              .toLowerCase();
           groups = personDoc.getItemValue(NCCONST.PCITM_GROUPS);
+        } else {
+          LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
+              "Person not found in ACL database " + pvi);
+          return new AuthenticationResponse(false, null);
         }
-      }
-      if (null == personDoc) {
-        LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
-            "Person not found in ACL database " + pvi);
-        return new AuthenticationResponse(false, null);
       }
       LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
           "Authentication user using Notes name " + notesName);
@@ -122,15 +122,12 @@ class NotesAuthenticationManager implements AuthenticationManager {
       if (null == authDoc) {
         return new AuthenticationResponse(false, null);
       }
-      String hashedPassword = authDoc.getItemValueString("HTTPPassword");
-      if (nSession.verifyPassword(id.getPassword(), hashedPassword)) {
-        LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
-            "User succesfully authenticated " + notesName);
 
-        ArrayList<String> prefixedGroups = null;
-        if (groups.size() > 0) {
-          String groupPrefix = ncs.getGsaGroupPrefix();
-          if (null == groupPrefix || "".equals(groupPrefix)) {
+      ArrayList<String> prefixedGroups = null;
+      if (groups.size() > 0) {
+        String groupPrefix = ncs.getGsaGroupPrefix();
+        if (null == groupPrefix || "".equals(groupPrefix)) {
+          if (Strings.isNullOrEmpty(groupPrefix)) {
             groupPrefix = "";
           } else if (!groupPrefix.endsWith("/")) {
             groupPrefix += "/";
@@ -141,10 +138,23 @@ class NotesAuthenticationManager implements AuthenticationManager {
                 URLEncoder.encode(groupPrefix + group.toString(), "UTF-8"));
           }
         }
-        return new AuthenticationResponse(true, null, prefixedGroups);
       }
-      LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
-          "User failed authentication " + notesName);
+      if (null != id.getPassword()) {
+        String hashedPassword = authDoc.getItemValueString("HTTPPassword");
+        if (nSession.verifyPassword(id.getPassword(), hashedPassword)) {
+          LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
+              "User succesfully authenticated " + notesName);
+          return new AuthenticationResponse(true, null, prefixedGroups);
+        } else {
+          LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
+              "User failed authentication " + notesName);
+          return new AuthenticationResponse(false, null, prefixedGroups);
+        }
+      } else {
+        LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
+            "No password; returning groups for " + notesName);
+        return new AuthenticationResponse(false, null, prefixedGroups);
+      }
     } catch (Exception e) {
       // TODO: what kinds of Notes exceptions can be caught here?
       // Should we rethrow an exception (RepositoryException?)
