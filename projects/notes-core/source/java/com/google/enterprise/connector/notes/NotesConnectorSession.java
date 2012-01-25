@@ -54,6 +54,7 @@ public class NotesConnectorSession implements Session {
   private String userNameFormula = null;
   private String userSelectionFormula = null;
   private String gsaGroupPrefix;
+  private boolean retainMetaData = true;
 
   public NotesConnectorSession(NotesConnector Connector,
       NotesPollerNotifier connectorNpn, String Password,
@@ -324,6 +325,14 @@ public class NotesConnectorSession implements Session {
       // Load into a new map then reassign to minimize threading issues
       MimeTypeMap = tmpMimeExtnMap;
 
+      String retainMetaDataConfig =
+          systemDoc.getItemValueString(NCCONST.SITM_RETAINMETADATA);
+      retainMetaData = "yes".equalsIgnoreCase(retainMetaDataConfig);
+      LOGGER.logp(Level.CONFIG, CLASS_NAME, METHOD,
+          "RetainMetaData configured value: " + retainMetaDataConfig);
+      LOGGER.logp(Level.CONFIG, CLASS_NAME, METHOD,
+          "RetainMetaData: " + retainMetaData);
+
       systemDoc.recycle();
       LOGGER.logp(Level.CONFIG, CLASS_NAME, METHOD,
           "Configuration successfully loaded.");
@@ -392,6 +401,10 @@ public class NotesConnectorSession implements Session {
 
   public String getGsaGroupPrefix() {
     return gsaGroupPrefix;
+  }
+
+  public boolean getRetainMetaData() {
+    return retainMetaData;
   }
 
   public String getPassword() {

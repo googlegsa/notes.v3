@@ -42,6 +42,7 @@ public class NotesAuthorizationManagerTest extends ConnectorFixture {
 
   @Override
   protected void setUp() throws Exception {
+    allowCrawlerThread = true;
     super.setUp();
     username = ConnectorFixture.getRequiredProperty(
         "javatest.authorization.username");

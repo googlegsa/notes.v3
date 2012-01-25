@@ -49,6 +49,7 @@ public class NotesConnectorDocument implements Document {
   private String UNID = null;
   private FileInputStream fin = null;
   private String docid = null;
+  private boolean isAttachment = false;
 
   @VisibleForTesting
   NotesDocument crawlDoc = null;
@@ -119,6 +120,7 @@ public class NotesConnectorDocument implements Document {
       docid = crawlDoc.getItemValueString(NCCONST.ITM_DOCID);
       LOGGER.logp(Level.FINER, CLASS_NAME, METHOD,
           "Loading document properties for " + docid);
+      isAttachment = docid.contains("/$File/");
 
       // Load the Connector Manager SPI Properties first
       putTextItem(SpiConstants.PROPNAME_DOCID, NCCONST.ITM_DOCID, null);
@@ -208,7 +210,6 @@ public class NotesConnectorDocument implements Document {
 
   protected void setContentProperty()
       throws RepositoryException, FileNotFoundException {
-    boolean isAttachment = docid.contains("/$File/");
     if (isAttachment) {
       String filePath = crawlDoc.getItemValueString(NCCONST.ITM_CONTENTPATH);
       // For unsupported attachments, we don't send content so

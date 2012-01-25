@@ -14,9 +14,8 @@
 
 package com.google.enterprise.connector.notes;
 
-import com.google.enterprise.connector.notes.NotesConnector;
-import com.google.enterprise.connector.notes.NotesConnectorSession;
-import com.google.enterprise.connector.notes.NotesTraversalManager;
+import com.google.enterprise.connector.notes.client.NotesDatabase;
+import com.google.enterprise.connector.notes.client.NotesSession;
 import com.google.enterprise.connector.spi.Connector;
 import com.google.enterprise.connector.spi.Document;
 import com.google.enterprise.connector.spi.DocumentList;
@@ -39,6 +38,7 @@ public class NotesTraversalManagerTest extends ConnectorFixture {
 
   @Override
   protected void setUp() throws Exception {
+    allowCrawlerThread = true;
     super.setUp();
     // Temporary fix for the need to create user/group cache.
     Session session = connector.login();
@@ -56,7 +56,7 @@ public class NotesTraversalManagerTest extends ConnectorFixture {
    */
   public void testTraversalReturnsNewDocumentsOnResume()
       throws RepositoryLoginException, RepositoryException {
-    Session session = connector.login();
+    NotesConnectorSession session = (NotesConnectorSession) connector.login();
     TraversalManager tm = session.getTraversalManager();
     assertNotNull(tm);
     assertTrue(tm instanceof NotesTraversalManager);
@@ -169,5 +169,38 @@ public class NotesTraversalManagerTest extends ConnectorFixture {
     //      duplicatesSecondTraversal.size());
     //}
   }
+
+  /* Helper "test" to carry out a single complete traversal.
+  public void testTraverseUntilDone()
+      throws RepositoryLoginException, RepositoryException {
+
+    Session session = connector.login();
+    TraversalManager tm = session.getTraversalManager();
+    // Get the first set of documents.
+    tm.setBatchHint(20);
+    Set<String> docIdListFirstTraversal = new HashSet<String>(100);
+    DocumentList docList = tm.startTraversal();
+    System.out.println("Docs on startTraversal: " + docList);
+    while (docList != null) {
+      Document doc = null;
+      while (null != (doc = docList.nextDocument())) {
+        String docId = doc.findProperty(SpiConstants.PROPNAME_DOCID).
+            nextValue().toString();
+        System.out.println("docId: " + docId);
+        if (!docIdListFirstTraversal.add(docId)) {
+          System.out.println("docId is a duplicate");
+        }
+      }
+      String checkpoint = docList.checkpoint();
+      assertNotNull("Checkpoint was null", checkpoint);
+      System.out.println("checkpoint: " + checkpoint);
+
+      // Resume traversal.
+      tm.setBatchHint(20);
+      docList = tm.resumeTraversal(checkpoint);
+      System.out.println("Docs on resumeTraversal: " + docList);
+    }
+  }
+  */
 }
 

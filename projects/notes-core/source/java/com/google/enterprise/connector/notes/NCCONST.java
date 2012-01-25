@@ -61,7 +61,6 @@ public class NCCONST {
   public static final String DITM_CHECKDELETIONS = "CheckDeletions";
   public static final String DITM_ACLTEXT = "DbACLText";
 
-
   // Authorization methods specified in the field ITM_DAUTHTYPE
   public static final String AUTH_NONE = "none";
   public static final String AUTH_ACL = "acl";
@@ -279,6 +278,7 @@ public class NCCONST {
   public static final String SITM_NUMCRAWLERTHREADS = "NumCrawlerThreads";
   public static final String SITM_CACHEUPDATEINTERVAL = "CacheUpdateInterval";
   public static final String SITM_LASTCACHEUPDATE = "LastCacheUpdate";
+  public static final String SITM_RETAINMETADATA = "RetainMetaData";
 
   /** Path to the Domino directory on the server */
   public static final String SITM_DIRECTORY = "Directory";
