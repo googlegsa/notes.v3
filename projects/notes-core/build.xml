@@ -167,6 +167,8 @@
       <syspropertyset refid="javatest.properties" />
       <sysproperty key="java.util.logging.config.file"
                    value="${tests.logging.properties}" />
+      <sysproperty key="javatest.inidirectory"
+                   value="${tests.build}" />
       <classpath refid="${tests.classpath}" />
       <formatter type="brief" usefile="no" />
       <formatter type="plain" />

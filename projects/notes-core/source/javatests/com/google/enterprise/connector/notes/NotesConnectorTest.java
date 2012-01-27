@@ -16,10 +16,22 @@ package com.google.enterprise.connector.notes;
 
 import com.google.enterprise.connector.notes.NotesConnector;
 import com.google.enterprise.connector.notes.client.mock.SessionFactoryMock;
+import com.google.enterprise.connector.spi.Session;
 
 import junit.framework.TestCase;
 
 public class NotesConnectorTest extends TestCase {
+
+  static NotesConnector getConnector() {
+    NotesConnector connector = new NotesConnector(
+        "com.google.enterprise.connector.notes.client.mock.SessionFactoryMock");
+    connector.setIdPassword("testpassword");
+    connector.setServer("testserver");
+    connector.setDatabase("testconfig.nsf");
+    // Initialize this to prevent NotesConnector from creating one.
+    connector.maintThread = new NotesMaintenanceThread(null, null);
+    return connector;
+  }
 
   private NotesConnector connector;
 
@@ -30,5 +42,28 @@ public class NotesConnectorTest extends TestCase {
     connector = new NotesConnector(
         "com.google.enterprise.connector.notes.client.mock.SessionFactoryMock");
     assertTrue(connector.getSessionFactory() instanceof SessionFactoryMock);
+  }
+
+  public void testLoginShutdown() throws Exception {
+    connector = NotesConnectorTest.getConnector();
+    SessionFactoryMock factory = (SessionFactoryMock)
+        connector.getSessionFactory();
+    NotesConnectorSessionTest.configureFactoryForSession(factory);
+
+    assertFalse(connector.getShutdown());
+    try {
+      Session session = connector.login();
+    } finally {
+      connector.shutdown();
+    }
+    assertTrue(connector.getShutdown());
+  }
+
+  public void testDelete() throws Exception {
+    connector = new NotesConnector(
+        "com.google.enterprise.connector.notes.client.mock.SessionFactoryMock");
+    assertFalse(connector.getDelete());
+    connector.delete();
+    assertTrue(connector.getDelete());
   }
 }

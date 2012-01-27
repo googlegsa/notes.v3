@@ -21,6 +21,8 @@ import com.google.enterprise.connector.notes.client.NotesDocument;
 import com.google.enterprise.connector.notes.client.NotesView;
 import com.google.enterprise.connector.spi.RepositoryException;
 
+import java.util.List;
+import java.util.Map;
 import java.util.Vector;
 import java.util.logging.Logger;
 
@@ -32,7 +34,13 @@ class NotesSessionMock extends NotesBaseMock
   private static final Logger LOGGER =
       Logger.getLogger(CLASS_NAME);
 
-  NotesSessionMock() {
+  private List<NotesDatabaseMock> databases;
+  private Map<String, String> environment;
+
+  NotesSessionMock(List<NotesDatabaseMock> databases,
+      Map<String, String> environment) {
+    this.databases = databases;
+    this.environment = environment;
   }
 
   /** {@inheritDoc} */
@@ -60,7 +68,7 @@ class NotesSessionMock extends NotesBaseMock
   public String getEnvironmentString(String name, boolean isSystem)
       throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "getEnvironmentString");
-    return null;
+    return environment.get(name);
  }
 
   /** {@inheritDoc} */
@@ -68,6 +76,12 @@ class NotesSessionMock extends NotesBaseMock
   public NotesDatabase getDatabase(String server, String database)
       throws RepositoryException {
    LOGGER.entering(CLASS_NAME, "getDatabase");
+
+   for (NotesDatabaseMock db : databases) {
+     if (server.equals(db.getServer()) && database.equals(db.getName())) {
+       return db;
+     }
+   }
    return null;
   }
 
@@ -90,7 +104,10 @@ class NotesSessionMock extends NotesBaseMock
   /* @Override */
   public NotesDateTime createDateTime(String date) throws RepositoryException {
    LOGGER.entering(CLASS_NAME, "createDateTime");
-   return null;
+   // TODO: this is often used to get an object, followed
+   // immediately by date.setNow, so for now try returning an
+   // unset date to avoid NullPointerExceptions.
+   return new NotesDateTimeMock();
   }
 
   /* TODO: implement getUserName.

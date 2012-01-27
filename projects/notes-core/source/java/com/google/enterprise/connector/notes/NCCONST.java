@@ -145,6 +145,7 @@ public class NCCONST {
   public static final String NCITM_LOCK = "NC.Lock";
 
   /** The readers of this document */
+  /* Currently unused. */
   public static final String NCITM_DOCREADERS = "NC.DocReaders";
 
   /** The readers of this document */

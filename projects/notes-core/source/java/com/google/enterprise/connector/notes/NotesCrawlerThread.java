@@ -44,9 +44,12 @@ public class NotesCrawlerThread extends Thread {
   private NotesConnectorSession ncs = null;
   private NotesSession ns = null;
   private NotesDatabase cdb = null;
-  private NotesDocument templateDoc = null;
-  private NotesDocument formDoc = null;
-  private NotesDocumentCollection formsdc = null;
+  @VisibleForTesting
+  NotesDocument templateDoc = null;
+  @VisibleForTesting
+  NotesDocument formDoc = null;
+  @VisibleForTesting
+  NotesDocumentCollection formsdc = null;
   private String openDbRepId = "";
   private NotesDatabase srcdb = null;
   private NotesView crawlQueue = null;
@@ -66,7 +69,8 @@ public class NotesCrawlerThread extends Thread {
   // Since we are multi-threaded, each thread has its own objects
   // which are not shared.  Hence the calling thread must pass
   // the Domino objects to this method.
-  private static synchronized NotesDocument getNextFromCrawlQueue(
+  @VisibleForTesting
+  static synchronized NotesDocument getNextFromCrawlQueue(
       NotesSession ns, NotesView crawlQueue) {
     final String METHOD = "getNextFromCrawlQueue";
     try {

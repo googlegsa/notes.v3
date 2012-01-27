@@ -41,7 +41,6 @@ public class NotesConnector implements Connector, ConnectorShutdownAware  {
   NotesConnectorSession ncs = null;
   @VisibleForTesting
   NotesMaintenanceThread maintThread = null;
-  private NotesCrawlerThread crawlerThread = null;
   NotesPollerNotifier npn = null;
   Vector<NotesCrawlerThread> vecCrawlerThreads = null;
   SessionFactory sessionFactory;
@@ -94,13 +93,6 @@ public class NotesConnector implements Connector, ConnectorShutdownAware  {
       maintThread.start();
     }
 
-    /*
-      if (null == crawlerThread) {
-      NotesDatabasePoller.resetCrawlQueue(ncs);
-      crawlerThread = new NotesCrawlerThread(this, ncs);
-      crawlerThread.start();
-      }
-    */
     if (null == vecCrawlerThreads) {
       vecCrawlerThreads =
           new Vector<NotesCrawlerThread>(ncs.getNumCrawlerThreads());

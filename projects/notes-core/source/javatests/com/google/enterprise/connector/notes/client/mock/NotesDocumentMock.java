@@ -23,7 +23,8 @@ import com.google.enterprise.connector.notes.client.NotesRichTextItem;
 import com.google.enterprise.connector.notes.client.NotesView;
 import com.google.enterprise.connector.spi.RepositoryException;
 
-import java.util.Arrays;
+import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -41,6 +42,9 @@ public class NotesDocumentMock extends NotesBaseMock
   private Map<String, NotesItemMock> items =
       new HashMap<String, NotesItemMock>();
 
+  private List<NotesDocumentMock> responses =
+      new ArrayList<NotesDocumentMock>();
+
   /* The constructor's currently public for testing. At some
    * point, we might be able to build a more thorough test data
    * framework and remove the need for tests to construct mock
@@ -49,32 +53,12 @@ public class NotesDocumentMock extends NotesBaseMock
   public NotesDocumentMock() {
   }
 
-  /* Helper for tests to use to construct a document. Use
-   * arguments in the form (attrname, value, attrname,
-   * value, ..., "values", <one or more values>).
-   */
-  public void addItem(Object ... args) throws RepositoryException {
-    Map<String, Object> data = new HashMap<String, Object>();
-    int valuesIndex = -1;
-    for (int i = 0; i < args.length; i = i + 2) {
-      String name = args[i].toString();
-      if ("values".equals(name)) {
-        valuesIndex = i + 1;
-        break;
-      }
-      data.put(name, args[i + 1]);
-      LOGGER.finest("item attr: " + name + " = " + args[i + 1]);
-    }
-    if (valuesIndex != -1 && valuesIndex < args.length) {
-      data.put("values", new Vector<Object>(
-          Arrays.asList(args).subList(valuesIndex, args.length)));
-      LOGGER.finest("values: " + data.get("values"));
-    }
-    NotesItemMock item = new NotesItemMock(data);
-    if (null == item.getName()) {
-      throw new RuntimeException("Missing name in item");
-    }
+  public void addItem(NotesItemMock item) throws RepositoryException {
     this.items.put(item.getName().toLowerCase(), item);
+  }
+
+  public void addResponse(NotesDocumentMock response) {
+    this.responses.add(response);
   }
 
   /** {@inheritDoc} */
@@ -93,7 +77,7 @@ public class NotesDocumentMock extends NotesBaseMock
       return "";
     }
     Vector values = item.getValues();
-    if (null == values) {
+    if (null == values || values.size() == 0) {
       return "";
     }
     switch (item.getType()) {
@@ -115,14 +99,18 @@ public class NotesDocumentMock extends NotesBaseMock
     LOGGER.entering(CLASS_NAME, "getItemValueInteger");
     NotesItemMock item = items.get(name.toLowerCase());
     if (null == item) {
-      throw new RepositoryException("No such item: " + name);
+      return 0;
     }
     Vector values = item.getValues();
     if (null == values) {
-      throw new RepositoryException("No values for item: " + name);
+      return 0;
     }
-
-    return ((Double) values.get(0)).intValue();
+    switch (item.getType()) {
+      case NotesItem.NUMBERS:
+        return new Double(values.get(0).toString()).intValue();
+      default:
+        return 0;
+    }
   }
 
   /** {@inheritDoc} */
@@ -159,7 +147,21 @@ public class NotesDocumentMock extends NotesBaseMock
   public Vector getItemValueDateTimeArray(String name)
       throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "getItemValueDateTimeArray");
-    return null;
+    NotesItemMock item = items.get(name);
+    if (null == item) {
+      return new Vector(); // TODO: check that this is right.
+    }
+    Vector values = item.getValues();
+    if (null == values) {
+      return new Vector();
+    }
+    if (values.size() == 0) {
+      return values;
+    }
+    Date date = (Date) values.get(0);
+    Vector dateValues = new Vector();
+    dateValues.add(new NotesDateTimeMock(date));
+    return dateValues;
   }
 
   /** {@inheritDoc} */
@@ -173,29 +175,23 @@ public class NotesDocumentMock extends NotesBaseMock
   public NotesItem replaceItemValue(String name, Object value)
       throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "replaceItemValue " + name);
-    NotesItemMock item = null;
+    NotesItemMock item;
     if (value instanceof NotesItemMock) {
       item = (NotesItemMock) value;
-      items.put(name.toLowerCase(), item);
-    } else {
-      Map<String, Object> data = new HashMap<String, Object>();
-      data.put("name", name.toLowerCase());
-      Vector<Object> values = new Vector<Object>();
-      values.add(value);
-      if (value instanceof String) {
-        data.put("type", new Integer(NotesItem.TEXT));
-      } else if (value instanceof Integer) {
-        data.put("type", new Integer(NotesItem.NUMBERS));
-      } else if (value instanceof Double) {
-        data.put("type", new Integer(NotesItem.NUMBERS));
-      } else if (value instanceof NotesDateTime) {
-        data.put("type", new Integer(NotesItem.DATETIMES));
+    } else if (value instanceof Vector) {
+      Vector values = (Vector) value;
+      if (values.size() == 0) {
+        item = new NotesItemMock("name", name.toLowerCase(),
+            "type", NotesItem.TEXT);
+      } else {
+        item = new NotesItemMock("name", name.toLowerCase(),
+            "type", getNotesType(values.get(0)), "values", values);
       }
-      // TODO: handle the rest of the possible data types
-      data.put("values", values);
-      item = new NotesItemMock(data);
-      items.put(name.toLowerCase(), item);
+    } else {
+      item = new NotesItemMock("name", name.toLowerCase(),
+          "type", getNotesType(value), "values", value);
     }
+    items.put(name.toLowerCase(), item);
     return item;
   }
 
@@ -232,7 +228,7 @@ public class NotesDocumentMock extends NotesBaseMock
   /* @Override */
   public NotesDocumentCollection getResponses() throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "getResponses");
-    return null;
+    return new NotesDocumentCollectionMock(responses);
   }
 
   /** {@inheritDoc} */
@@ -299,5 +295,19 @@ public class NotesDocumentMock extends NotesBaseMock
     } catch (RepositoryException e) {
       return "";
     }
+  }
+
+  private int getNotesType(Object value) {
+    int type = -1;
+    if (value instanceof String) {
+      type = NotesItem.TEXT;
+    } else if (value instanceof Integer) {
+      type = NotesItem.NUMBERS;
+    } else if (value instanceof Double) {
+      type = NotesItem.NUMBERS;
+    } else if (value instanceof NotesDateTime) {
+      type = NotesItem.DATETIMES;
+    }
+    return type;
   }
 }

@@ -20,6 +20,7 @@ import com.google.enterprise.connector.notes.client.NotesViewEntryCollection;
 import com.google.enterprise.connector.notes.client.NotesViewNavigator;
 import com.google.enterprise.connector.spi.RepositoryException;
 
+import java.util.List;
 import java.util.Vector;
 import java.util.logging.Logger;
 
@@ -30,14 +31,27 @@ class NotesViewMock extends NotesBaseMock implements NotesView {
   private static final Logger LOGGER =
       Logger.getLogger(CLASS_NAME);
 
-  NotesViewMock() {
+  private List<NotesDocumentMock> documents;
+
+  private String[] fields;
+
+  NotesViewMock(List<NotesDocumentMock> documents) {
+    this.documents = documents;
+  }
+
+  void setFields(String[] fields) {
+    this.fields = fields;
+  }
+
+  String[] getFields() {
+    return fields;
   }
 
   /** {@inheritDoc} */
   /* @Override */
   public int getEntryCount() throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "getEntryCount");
-    return -1;
+    return documents.size();
   }
 
   /** {@inheritDoc} */
@@ -45,7 +59,7 @@ class NotesViewMock extends NotesBaseMock implements NotesView {
   public NotesDocument getFirstDocument()
       throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "getFirstDocument");
-    return null;
+    return documents.get(0);
   }
 
   /** {@inheritDoc} */
@@ -53,14 +67,35 @@ class NotesViewMock extends NotesBaseMock implements NotesView {
   public NotesDocument getNextDocument(NotesDocument previousDocument)
       throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "getNextDocument");
+    NotesDocumentMock prev = (NotesDocumentMock) previousDocument;
+    for (int i = 0; i < documents.size(); i++) {
+      if (documents.get(i).equals(prev)) {
+        if (i < documents.size() - 1) {
+          return documents.get(i + 1);
+        }
+      }
+    }
     return null;
   }
 
   /** {@inheritDoc} */
   /* @Override */
+  /* For tests, assume that the key field is the first configured
+   * field in the view. */
   public NotesDocument getDocumentByKey(Object key)
       throws RepositoryException {
-    LOGGER.entering(CLASS_NAME, "getDocumentByKey");
+    LOGGER.entering(CLASS_NAME, "getDocumentByKey " + key);
+    if (fields == null || fields.length == 0) {
+      LOGGER.finest("view fields are null");
+      return null;
+    }
+    for (NotesDocumentMock doc : documents) {
+      LOGGER.finest("checking doc item " + fields[0] +
+          " with value " + doc.getItemValueString(fields[0]));
+      if (key.equals(doc.getItemValueString(fields[0]))) {
+        return doc;
+      }
+    }
     return null;
   }
 
@@ -77,7 +112,7 @@ class NotesViewMock extends NotesBaseMock implements NotesView {
   public NotesDocument getDocumentByKey(Object key, boolean exact)
       throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "getDocumentByKey");
-    return null;
+    return getDocumentByKey(key);
   }
 
   /** {@inheritDoc} */
@@ -101,7 +136,7 @@ class NotesViewMock extends NotesBaseMock implements NotesView {
   public NotesViewNavigator createViewNav()
       throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "createViewNav");
-    return null;
+    return new NotesViewNavigatorMock(this);
   }
 
   /** {@inheritDoc} */
