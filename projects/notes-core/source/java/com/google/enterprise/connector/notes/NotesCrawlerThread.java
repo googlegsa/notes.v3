@@ -180,7 +180,7 @@ public class NotesCrawlerThread extends Thread {
       boolean hasReaders = false;
       int authorItemIndex = -1;
 
-      // Find the Readers field, if any.
+      // Find the Readers fields, if any.
       for (int i = 0; i < allItems.size(); i++) {
         NotesItem item = (NotesItem) allItems.elementAt(i);
         if (item.isReaders()) {
@@ -652,6 +652,9 @@ public class NotesCrawlerThread extends Thread {
       attachDoc = cdb.createDocument();
       crawlDoc.copyAllItems(attachDoc, true);
       crawlDoc.replaceItemValue(NCCONST.ITM_GMETAATTACHMENTS, AttachmentName);
+      // Store the filename of this attachment in the attachment crawl doc.
+      attachDoc.replaceItemValue(NCCONST.ITM_GMETAATTACHMENTFILENAME,
+          AttachmentName);
 
       String encodedAttachmentName = null;
       try {

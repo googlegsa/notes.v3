@@ -84,19 +84,8 @@ class NotesViewMock extends NotesBaseMock implements NotesView {
    * field in the view. */
   public NotesDocument getDocumentByKey(Object key)
       throws RepositoryException {
-    LOGGER.entering(CLASS_NAME, "getDocumentByKey " + key);
-    if (fields == null || fields.length == 0) {
-      LOGGER.finest("view fields are null");
-      return null;
-    }
-    for (NotesDocumentMock doc : documents) {
-      LOGGER.finest("checking doc item " + fields[0] +
-          " with value " + doc.getItemValueString(fields[0]));
-      if (key.equals(doc.getItemValueString(fields[0]))) {
-        return doc;
-      }
-    }
-    return null;
+    LOGGER.entering(CLASS_NAME, "getDocumentByKey");
+    return getDocumentByKey(key, false);
   }
 
   /** {@inheritDoc} */
@@ -111,8 +100,26 @@ class NotesViewMock extends NotesBaseMock implements NotesView {
   /* @Override */
   public NotesDocument getDocumentByKey(Object key, boolean exact)
       throws RepositoryException {
-    LOGGER.entering(CLASS_NAME, "getDocumentByKey");
-    return getDocumentByKey(key);
+    LOGGER.entering(CLASS_NAME, "getDocumentByKey " + key);
+    if (fields == null || fields.length == 0) {
+      LOGGER.finest("view fields are null");
+      return null;
+    }
+    for (NotesDocumentMock doc : documents) {
+      String docValue = doc.getItemValueString(fields[0]).toLowerCase();
+      LOGGER.finest("checking doc item " + fields[0]
+          + " with value " + docValue);
+      if (exact) {
+        if (docValue.equalsIgnoreCase(key.toString())) {
+          return doc;
+        }
+      } else {
+        if (docValue.startsWith(key.toString().toLowerCase())) {
+          return doc;
+        }
+      }
+    }
+    return null;
   }
 
   /** {@inheritDoc} */

@@ -28,6 +28,7 @@ import com.google.enterprise.connector.spi.AuthenticationResponse;
 
 import java.net.URLEncoder;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -109,7 +110,7 @@ class NotesAuthenticationManager implements AuthenticationManager {
           groups = personDoc.getItemValue(NCCONST.PCITM_GROUPS);
         } else {
           LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
-              "Person not found in ACL database " + pvi);
+              "Person not found in connector user database " + pvi);
           return new AuthenticationResponse(false, null);
         }
       }
@@ -120,39 +121,44 @@ class NotesAuthenticationManager implements AuthenticationManager {
       // Resolve the PVI to their Notes names and groups
       authDoc = usersVw.getDocumentByKey(notesName, true);
       if (null == authDoc) {
+        LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
+            "Username not found in Notes");
         return new AuthenticationResponse(false, null);
       }
 
       ArrayList<String> prefixedGroups = null;
       if (groups.size() > 0) {
         String groupPrefix = ncs.getGsaGroupPrefix();
-        if (null == groupPrefix || "".equals(groupPrefix)) {
-          if (Strings.isNullOrEmpty(groupPrefix)) {
-            groupPrefix = "";
-          } else if (!groupPrefix.endsWith("/")) {
-            groupPrefix += "/";
-          }
-          prefixedGroups = new ArrayList<String>(groups.size());
-          for (Object group : groups) {
-            prefixedGroups.add(
-                URLEncoder.encode(groupPrefix + group.toString(), "UTF-8"));
-          }
+        if (Strings.isNullOrEmpty(groupPrefix)) {
+          groupPrefix = "";
+        } else if (!groupPrefix.endsWith("/")) {
+          groupPrefix += "/";
+        }
+        prefixedGroups = new ArrayList<String>(groups.size());
+        for (Object group : groups) {
+          // Group names are sent to the GSA in lower case in
+          // NotesDatabasePoller, and the GSA seems to be
+          // case-sensitive here, so be sure to lower-case the
+          // groups.
+          prefixedGroups.add(URLEncoder.encode(
+              groupPrefix + group.toString().toLowerCase(), "UTF-8"));
         }
       }
+      String idLog = getIdentityLog(pvi, notesName, groups, prefixedGroups);
       if (null != id.getPassword()) {
         String hashedPassword = authDoc.getItemValueString("HTTPPassword");
         if (nSession.verifyPassword(id.getPassword(), hashedPassword)) {
           LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
-              "User succesfully authenticated " + notesName);
+              "User succesfully authenticated: " + idLog);
           return new AuthenticationResponse(true, null, prefixedGroups);
         } else {
           LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
-              "User failed authentication " + notesName);
+              "User failed authentication: " + idLog);
           return new AuthenticationResponse(false, null, prefixedGroups);
         }
       } else {
         LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
-            "No password; returning groups for " + notesName);
+            "No password; returning groups only: " + idLog);
         return new AuthenticationResponse(false, null, prefixedGroups);
       }
     } catch (Exception e) {
@@ -167,5 +173,11 @@ class NotesAuthenticationManager implements AuthenticationManager {
       ncs.closeNotesSession(nSession);
     }
     return new AuthenticationResponse(false, null);
+  }
+
+  private String getIdentityLog(String pvi, String notesName,
+      Vector groups, List<String> prefixedGroups) {
+    return "pvi: " + pvi + "; Notes name: " + notesName
+        + "; groups: " + groups + "; groups sent: " + prefixedGroups;
   }
 }

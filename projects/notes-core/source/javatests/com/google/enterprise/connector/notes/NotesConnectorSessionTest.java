@@ -41,6 +41,23 @@ public class NotesConnectorSessionTest extends TestCase {
     NotesDatabaseMock namesDatabase = new NotesDatabaseMock("testserver",
         "testnames.nsf");
     factory.addDatabase(namesDatabase);
+    NotesDocumentMock notesPerson = new NotesDocumentMock();
+    namesDatabase.addDocument(notesPerson, "($Users)");
+    namesDatabase.setViewFields("($Users)", "userid", "HTTPPassword");
+    notesPerson.addItem(new NotesItemMock("name", "userid",
+            "type", NotesItem.TEXT, "values", "cn=Test User/ou=Tests/o=Tests"));
+    notesPerson.addItem(new NotesItemMock("name", "HTTPPassword",
+            "type", NotesItem.TEXT, "values", "password"));
+    NotesDocumentMock connectorPerson = new NotesDocumentMock();
+    configDatabase.addDocument(connectorPerson, NCCONST.VIEWPEOPLECACHE);
+    configDatabase.setViewFields( NCCONST.VIEWPEOPLECACHE,
+        NCCONST.PCITM_USERNAME, NCCONST.PCITM_NOTESNAME, NCCONST.PCITM_GROUPS);
+    connectorPerson.addItem(new NotesItemMock("name", NCCONST.PCITM_USERNAME,
+            "type", NotesItem.TEXT, "values", "testuser"));
+    connectorPerson.addItem(new NotesItemMock("name", NCCONST.PCITM_NOTESNAME,
+            "type", NotesItem.TEXT, "values", "cn=Test User/ou=Tests/o=Tests"));
+    connectorPerson.addItem(new NotesItemMock("name", NCCONST.PCITM_GROUPS,
+            "type", NotesItem.TEXT, "values", "Group1", "Group2"));
 
     // Create config document.
     NotesDocumentMock systemConfig = new NotesDocumentMock();

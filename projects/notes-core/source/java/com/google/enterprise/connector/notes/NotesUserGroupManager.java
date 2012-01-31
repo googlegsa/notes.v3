@@ -322,6 +322,11 @@ public class NotesUserGroupManager {
 
     // Get the group document
     NotesDocument groupDoc = vwPG.getDocumentByKey(groupName, true);
+    if (null == groupDoc) {
+      LOGGER.logp(Level.WARNING, CLASS_NAME, METHOD,
+          "Failed to find document for group: " + groupName);
+      return;
+    }
     Vector<String> grpMembers = groupDoc.getItemValue(NCCONST.GITM_MEMBERS);
 
     for (String mem : grpMembers) {

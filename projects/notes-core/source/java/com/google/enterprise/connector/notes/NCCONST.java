@@ -253,6 +253,9 @@ public class NCCONST {
   /** The names of any attachments in this document */
   public static final String ITM_GMETAATTACHMENTS = "lnmeta.attachments";
 
+  /** The filename of this attachment document */
+  public static final String ITM_GMETAATTACHMENTFILENAME = "lnmeta.attachmentfilename";
+
   /** The names of any attachments in this document */
   public static final String ITM_GMETAALLATTACHMENTS = "lnmeta.allattachments";
 
@@ -319,6 +322,7 @@ public class NCCONST {
   public static final String PROPNAME_NCNOTESLINK = "dom_noteslink";
   public static final String PROPNAME_NCDOCPATH = "dom_docpath";
   public static final String PROPNAME_NCATTACHMENTS = "dom_docattachments";
+  public static final String PROPNAME_NCATTACHMENTFILENAME = "dom_attachmentfilename";
   public static final String PROPNAME_NCALLATTACHMENTS = "dom_docallattachments";
   public static final String PROPNAME_NCAUTHORS = "dom_authors";
   public static final String PROPNAME_NCFORM = "dom_docform";

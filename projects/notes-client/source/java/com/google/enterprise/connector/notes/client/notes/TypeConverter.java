@@ -35,7 +35,9 @@ class TypeConverter {
     }
     Vector connectorValues = new Vector(notesValues.size());
     for (Object notesValue : notesValues) {
-      if (notesValue instanceof DateTime) {
+      if (notesValue instanceof Vector) {
+        connectorValues.add(toConnectorValues((Vector) notesValue));
+      } else if (notesValue instanceof DateTime) {
         connectorValues.add(new NotesDateTimeImpl((DateTime) notesValue));
       } else if (notesValue instanceof DateRange) {
         connectorValues.add(new NotesDateRangeImpl((DateRange) notesValue));

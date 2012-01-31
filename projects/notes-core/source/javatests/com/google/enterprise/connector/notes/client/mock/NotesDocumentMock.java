@@ -159,7 +159,7 @@ public class NotesDocumentMock extends NotesBaseMock
       return values;
     }
     Date date = (Date) values.get(0);
-    Vector dateValues = new Vector();
+    Vector<NotesDateTimeMock> dateValues = new Vector<NotesDateTimeMock>();
     dateValues.add(new NotesDateTimeMock(date));
     return dateValues;
   }

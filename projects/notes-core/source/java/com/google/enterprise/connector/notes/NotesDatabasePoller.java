@@ -110,6 +110,7 @@ public class NotesDatabasePoller {
             "Connector reset - Resetting database last update date for "
             + srcdbDoc.getItemValue(NCCONST.DITM_DBNAME));
         srcdbDoc.removeItem(NCCONST.DITM_LASTUPDATE);
+        srcdbDoc.removeItem(NCCONST.DITM_ACLTEXT);
         srcdbDoc.save(true);
         NotesDocument prevDoc = srcdbDoc;
         srcdbDoc = srcdbView.getNextDocument(prevDoc);

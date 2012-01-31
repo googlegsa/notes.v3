@@ -60,7 +60,7 @@ class NotesSessionMock extends NotesBaseMock
   /* @Override */
   public boolean verifyPassword(String password, String hashedPassword)
       throws RepositoryException {
-    return false;
+    return password.equals(hashedPassword);
   }
 
   /** {@inheritDoc} */

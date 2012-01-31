@@ -170,6 +170,33 @@ public class NotesTraversalManagerTest extends ConnectorFixture {
     //}
   }
 
+  /**
+   * Attachment docs should have a metadata element containing
+   * the attachment filename.
+   */
+  public void testTraversalCheckAttachments()
+      throws RepositoryLoginException, RepositoryException {
+    Session session = connector.login();
+    TraversalManager tm = session.getTraversalManager();
+
+    // Get the first set of documents.
+    tm.setBatchHint(25);
+    DocumentList docList = tm.startTraversal();
+    assertNotNull("startTraversal returned a null document list", docList);
+    Document doc;
+    while (null != (doc = docList.nextDocument())) {
+      String docId = doc.findProperty(SpiConstants.PROPNAME_DOCID).
+          nextValue().toString();
+      if (docId.contains(("/$File/"))) {
+        assertNotNull("Missing attachment filename " + docId,
+            doc.findProperty(NCCONST.PROPNAME_NCATTACHMENTFILENAME));
+      } else {
+        assertNull("Has attachment filename " + docId,
+            doc.findProperty(NCCONST.PROPNAME_NCATTACHMENTFILENAME));
+      }
+    }
+  }
+
   /* Helper "test" to carry out a single complete traversal.
   public void testTraverseUntilDone()
       throws RepositoryLoginException, RepositoryException {
