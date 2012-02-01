@@ -22,10 +22,14 @@ import com.google.enterprise.connector.notes.client.NotesDocumentCollection;
 import com.google.enterprise.connector.notes.client.NotesView;
 import com.google.enterprise.connector.spi.RepositoryException;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Vector;
 import java.util.logging.Logger;
 
-class NotesDatabaseMock extends NotesBaseMock
+public class NotesDatabaseMock extends NotesBaseMock
     implements NotesDatabase {
   private static final String CLASS_NAME = NotesDatabaseMock.class.getName();
 
@@ -33,13 +37,58 @@ class NotesDatabaseMock extends NotesBaseMock
   private static final Logger LOGGER =
       Logger.getLogger(CLASS_NAME);
 
-  NotesDatabaseMock() {
+  private List<NotesDocumentMock> documents =
+      new ArrayList<NotesDocumentMock>();
+  private Map<String, List<NotesDocumentMock>> views =
+      new HashMap<String, List<NotesDocumentMock>>();
+  private Map<String, String[]> viewFields =
+      new HashMap<String, String[]>();
+  private String server;
+  private String name;
+
+  public NotesDatabaseMock(String server, String name) {
+    this.server = server;
+    this.name = name;
+  }
+
+  public String getServer() {
+    return server;
+  }
+
+  public String getName() {
+    return name;
+  }
+
+  public void addDocument(NotesDocumentMock document,
+      String... documentViewNames) {
+    documents.add(document);
+    for (String documentViewName : documentViewNames) {
+      List<NotesDocumentMock> view = views.get(documentViewName);
+      if (null == view) {
+        view = new ArrayList<NotesDocumentMock>();
+        views.put(documentViewName, view);
+      }
+      view.add(document);
+    }
+  }
+
+  public void setViewFields(String viewName, String... fields) {
+    viewFields.put(viewName, fields);
   }
 
   /** {@inheritDoc} */
   /* @Override */
   public NotesView getView(String view) throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "getView");
+    List<NotesDocumentMock> documents = views.get(view);
+    if (null != documents) {
+      NotesViewMock v = new NotesViewMock(documents);
+      String[] fields = viewFields.get(view);
+      if (null != fields) {
+        v.setFields(fields);
+      }
+      return v;
+    }
     return null;
   }
 

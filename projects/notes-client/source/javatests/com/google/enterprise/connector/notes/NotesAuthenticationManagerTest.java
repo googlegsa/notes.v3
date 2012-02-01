@@ -82,8 +82,30 @@ public class NotesAuthenticationManagerTest extends ConnectorFixture {
       String groupPrefix = ((NotesConnectorSession) session)
           .getGsaGroupPrefix();
       for (String group : groups) {
-        assertTrue(group, group.startsWith(groupPrefix));
-        assertTrue(group, group.indexOf(" ") < 0);
+          assertTrue(group, group.startsWith(groupPrefix));
+          assertTrue(group, group.indexOf(" ") < 0);
+      }
+    }
+  }
+
+  /**
+   * Tests a valid user name with no password.
+   *
+   * @throws RepositoryException
+   */
+  public void testValidUserGroupResolutionOnly() throws RepositoryException {
+    Session session = connector.login();
+    AuthenticationManager manager = session.getAuthenticationManager();
+    AuthenticationResponse response = manager.authenticate(
+        new SimpleAuthenticationIdentity(username, null));
+    assertFalse("Authenticated: " + username, response.isValid());
+    Collection<String> groups = response.getGroups();
+    if (groups != null) {
+      String groupPrefix = ((NotesConnectorSession) session)
+          .getGsaGroupPrefix();
+      for (String group : groups) {
+          assertTrue(group, group.startsWith(groupPrefix));
+          assertTrue(group, group.indexOf(" ") < 0);
       }
     }
   }

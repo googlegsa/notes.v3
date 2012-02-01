@@ -15,6 +15,7 @@
 package com.google.enterprise.connector.notes.client.mock;
 
 import com.google.enterprise.connector.notes.client.NotesDocument;
+import com.google.enterprise.connector.notes.client.NotesItem;
 import com.google.enterprise.connector.notes.client.NotesViewEntry;
 import com.google.enterprise.connector.spi.RepositoryException;
 
@@ -29,20 +30,30 @@ class NotesViewEntryMock extends NotesBaseMock
   private static final Logger LOGGER =
       Logger.getLogger(CLASS_NAME);
 
-  NotesViewEntryMock() {
+  NotesViewMock view;
+  NotesDocument document;
+
+  NotesViewEntryMock(NotesViewMock view, NotesDocument document) {
+    this.view = view;
+    this.document = document;
   }
 
   /** {@inheritDoc} */
   /* @Override */
   public Vector getColumnValues() throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "getColumnValues");
-    return null;
+    Vector<Object> values = new Vector<Object>();
+    for (String field: view.getFields()) {
+      NotesItem item = document.getFirstItem(field);
+      values.add(item.getValues().get(0));
+    }
+    return values;
   }
 
   /** {@inheritDoc} */
   /* @Override */
   public NotesDocument getDocument() throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "getDocument");
-    return null;
+    return document;
   }
 }

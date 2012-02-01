@@ -42,6 +42,7 @@ public class NotesAuthorizationManagerTest extends ConnectorFixture {
 
   @Override
   protected void setUp() throws Exception {
+    allowCrawlerThread = true;
     super.setUp();
     username = ConnectorFixture.getRequiredProperty(
         "javatest.authorization.username");
@@ -162,7 +163,7 @@ public class NotesAuthorizationManagerTest extends ConnectorFixture {
         (NotesAuthorizationManager) session.getAuthorizationManager();
     Collection<AuthorizationResponse> responseList = manager.authorizeDocids(
         docIds, new SimpleAuthenticationIdentity(null));
-    assertEquals(3, responseList.size());
+    assertEquals(0, responseList.size());
     for (AuthorizationResponse response : responseList) {
       assertEquals(AuthorizationResponse.Status.INDETERMINATE,
           response.getStatus());

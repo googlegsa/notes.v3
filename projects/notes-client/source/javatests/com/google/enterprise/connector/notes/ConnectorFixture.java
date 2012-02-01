@@ -18,6 +18,8 @@ import com.google.enterprise.connector.notes.NotesConnector;
 
 import junit.framework.TestCase;
 
+import java.util.Vector;
+
 public class ConnectorFixture extends TestCase {
 
   static String getRequiredProperty(String key) {
@@ -38,13 +40,15 @@ public class ConnectorFixture extends TestCase {
   String gsapassword;
   NotesConnector connector;
 
+  boolean allowMaintenanceThread = false;
+  boolean allowCrawlerThread = false;
+
   public ConnectorFixture() {
     super();
   }
 
   @Override
   protected void setUp() throws Exception {
-    super.setUp();
     server = ConnectorFixture.getRequiredProperty("javatest.server");
     database = ConnectorFixture.getRequiredProperty("javatest.database");
     idpassword = ConnectorFixture.getRequiredProperty("javatest.idpassword");
@@ -52,6 +56,14 @@ public class ConnectorFixture extends TestCase {
     gsausername = ConnectorFixture.getOptionalProperty("javatest.gsausername");
     gsapassword = ConnectorFixture.getOptionalProperty("javatest.gsapassword");
     connector = new NotesConnector();
+
+    if (!allowMaintenanceThread) {
+      connector.maintThread = new NotesMaintenanceThread(null, null);
+    }
+    if (!allowCrawlerThread) {
+      connector.vecCrawlerThreads = new Vector<NotesCrawlerThread>();
+    }
+
     connector.setServer(server);
     connector.setDatabase(database);
     connector.setIdPassword(idpassword);

@@ -61,7 +61,6 @@ public class NCCONST {
   public static final String DITM_CHECKDELETIONS = "CheckDeletions";
   public static final String DITM_ACLTEXT = "DbACLText";
 
-
   // Authorization methods specified in the field ITM_DAUTHTYPE
   public static final String AUTH_NONE = "none";
   public static final String AUTH_ACL = "acl";
@@ -146,6 +145,7 @@ public class NCCONST {
   public static final String NCITM_LOCK = "NC.Lock";
 
   /** The readers of this document */
+  /* Currently unused. */
   public static final String NCITM_DOCREADERS = "NC.DocReaders";
 
   /** The readers of this document */
@@ -253,6 +253,9 @@ public class NCCONST {
   /** The names of any attachments in this document */
   public static final String ITM_GMETAATTACHMENTS = "lnmeta.attachments";
 
+  /** The filename of this attachment document */
+  public static final String ITM_GMETAATTACHMENTFILENAME = "lnmeta.attachmentfilename";
+
   /** The names of any attachments in this document */
   public static final String ITM_GMETAALLATTACHMENTS = "lnmeta.allattachments";
 
@@ -279,6 +282,7 @@ public class NCCONST {
   public static final String SITM_NUMCRAWLERTHREADS = "NumCrawlerThreads";
   public static final String SITM_CACHEUPDATEINTERVAL = "CacheUpdateInterval";
   public static final String SITM_LASTCACHEUPDATE = "LastCacheUpdate";
+  public static final String SITM_RETAINMETADATA = "RetainMetaData";
 
   /** Path to the Domino directory on the server */
   public static final String SITM_DIRECTORY = "Directory";
@@ -318,6 +322,7 @@ public class NCCONST {
   public static final String PROPNAME_NCNOTESLINK = "dom_noteslink";
   public static final String PROPNAME_NCDOCPATH = "dom_docpath";
   public static final String PROPNAME_NCATTACHMENTS = "dom_docattachments";
+  public static final String PROPNAME_NCATTACHMENTFILENAME = "dom_attachmentfilename";
   public static final String PROPNAME_NCALLATTACHMENTS = "dom_docallattachments";
   public static final String PROPNAME_NCAUTHORS = "dom_authors";
   public static final String PROPNAME_NCFORM = "dom_docform";

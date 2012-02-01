@@ -114,7 +114,7 @@ class NotesConnectorDocumentList implements DocumentList {
     // getItemValueString returns null in Domino 6.5 or earlier.
     // Empty string after.  Handle both
     String attachPath = indexedDoc.getItemValueString(NCCONST.ITM_CONTENTPATH);
-    if ( null != attachPath) {
+    if (null != attachPath) {
       if (attachPath.length() > 0) {
         LOGGER.logp(Level.FINER, CLASS_NAME, METHOD,
             "Checkpoint cleaning up attachment: " + attachPath);
@@ -122,7 +122,7 @@ class NotesConnectorDocumentList implements DocumentList {
         f.delete();
         // Remove the parent directory for the document if it is empty
         java.io.File parentDir = new java.io.File(
-            attachPath.substring(0,attachPath.lastIndexOf('/')));
+            attachPath.substring(0, attachPath.lastIndexOf('/')));
         String[] dirContents = parentDir.list();
         if (dirContents != null) {  // If this is a valid directory
           if (dirContents.length == 0) {  // If the directory is empty
@@ -143,8 +143,23 @@ class NotesConnectorDocumentList implements DocumentList {
     if (null != prevDoc) {
       prevDoc.remove(true);
     }
+
     indexedDoc.replaceItemValue(NCCONST.NCITM_STATE, NCCONST.STATEINDEXED);
     indexedDoc.save(true);
+    if (!ncs.getRetainMetaData()) {
+      if (!NCCONST.AUTH_CONNECTOR.equals(
+              indexedDoc.getItemValueString(NCCONST.NCITM_AUTHTYPE))) {
+        LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD,
+            "Deleting metadata for indexed doc not using connector authz: "
+            + docid);
+        indexedDoc.remove(true);
+      } else if (indexedDoc.getItemValue(NCCONST.NCITM_DOCAUTHORREADERS)
+          .size() == 0) {
+        LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD,
+            "Deleting metadata for indexed doc with no readers: " + docid);
+        indexedDoc.remove(true);
+      }
+    }
     LOGGER.exiting(CLASS_NAME, METHOD);
   }
 
@@ -175,8 +190,7 @@ class NotesConnectorDocumentList implements DocumentList {
           if (indexedDoc.getItemValueString(NCCONST.ITM_ACTION)
               .equalsIgnoreCase(SpiConstants.ActionType.ADD.toString())) {
             checkpointAdd(indexedDoc, docidvw);
-          }
-          if (indexedDoc.getItemValueString(NCCONST.ITM_ACTION)
+          } else if (indexedDoc.getItemValueString(NCCONST.ITM_ACTION)
               .equalsIgnoreCase(SpiConstants.ActionType.DELETE.toString())) {
             checkpointDelete(indexedDoc, docidvw);
           }
@@ -212,5 +226,9 @@ class NotesConnectorDocumentList implements DocumentList {
 
     LOGGER.log(Level.FINE, CLASS_NAME, "Checkpoint: " + checkPointUnid);
     return checkPointUnid;
+  }
+
+  public String toString() {
+    return unidList.toString();
   }
 }

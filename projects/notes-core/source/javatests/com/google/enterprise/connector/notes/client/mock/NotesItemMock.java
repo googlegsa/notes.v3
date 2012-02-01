@@ -17,26 +17,50 @@ package com.google.enterprise.connector.notes.client.mock;
 import com.google.enterprise.connector.notes.client.NotesItem;
 import com.google.enterprise.connector.spi.RepositoryException;
 
-import java.util.Collections;
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Vector;
 import java.util.logging.Logger;
 
-class NotesItemMock extends NotesBaseMock implements NotesItem {
+public class NotesItemMock extends NotesBaseMock implements NotesItem {
   private static final String CLASS_NAME = NotesItemMock.class.getName();
 
   /** The logger for this class. */
   private static final Logger LOGGER =
       Logger.getLogger(CLASS_NAME);
 
-  private Map<String, Object> properties;
+  private Map<String, Object> properties = new HashMap<String, Object>();
+  private boolean isReaders = false;
+  private boolean isAuthors = false;
 
-  NotesItemMock() {
-    this.properties = Collections.emptyMap();
-  }
-
-  NotesItemMock(Map<String, Object> properties) {
-    this.properties = properties;
+  public NotesItemMock(Object... args) {
+    int valuesIndex = -1;
+    for (int i = 0; i < args.length; i = i + 2) {
+      String name = args[i].toString();
+      if ("values".equals(name)) {
+        valuesIndex = i + 1;
+        break;
+      }
+      properties.put(name, args[i + 1]);
+    }
+    if (valuesIndex != -1 && valuesIndex < args.length) {
+      Vector<Object> values = new Vector<Object>();
+      for (int i = valuesIndex; i < args.length; i++) {
+        if (null == args[i]) {
+          continue;
+        }
+        if (args[i] instanceof Vector) {
+          for (Object o : (Vector) args[i]) {
+            values.add(o);
+          }
+        } else {
+          values.add(args[i]);
+        }
+      }
+      properties.put("values", values);
+      LOGGER.finest("NotesItemMock<init> values: " + properties.get("values"));
+    }
   }
 
   /** {@inheritDoc} */
@@ -77,14 +101,22 @@ class NotesItemMock extends NotesBaseMock implements NotesItem {
   /* @Override */
   public boolean isReaders() throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "isReaders");
-    return false;
+    return isReaders;
+  }
+
+  public void setReaders(boolean readers) {
+    isReaders = readers;
   }
 
   /** {@inheritDoc} */
   /* @Override */
   public boolean isAuthors() throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "isAuthors");
-    return false;
+    return isAuthors;
+  }
+
+  public void setAuthors(boolean authors) {
+    isAuthors = authors;
   }
 
   /** {@inheritDoc} */

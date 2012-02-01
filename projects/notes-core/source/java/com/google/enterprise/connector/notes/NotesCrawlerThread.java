@@ -44,9 +44,12 @@ public class NotesCrawlerThread extends Thread {
   private NotesConnectorSession ncs = null;
   private NotesSession ns = null;
   private NotesDatabase cdb = null;
-  private NotesDocument templateDoc = null;
-  private NotesDocument formDoc = null;
-  private NotesDocumentCollection formsdc = null;
+  @VisibleForTesting
+  NotesDocument templateDoc = null;
+  @VisibleForTesting
+  NotesDocument formDoc = null;
+  @VisibleForTesting
+  NotesDocumentCollection formsdc = null;
   private String openDbRepId = "";
   private NotesDatabase srcdb = null;
   private NotesView crawlQueue = null;
@@ -66,7 +69,8 @@ public class NotesCrawlerThread extends Thread {
   // Since we are multi-threaded, each thread has its own objects
   // which are not shared.  Hence the calling thread must pass
   // the Domino objects to this method.
-  private static synchronized NotesDocument getNextFromCrawlQueue(
+  @VisibleForTesting
+  static synchronized NotesDocument getNextFromCrawlQueue(
       NotesSession ns, NotesView crawlQueue) {
     final String METHOD = "getNextFromCrawlQueue";
     try {
@@ -165,46 +169,64 @@ public class NotesCrawlerThread extends Thread {
    *   authors fields, but not any non-blank readers fields,
    *   document level security will not be enforced.
    */
-  protected void getDocumentReaderNames(NotesDocument crawlDoc,
+  protected boolean getDocumentReaderNames(NotesDocument crawlDoc,
       NotesDocument srcDoc) throws RepositoryException {
     final String METHOD = "getDocumentReaderNames";
     LOGGER.entering(CLASS_NAME, METHOD);
 
-    NotesItem itm = null;
-    NotesItem allReaders =
-        crawlDoc.replaceItemValue(NCCONST.NCITM_DOCREADERS, null);
     Vector<?> allItems = srcDoc.getItems();
-    Vector<String> AuthorReaders = new Vector<String>();
+    try {
+      Vector<String> authorReaders = new Vector<String>();
+      boolean hasReaders = false;
+      Vector<Integer> authorItems = new Vector<Integer>();
 
-    for (int i = 0; i < allItems.size(); i++) {
-      itm = (NotesItem) allItems.elementAt(i);
-      if (itm.isReaders()) {
-        Vector readersVals = itm.getValues();
-        if (null != readersVals) {
-          LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD,
-              "Adding readers " + readersVals.toString());
-          allReaders.appendToTextList(readersVals);
-          for (int j = 0; j < readersVals.size(); j++) {
-            AuthorReaders.add(readersVals.elementAt(j).toString().toLowerCase());
-          }
+      // Find the Readers field(s), if any. There can be more
+      // than one Readers field.
+      for (int i = 0; i < allItems.size(); i++) {
+        NotesItem item = (NotesItem) allItems.elementAt(i);
+        if (item.isReaders()) {
+          boolean hasCurrentItemReaders =
+              copyValues(item, authorReaders, "readers");
+          hasReaders = hasCurrentItemReaders || hasReaders;
+        } else if (item.isAuthors()) {
+          authorItems.add(i);
         }
       }
-      if (itm.isAuthors()) {
-        Vector<?> authorsVals = itm.getValues();
-        if (null != authorsVals) {
-          LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD,
-              "Adding authors " + authorsVals.toString());
-          for (int j = 0; j < authorsVals.size(); j++) {
-            AuthorReaders.add(authorsVals.elementAt(j).toString().toLowerCase());
-          }
+      // If there are Readers, add any Authors to the Readers list
+      // for AuthZ purposes. With no Readers, database security applies.
+      if (hasReaders && authorItems.size() > 0) {
+        for (Integer i : authorItems) {
+          copyValues((NotesItem) allItems.elementAt(i),
+              authorReaders, "authors");
         }
       }
+
+      LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD,
+          "Document readers are " + authorReaders);
+      if (authorReaders.size() > 0) {
+        crawlDoc.replaceItemValue(NCCONST.NCITM_DOCAUTHORREADERS,
+            authorReaders);
+        crawlDoc.replaceItemValue(NCCONST.NCITM_DOCREADERS, authorReaders);
+      }
+      return hasReaders;
+    } finally {
+      srcDoc.recycle(allItems);
     }
-    LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD,
-        "Document readers are " + AuthorReaders);
-    if (AuthorReaders.size() > 0) {
-      crawlDoc.replaceItemValue(NCCONST.NCITM_DOCAUTHORREADERS, AuthorReaders);
+  }
+
+  private boolean copyValues(NotesItem item, Vector<String> destination,
+      String description) throws RepositoryException {
+    final String METHOD = "copyValues";
+    Vector values = item.getValues();
+    int count = 0;
+    if (null != values) {
+      LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD,
+          "Adding " + description + " " + values.toString());
+      for (; count < values.size(); count++) {
+        destination.add(values.elementAt(count).toString().toLowerCase());
+      }
     }
+    return count > 0;
   }
 
   // This function will set google security fields for the document
@@ -520,6 +542,7 @@ public class NotesCrawlerThread extends Thread {
       // Load our source document
       srcDoc = srcdb.getDocumentByUNID(crawlDoc.getItemValueString(
               NCCONST.NCITM_UNID));
+      // Get the form configuration for this document
       loadForm(srcDoc.getItemValueString(NCCONST.ITMFORM));
       if (null == formDoc) {
         LOGGER.logp(Level.FINER, CLASS_NAME, METHOD,
@@ -527,8 +550,17 @@ public class NotesCrawlerThread extends Thread {
             "to process document " + NotesURL);
       }
 
-      // Get the form configuration for this document
-      getDocumentReaderNames(crawlDoc, srcDoc);
+      boolean hasReaders = getDocumentReaderNames(crawlDoc, srcDoc);
+      if (hasReaders) {
+        if (NCCONST.AUTH_ACL.equals(
+            crawlDoc.getItemValueString(NCCONST.NCITM_AUTHTYPE))) {
+          LOGGER.logp(Level.WARNING, CLASS_NAME, METHOD,
+              "Document " + NotesURL + " has document-level security, "
+              + "but the connector is configured to use database-level "
+              + "Policy ACLs. This document will not be indexed.");
+          return false;
+        }
+      }
       setDocumentSecurity(crawlDoc, srcDoc);
 
       mapFields(crawlDoc, srcDoc);
@@ -626,6 +658,9 @@ public class NotesCrawlerThread extends Thread {
       attachDoc = cdb.createDocument();
       crawlDoc.copyAllItems(attachDoc, true);
       crawlDoc.replaceItemValue(NCCONST.ITM_GMETAATTACHMENTS, AttachmentName);
+      // Store the filename of this attachment in the attachment crawl doc.
+      attachDoc.replaceItemValue(NCCONST.ITM_GMETAATTACHMENTFILENAME,
+          AttachmentName);
 
       String encodedAttachmentName = null;
       try {
@@ -829,7 +864,7 @@ public class NotesCrawlerThread extends Thread {
     disconnectQueue();
     LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
         "Connector shutdown - NotesCrawlerThread exiting.");
-    LOGGER.entering(CLASS_NAME, METHOD);
+    LOGGER.exiting(CLASS_NAME, METHOD);
   }
 
   @VisibleForTesting

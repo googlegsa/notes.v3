@@ -44,7 +44,7 @@ public class NotesConnectorSession implements Session {
   private int MaxFileSize;
   private String SpoolDir = null;
   private HashMap<String,String> MimeTypeMap = null;
-  HashMap<String, String> ServerDomainMap = null;
+  HashMap<String, String> serverDomainMap = new HashMap<String, String>();
   private NotesPollerNotifier npn = null;
   private int maxCrawlQDepth;
   private int deletionBatchSize;
@@ -54,6 +54,7 @@ public class NotesConnectorSession implements Session {
   private String userNameFormula = null;
   private String userSelectionFormula = null;
   private String gsaGroupPrefix;
+  private boolean retainMetaData = true;
 
   public NotesConnectorSession(NotesConnector Connector,
       NotesPollerNotifier connectorNpn, String Password,
@@ -269,38 +270,43 @@ public class NotesConnectorSession implements Session {
       serversView.refresh();
       NotesViewNavigator svn = serversView.createViewNav();
       NotesViewEntry sve = svn.getFirst();
-      NotesViewEntry tmpsve;
-      HashMap<String, String> TmpServerRegionMap =
-          new HashMap<String, String>();
       while (null != sve) {
-        Vector<?> ColumnVals = sve.getColumnValues();
-        // This is a problem with the Notes Java API.
-        // when this column has 1 element we get a String
-        // when this column has more than 1 element we get a Vector
-        // The alternative is to test whether this is a vector
-        // before we start using it i.e.
-        // if (ColumnVals.elementAt(0).getClass().getName()
-        //    .compareTo("java.util.Vector")
-        String TmpServer = ColumnVals.elementAt(0).toString().toLowerCase();
-        if (TmpServer.charAt(0) == '[') {
-          TmpServer = TmpServer.substring(1);
+        Vector<?> columnVals = sve.getColumnValues();
+        String domain = columnVals.elementAt(2).toString().toLowerCase();
+
+        // This is a problem with the Notes Java API. When the
+        // server field for a given region has 1 element we get a
+        // String in the server column of the ViewEntry. When
+        // the server field has more than 1 element we get one
+        // ViewEntry for each server value, but the value
+        // returned in the getColumnValues Vector is a Vector
+        // with one element.
+        String server;
+        Object serverObject = columnVals.elementAt(0);
+        if (serverObject instanceof String) {
+          server = ((String) serverObject).toLowerCase();
+        } else if (serverObject instanceof Vector) {
+          Vector serverVector = (Vector) serverObject;
+          if (serverVector.size() == 0) {
+            LOGGER.logp(Level.CONFIG, CLASS_NAME, METHOD, "Empty server value");
+            continue;
+          }
+          server = ((String) serverVector.elementAt(0)).toLowerCase();
+        } else {
+            LOGGER.logp(Level.CONFIG, CLASS_NAME, METHOD,
+                "Unknown server value " + serverObject);
+            continue;
         }
-        if (TmpServer.charAt(TmpServer.length() - 1) == ']') {
-          TmpServer = TmpServer.substring(0, TmpServer.length() - 1);
-        }
-        String TmpDomain = ColumnVals.elementAt(2).toString().toLowerCase();
-        String TmpMsg = String.format("Server %s is in domain %s",
-            TmpServer, TmpDomain);
-        LOGGER.logp(Level.CONFIG, CLASS_NAME, METHOD, TmpMsg);
-        TmpServerRegionMap.put(TmpServer, TmpDomain);
-        tmpsve = svn.getNext();
+        LOGGER.logp(Level.CONFIG, CLASS_NAME, METHOD,
+            "Server {0} is in domain {1}", new Object[] { server, domain });
+        serverDomainMap.put(server, domain);
+        NotesViewEntry tmpsve = svn.getNext();
         sve.recycle();
         sve = tmpsve;
       }
       svn.recycle();
       serversView.recycle();
-      ServerDomainMap =  TmpServerRegionMap;
-      if (0 == TmpServerRegionMap.size()) {
+      if (0 == serverDomainMap.size()) {
         LOGGER.logp(Level.SEVERE, CLASS_NAME, METHOD,
             "No regions have been configured for this connector.");
         return false;
@@ -323,6 +329,14 @@ public class NotesConnectorSession implements Session {
       }
       // Load into a new map then reassign to minimize threading issues
       MimeTypeMap = tmpMimeExtnMap;
+
+      String retainMetaDataConfig =
+          systemDoc.getItemValueString(NCCONST.SITM_RETAINMETADATA);
+      retainMetaData = "yes".equalsIgnoreCase(retainMetaDataConfig);
+      LOGGER.logp(Level.CONFIG, CLASS_NAME, METHOD,
+          "RetainMetaData configured value: " + retainMetaDataConfig);
+      LOGGER.logp(Level.CONFIG, CLASS_NAME, METHOD,
+          "RetainMetaData: " + retainMetaData);
 
       systemDoc.recycle();
       LOGGER.logp(Level.CONFIG, CLASS_NAME, METHOD,
@@ -357,7 +371,7 @@ public class NotesConnectorSession implements Session {
   }
 
   public String getDomain(String server) {
-    String domain = ServerDomainMap.get(server.toLowerCase());
+    String domain = serverDomainMap.get(server.toLowerCase());
     if (null == domain) {
       return "";
     } else {
@@ -392,6 +406,10 @@ public class NotesConnectorSession implements Session {
 
   public String getGsaGroupPrefix() {
     return gsaGroupPrefix;
+  }
+
+  public boolean getRetainMetaData() {
+    return retainMetaData;
   }
 
   public String getPassword() {

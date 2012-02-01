@@ -34,7 +34,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /* Synchronization blocks in this class are intended to take
- * advantage of the current implemenation strategy in which
+ * advantage of the current implementation strategy in which
  * there's a single instance of this class in a single
  * thread. This class is the only part of the connector
  * performing update/deletion operations on the user and group
@@ -322,6 +322,11 @@ public class NotesUserGroupManager {
 
     // Get the group document
     NotesDocument groupDoc = vwPG.getDocumentByKey(groupName, true);
+    if (null == groupDoc) {
+      LOGGER.logp(Level.WARNING, CLASS_NAME, METHOD,
+          "Failed to find document for group: " + groupName);
+      return;
+    }
     Vector<String> grpMembers = groupDoc.getItemValue(NCCONST.GITM_MEMBERS);
 
     for (String mem : grpMembers) {

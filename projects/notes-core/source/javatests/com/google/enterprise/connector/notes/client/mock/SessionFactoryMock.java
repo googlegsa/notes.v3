@@ -18,6 +18,10 @@ import com.google.enterprise.connector.notes.client.NotesSession;
 import com.google.enterprise.connector.notes.client.NotesThread;
 import com.google.enterprise.connector.notes.client.SessionFactory;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.logging.Logger;
 
 public class SessionFactoryMock implements SessionFactory {
@@ -28,6 +32,10 @@ public class SessionFactoryMock implements SessionFactory {
   private static final Logger LOGGER =
       Logger.getLogger(CLASS_NAME);
 
+  private List<NotesDatabaseMock> databases =
+      new ArrayList<NotesDatabaseMock>();
+  private Map<String, String> environment = new HashMap<String, String>();
+
   public SessionFactoryMock() {
   }
 
@@ -35,7 +43,7 @@ public class SessionFactoryMock implements SessionFactory {
   /* @Override */
   public NotesSession createSessionWithFullAccess(String password) {
     LOGGER.entering(CLASS_NAME, "createSessionWithFullAccess");
-    return new NotesSessionMock();
+    return new NotesSessionMock(databases, environment);
   }
 
   /** {@inheritDoc} */
@@ -43,5 +51,22 @@ public class SessionFactoryMock implements SessionFactory {
   public NotesThread getNotesThread() {
     LOGGER.entering(CLASS_NAME, "getNotesThread");
     return new NotesThreadMock();
+  }
+
+  public void addDatabase(NotesDatabaseMock database) {
+    databases.add(database);
+  }
+
+  public NotesDatabaseMock getDatabase(String name) {
+    for (NotesDatabaseMock database: databases) {
+      if (name.equals(database.getName())) {
+        return database;
+      }
+    }
+    return null;
+  }
+
+  public void setEnvironmentProperty(String name, String value) {
+    environment.put(name, value);
   }
 }

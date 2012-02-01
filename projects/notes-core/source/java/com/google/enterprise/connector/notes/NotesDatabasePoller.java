@@ -14,6 +14,7 @@
 
 package com.google.enterprise.connector.notes;
 
+import com.google.common.base.Strings;
 import com.google.enterprise.apis.client.GsaClient;
 import com.google.enterprise.apis.client.GsaEntry;
 import com.google.enterprise.apis.client.GsaFeed;
@@ -109,6 +110,7 @@ public class NotesDatabasePoller {
             "Connector reset - Resetting database last update date for "
             + srcdbDoc.getItemValue(NCCONST.DITM_DBNAME));
         srcdbDoc.removeItem(NCCONST.DITM_LASTUPDATE);
+        srcdbDoc.removeItem(NCCONST.DITM_ACLTEXT);
         srcdbDoc.save(true);
         NotesDocument prevDoc = srcdbDoc;
         srcdbDoc = srcdbView.getNextDocument(prevDoc);
@@ -304,28 +306,9 @@ public class NotesDatabasePoller {
       // If we updated the GSA (or didn't need to), update the dbdoc.
       if (shouldUpdateAcl) {
         dbdoc.replaceItemValue(NCCONST.DITM_ACLTEXT, aclActivityText);
-        NotesItem item = dbdoc.replaceItemValue(
-            NCCONST.NCITM_DBNOACCESSUSERS, null);
-        item.setSummary(false);
-        for (String user : noAccessUsers) {
-          item.appendToTextList(user);
-        }
-        item.recycle();
-        item = dbdoc.replaceItemValue(
-            NCCONST.NCITM_DBPERMITUSERS, null);
-        item.setSummary(false);
-        for (String user : permitUsers) {
-          item.appendToTextList(user);
-        }
-        item.recycle();
-        item = dbdoc.replaceItemValue(
-            NCCONST.NCITM_DBPERMITGROUPS, null);
-        item.setSummary(false);
-        for (String user : permitGroups) {
-          item.appendToTextList(user);
-        }
-        item.recycle();
-
+        updateTextList(dbdoc, NCCONST.NCITM_DBNOACCESSUSERS, noAccessUsers);
+        updateTextList(dbdoc, NCCONST.NCITM_DBPERMITUSERS, permitUsers);
+        updateTextList(dbdoc, NCCONST.NCITM_DBPERMITGROUPS, permitGroups);
         processRoles(acl, dbdoc);
       }
     } catch (Exception e) {
@@ -341,6 +324,19 @@ public class NotesDatabasePoller {
       LOGGER.exiting(CLASS_NAME, METHOD);
     }
     return true;
+  }
+
+  private void updateTextList(NotesDocument dbdoc, String itemName,
+      List<String> textData) throws RepositoryException {
+    NotesItem item = dbdoc.replaceItemValue(itemName, null);
+    try {
+      item.setSummary(false);
+      for (String text : textData) {
+        item.appendToTextList(text);
+      }
+    } finally {
+      item.recycle();
+    }
   }
 
   /**
@@ -362,62 +358,30 @@ public class NotesDatabasePoller {
     // The code in NotesCrawlerThread.getHTTPURL suggests so.
     id.setHost(server + domain);
     id.setReplicaId(dbdoc.getItemValueString(NCCONST.DITM_REPLICAID));
-
     String urlPattern = java.text.MessageFormat.format(
         notesConnectorSession.getConnector().getPolicyAclPattern(),
         notesConnectorSession.getConnector().getGoogleConnectorName(),
         id.toString());
 
-    // Delete any existing ACL rules for this database.
+    // Get the GSA client.
     NotesConnector connector = notesConnectorSession.getConnector();
     GsaClient client = null;
     try {
-      LOGGER.logp(Level.FINER, CLASS_NAME, METHOD,
-          "Connecting to GSA: " + connector.getGsaProtocol() + "://"
-          + connector.getGoogleFeedHost() + ":" + connector.getGsaPort()
-          + " as " + connector.getGsaUsername());
-
-      client = new GsaClient(connector.getGsaProtocol(),
-          connector.getGoogleFeedHost(), connector.getGsaPort(),
-          connector.getGsaUsername(), connector.getGsaPassword());
+      client = getGsaClient(connector);
     } catch (AuthenticationException e) {
-      LOGGER.logp(Level.FINER, CLASS_NAME, METHOD,
-          "Failed to connect to GSA", e);
       return false;
     }
 
-    try {
-      // The GData API throws an exception when asked to delete
-      // an entry that doesn't exist. It also throws an exception
-      // when asked to retrieve an ACL that doesn't exist. The
-      // exceptions don't have unique codes, so rather than
-      // attempt to check the exception text, we'll try to
-      // retrieve the ACL. If that succeeds, we'll try to
-      // delete it.
-      client.getEntry(Terms.FEED_POLICY_ACLS, urlPattern);
-      try {
-        client.deleteEntry(Terms.FEED_POLICY_ACLS, urlPattern);
-        LOGGER.logp(Level.FINER, CLASS_NAME, METHOD,
-            "Deleted ACL entry for " + urlPattern);
-      } catch (ServiceException e) {
-        LOGGER.logp(Level.FINER, CLASS_NAME, METHOD,
-            "Failed to delete policy ACL for " + urlPattern, e);
-        return false;
-      }
-    } catch (ServiceException e) {
-      // Don't log this exception; it's likely the "no such
-      // entry" exception.
-    } catch (MalformedURLException e) {
-      LOGGER.logp(Level.WARNING, CLASS_NAME, METHOD, e.toString());
-      return false;
-    } catch (IOException e) {
-      LOGGER.logp(Level.WARNING, CLASS_NAME, METHOD, e.toString());
+    // Delete any existing ACL rules for this database.
+    if (!deletePolicyAcl(client, urlPattern)) {
       return false;
     }
+
+    boolean hasUsers = (null != permitUsers && permitUsers.size() > 0);
+    boolean hasGroups = (null != permitGroups && permitGroups.size() > 0);
 
     // If there are no allowed users or groups, we're done.
-    if ((null == permitUsers || permitUsers.size() == 0) &&
-        (null == permitGroups || permitGroups.size() == 0)) {
+    if (!(hasUsers || hasGroups)) {
       if (LOGGER.isLoggable(Level.FINER)) {
         LOGGER.logp(Level.FINER, CLASS_NAME, METHOD,
             "No new users/groups for " + urlPattern);
@@ -426,79 +390,63 @@ public class NotesDatabasePoller {
     }
 
     // Build and add new ACL.
-
-    // Prefix group names with the configured prefix.
-    String groupPrefix = notesConnectorSession.getGsaGroupPrefix();
-    if (LOGGER.isLoggable(Level.FINEST)) {
-      LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD,
-          "Using group prefix '" + groupPrefix + "'");
-    }
-    if (null == groupPrefix || "".equals(groupPrefix)) {
-      groupPrefix = "";
-    } else if (!groupPrefix.endsWith("/")) {
-      groupPrefix += "/";
-    }
-
     StringBuilder acl = new StringBuilder();
-    try {
-      for (String group : permitGroups) {
-        acl.append("group:")
-            .append(URLEncoder.encode(groupPrefix + group, "UTF-8"))
-            .append(" ");
+
+    // Add groups.
+    if (hasGroups) {
+      // Prefix group names with the configured prefix.
+      String groupPrefix = notesConnectorSession.getGsaGroupPrefix();
+      if (LOGGER.isLoggable(Level.FINEST)) {
+        LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD,
+            "Using group prefix '" + groupPrefix + "'");
       }
-    } catch (UnsupportedEncodingException e) {
-      LOGGER.logp(Level.WARNING, CLASS_NAME, METHOD, e.toString());
-      return false;
+      if (Strings.isNullOrEmpty(groupPrefix)) {
+        groupPrefix = "";
+      } else if (!groupPrefix.endsWith("/")) {
+        groupPrefix += "/";
+      }
+
+      try {
+        for (String group : permitGroups) {
+          acl.append("group:")
+              .append(URLEncoder.encode(groupPrefix + group, "UTF-8"))
+              .append(" ");
+        }
+      } catch (UnsupportedEncodingException e) {
+        LOGGER.logp(Level.WARNING, CLASS_NAME, METHOD, e.toString());
+        return false;
+      }
     }
 
-    // Resolve the Notes name to the PVI.
-    NotesView people = null;
-    try {
-      synchronized(notesConnectorSession.getConnector().getPeopleCacheLock()) {
-        people = connectorDatabase.getView(NCCONST.VIEWNOTESNAMELOOKUP);
-        people.refresh();
-        for (String user : permitUsers) {
-          NotesDocument personDoc = null;
-          try {
-            if (user.startsWith("cn=")) {
-              personDoc = people.getDocumentByKey(user, true);
-              if (null == personDoc) {
-                if (LOGGER.isLoggable(Level.FINEST)) {
-                  LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD,
-                      "Person not found in user cache: " + user);
-                }
-                continue;
-              }
-            } else {
-              String userLookup = "cn=" + user + "/";
-              personDoc = people.getDocumentByKey(userLookup, false);
-              if (null == personDoc) {
-                if (LOGGER.isLoggable(Level.FINEST)) {
-                  LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD,
-                      "Person not found in user cache: " + userLookup);
-                }
-                continue;
-              }
-            }
-            String pvi = personDoc.getItemValueString(NCCONST.PCITM_USERNAME)
-                .toLowerCase();
-            if (LOGGER.isLoggable(Level.FINEST)) {
-              LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD,
-                  "GSA mapping: " + user + " = " + pvi);
-            }
-            acl.append("user:").append(pvi).append(" ");
-          } finally {
-            if (null != personDoc) {
-              personDoc.recycle();
+    // Resolve the Notes names to the PVIs and add users.
+    if (hasUsers) {
+      NotesView people = null;
+      try {
+        synchronized(notesConnectorSession.getConnector().getPeopleCacheLock()) {
+          people = connectorDatabase.getView(NCCONST.VIEWNOTESNAMELOOKUP);
+          people.refresh();
+          for (String user : permitUsers) {
+            String pvi = getPvi(people, user);
+            if (null != pvi) {
+              acl.append("user:").append(pvi).append(" ");
             }
           }
         }
-      }
-    } finally {
-      if (null != people) {
-        people.recycle();
+      } finally {
+        if (null != people) {
+          people.recycle();
+        }
       }
     }
+
+    // If the acl is empty, pvi lookup must have failed for all users.
+    if (acl.length() == 0) {
+      LOGGER.logp(Level.WARNING, CLASS_NAME, METHOD,
+          "No ACL to send for url pattern: " + urlPattern);
+      return false;
+    }
+
+    // Send ACL to GSA.
     if (LOGGER.isLoggable(Level.FINE)) {
       LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
           "Sending ACL for url pattern: " + urlPattern + " with values "
@@ -525,6 +473,99 @@ public class NotesDatabasePoller {
     }
     LOGGER.exiting(CLASS_NAME, METHOD);
     return true;
+  }
+
+  private GsaClient getGsaClient(NotesConnector connector)
+      throws AuthenticationException {
+    final String METHOD = "getGsaClient";
+    if (LOGGER.isLoggable(Level.FINER)) {
+      LOGGER.logp(Level.FINER, CLASS_NAME, METHOD,
+          "Connecting to GSA: " + connector.getGsaProtocol() + "://"
+          + connector.getGoogleFeedHost() + ":" + connector.getGsaPort()
+          + " as " + connector.getGsaUsername());
+    }
+    try {
+      return new GsaClient(connector.getGsaProtocol(),
+          connector.getGoogleFeedHost(), connector.getGsaPort(),
+          connector.getGsaUsername(), connector.getGsaPassword());
+    } catch (AuthenticationException e) {
+      LOGGER.logp(Level.FINER, CLASS_NAME, METHOD,
+          "Failed to connect to GSA", e);
+      throw e;
+    }
+  }
+
+  private boolean deletePolicyAcl(GsaClient client, String urlPattern) {
+    final String METHOD = "deletePolicyAcl";
+    try {
+      // The GData API throws an exception when asked to delete
+      // an entry that doesn't exist. It also throws an exception
+      // when asked to retrieve an ACL that doesn't exist. The
+      // exceptions don't have unique codes, so rather than
+      // attempt to check the exception text, we'll try to
+      // retrieve the ACL. If that succeeds, we'll try to
+      // delete it.
+      client.getEntry(Terms.FEED_POLICY_ACLS, urlPattern);
+      try {
+        client.deleteEntry(Terms.FEED_POLICY_ACLS, urlPattern);
+        LOGGER.logp(Level.FINER, CLASS_NAME, METHOD,
+            "Deleted ACL entry for " + urlPattern);
+      } catch (ServiceException e) {
+        LOGGER.logp(Level.FINER, CLASS_NAME, METHOD,
+            "Failed to delete policy ACL for " + urlPattern, e);
+        return false;
+      }
+      return true;
+    } catch (ServiceException e) {
+      // Don't log this exception; it's likely the "no such
+      // entry" exception.
+      return true;
+    } catch (MalformedURLException e) {
+      LOGGER.logp(Level.WARNING, CLASS_NAME, METHOD, e.toString());
+      return false;
+    } catch (IOException e) {
+      LOGGER.logp(Level.WARNING, CLASS_NAME, METHOD, e.toString());
+      return false;
+    }
+  }
+
+  private String getPvi(NotesView people, String user)
+      throws RepositoryException {
+    NotesDocument personDoc = null;
+    final String METHOD = "getPvi";
+    try {
+      if (user.startsWith("cn=")) {
+        personDoc = people.getDocumentByKey(user, true);
+        if (null == personDoc) {
+          if (LOGGER.isLoggable(Level.FINEST)) {
+            LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD,
+                "Person not found in user cache: " + user);
+          }
+          return null;
+        }
+      } else {
+        String userLookup = "cn=" + user + "/";
+        personDoc = people.getDocumentByKey(userLookup, false);
+        if (null == personDoc) {
+          if (LOGGER.isLoggable(Level.FINEST)) {
+            LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD,
+                "Person not found in user cache: " + userLookup);
+          }
+          return null;
+        }
+      }
+      String pvi = personDoc.getItemValueString(NCCONST.PCITM_USERNAME)
+          .toLowerCase();
+      if (LOGGER.isLoggable(Level.FINEST)) {
+        LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD,
+            "GSA mapping: " + user + " = " + pvi);
+      }
+      return pvi;
+    } finally {
+      if (null != personDoc) {
+        personDoc.recycle();
+      }
+    }
   }
 
   /*

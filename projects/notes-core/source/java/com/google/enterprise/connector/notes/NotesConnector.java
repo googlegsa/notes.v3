@@ -14,6 +14,7 @@
 
 package com.google.enterprise.connector.notes;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.enterprise.connector.notes.client.SessionFactory;
 import com.google.enterprise.connector.spi.Connector;
 import com.google.enterprise.connector.spi.ConnectorShutdownAware;
@@ -38,8 +39,8 @@ public class NotesConnector implements Connector, ConnectorShutdownAware  {
   private boolean shutdown = false;
   private boolean deleted = false;
   NotesConnectorSession ncs = null;
-  private NotesMaintenanceThread maintThread = null;
-  private NotesCrawlerThread crawlerThread = null;
+  @VisibleForTesting
+  NotesMaintenanceThread maintThread = null;
   NotesPollerNotifier npn = null;
   Vector<NotesCrawlerThread> vecCrawlerThreads = null;
   SessionFactory sessionFactory;
@@ -92,13 +93,6 @@ public class NotesConnector implements Connector, ConnectorShutdownAware  {
       maintThread.start();
     }
 
-    /*
-      if (null == crawlerThread) {
-      NotesDatabasePoller.resetCrawlQueue(ncs);
-      crawlerThread = new NotesCrawlerThread(this, ncs);
-      crawlerThread.start();
-      }
-    */
     if (null == vecCrawlerThreads) {
       vecCrawlerThreads =
           new Vector<NotesCrawlerThread>(ncs.getNumCrawlerThreads());

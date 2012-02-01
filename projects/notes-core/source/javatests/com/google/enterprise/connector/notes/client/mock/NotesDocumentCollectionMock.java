@@ -21,6 +21,7 @@ import com.google.enterprise.connector.notes.client.NotesItem;
 import com.google.enterprise.connector.notes.client.NotesView;
 import com.google.enterprise.connector.spi.RepositoryException;
 
+import java.util.List;
 import java.util.logging.Logger;
 
 public class NotesDocumentCollectionMock extends NotesBaseMock
@@ -32,20 +33,33 @@ public class NotesDocumentCollectionMock extends NotesBaseMock
   private static final Logger LOGGER =
       Logger.getLogger(CLASS_NAME);
 
-  public NotesDocumentCollectionMock() {
+  private List<NotesDocumentMock> documents;
+
+  private int lastReturned = -1;
+
+  public NotesDocumentCollectionMock(List<NotesDocumentMock> documents) {
+    this.documents = documents;
   }
 
   /** {@inheritDoc} */
   /* @Override */
   public NotesDocument getFirstDocument() throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "getFirstDocument");
-    return null;
+    if (documents.size() == 0) {
+      return null;
+    }
+    lastReturned = 0;
+    return documents.get(0);
   }
 
   /** {@inheritDoc} */
   /* @Override */
   public NotesDocument getNextDocument() throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "getNextDocument");
+    if (lastReturned + 1 < documents.size()) {
+      lastReturned++;
+      return documents.get(lastReturned);
+    }
     return null;
   }
 
@@ -54,6 +68,19 @@ public class NotesDocumentCollectionMock extends NotesBaseMock
   public NotesDocument getNextDocument(NotesDocument document)
       throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "getNextDocument");
+    int position = -1;
+    for (int i = 0; i < documents.size(); i++) {
+      if (document == documents.get(i)) {
+        position = i;
+        break;
+      }
+    }
+    if (position != -1) {
+      if (position + 1 < documents.size()) {
+        lastReturned = position + 1;
+        return documents.get(position + 1);
+      }
+    }
     return null;
   }
 
@@ -61,6 +88,6 @@ public class NotesDocumentCollectionMock extends NotesBaseMock
   /* @Override */
   public int getCount() throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "getCount");
-    return -1;
+    return documents.size();
   }
 }

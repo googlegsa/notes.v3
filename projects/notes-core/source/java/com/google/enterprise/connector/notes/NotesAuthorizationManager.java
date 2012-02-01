@@ -86,17 +86,6 @@ class NotesAuthorizationManager implements AuthorizationManager {
     ArrayList<AuthorizationResponse> authorized =
         new ArrayList<AuthorizationResponse>(docIds.size());
 
-    // There's a possible GSA issue which can cause a null user id to be sent.
-    if (pvi == null) {
-      LOGGER.logp(Level.WARNING, CLASS_NAME, METHOD,
-          "Received a null user name; returning INDETERMINATE for all docs");
-      for (String docId : docIds) {
-        authorized.add(new AuthorizationResponse(
-            AuthorizationResponse.Status.INDETERMINATE, docId));
-      }
-      return authorized;
-    }
-
     String notesName = null;
     Vector<String> userGroups = null;
     NotesSession ns = null;
@@ -424,7 +413,7 @@ class NotesAuthorizationManager implements AuthorizationManager {
   }
 
   // TODO:  the access groups may not need to be summary data. to avoid 64k
-  protected boolean checkAllowGroup(Vector<?>userGroups,
+  protected boolean checkAllowGroup(Vector<?> userGroups,
       NotesDocument dbdoc) throws RepositoryException {
     final String METHOD = "checkAllowGroup";
     LOGGER.entering(CLASS_NAME, METHOD);

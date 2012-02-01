@@ -31,28 +31,41 @@ class NotesViewNavigatorMock extends NotesBaseMock
   private static final Logger LOGGER =
       Logger.getLogger(CLASS_NAME);
 
-  NotesViewNavigatorMock() {
+  private NotesViewMock view;
+
+  private NotesDocument currentDoc;
+
+  NotesViewNavigatorMock(NotesViewMock view) {
+    this.view = view;
   }
 
   /** {@inheritDoc} */
   /* @Override */
   public int getCount() throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "getCount");
-    return -1;
+    return view.getEntryCount();
   }
 
   /** {@inheritDoc} */
   /* @Override */
   public NotesViewEntry getFirst() throws RepositoryException {
-     LOGGER.entering(CLASS_NAME, "getFirst");
-     return null;
- }
+    LOGGER.entering(CLASS_NAME, "getFirst");
+    currentDoc = view.getFirstDocument();
+    if (null == currentDoc) {
+      return null;
+    }
+    return new NotesViewEntryMock(view, currentDoc);
+  }
 
   /** {@inheritDoc} */
   /* @Override */
   public NotesViewEntry getNext() throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "getNext");
-    return null;
+    currentDoc = view.getNextDocument(currentDoc);
+    if (null == currentDoc) {
+      return null;
+    }
+    return new NotesViewEntryMock(view, currentDoc);
   }
 
   /** {@inheritDoc} */
