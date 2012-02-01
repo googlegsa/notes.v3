@@ -178,28 +178,34 @@ public class NotesCrawlerThread extends Thread {
     try {
       Vector<String> authorReaders = new Vector<String>();
       boolean hasReaders = false;
-      int authorItemIndex = -1;
+      Vector<Integer> authorItems = new Vector<Integer>();
 
-      // Find the Readers fields, if any.
+      // Find the Readers field(s), if any. There can be more
+      // than one Readers field.
       for (int i = 0; i < allItems.size(); i++) {
         NotesItem item = (NotesItem) allItems.elementAt(i);
         if (item.isReaders()) {
-          hasReaders = copyValues(item, authorReaders, "readers");
+          boolean hasCurrentItemReaders =
+              copyValues(item, authorReaders, "readers");
+          hasReaders = hasCurrentItemReaders || hasReaders;
         } else if (item.isAuthors()) {
-          authorItemIndex = i;
+          authorItems.add(i);
         }
       }
       // If there are Readers, add any Authors to the Readers list
       // for AuthZ purposes. With no Readers, database security applies.
-      if (hasReaders && authorItemIndex != -1) {
-        copyValues((NotesItem) allItems.elementAt(authorItemIndex),
-            authorReaders, "authors");
+      if (hasReaders && authorItems.size() > 0) {
+        for (Integer i : authorItems) {
+          copyValues((NotesItem) allItems.elementAt(i),
+              authorReaders, "authors");
+        }
       }
 
       LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD,
           "Document readers are " + authorReaders);
       if (authorReaders.size() > 0) {
-        crawlDoc.replaceItemValue(NCCONST.NCITM_DOCAUTHORREADERS, authorReaders);
+        crawlDoc.replaceItemValue(NCCONST.NCITM_DOCAUTHORREADERS,
+            authorReaders);
         crawlDoc.replaceItemValue(NCCONST.NCITM_DOCREADERS, authorReaders);
       }
       return hasReaders;

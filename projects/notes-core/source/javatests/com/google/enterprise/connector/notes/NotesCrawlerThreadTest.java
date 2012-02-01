@@ -276,6 +276,50 @@ public class NotesCrawlerThreadTest extends TestCase {
     assertTrue(values.contains("author 1"));
   }
 
+  public void testGetDocumentReaderNamesMultipleFields()
+      throws Exception {
+    NotesDocumentMock crawlDoc = new NotesDocumentMock();
+    NotesDocumentMock srcDoc = new NotesDocumentMock();
+    NotesCrawlerThread crawlerThread = new NotesCrawlerThread(null, null);
+
+    crawlerThread.getDocumentReaderNames(crawlDoc, srcDoc);
+    assertEquals("",
+        crawlDoc.getItemValueString(NCCONST.NCITM_DOCAUTHORREADERS));
+
+    // Check that the values from two Readers field are found.
+    NotesItemMock item = new NotesItemMock("name", "readers",
+        "type", NotesItem.TEXT, "values", "reader 1");
+    item.setReaders(true);
+    srcDoc.addItem(item);
+    item = new NotesItemMock("name", "readers2",
+        "type", NotesItem.TEXT, "values", "reader 2");
+    item.setReaders(true);
+    srcDoc.addItem(item);
+    crawlerThread.getDocumentReaderNames(crawlDoc, srcDoc);
+    Vector values = crawlDoc.getItemValue(NCCONST.NCITM_DOCAUTHORREADERS);
+    assertEquals(2, values.size());
+    assertTrue(values.contains("reader 1"));
+    assertTrue(values.contains("reader 2"));
+
+    // Check that the Authors field is added.
+    item = new NotesItemMock("name", "authors", "type", NotesItem.TEXT,
+        "values", "author 1");
+    item.setAuthors(true);
+    srcDoc.addItem(item);
+    item = new NotesItemMock("name", "authors2", "type", NotesItem.TEXT,
+        "values", "author 2", "author 3");
+    item.setAuthors(true);
+    srcDoc.addItem(item);
+    crawlerThread.getDocumentReaderNames(crawlDoc, srcDoc);
+    values = crawlDoc.getItemValue(NCCONST.NCITM_DOCAUTHORREADERS);
+    assertEquals(5, values.size());
+    assertTrue(values.contains("reader 1"));
+    assertTrue(values.contains("reader 2"));
+    assertTrue(values.contains("author 1"));
+    assertTrue(values.contains("author 2"));
+    assertTrue(values.contains("author 3"));
+  }
+
   public void testSetDocumentSecurity() throws Exception {
     NotesDocumentMock crawlDoc = new NotesDocumentMock();
     NotesItemMock item = new NotesItemMock("name", NCCONST.NCITM_AUTHTYPE,
