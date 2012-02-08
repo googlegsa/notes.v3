@@ -158,22 +158,16 @@ class NotesAuthorizationManager implements AuthorizationManager {
             continue;
           }
 
+          // Assume we have access to the document unless proven otherwise...
           boolean docallow = true;
           // Get the category from the security view for this database
           secVN = securityView.createViewNavFromCategory(repId);
           // The first document in the category is ALWAYS the database document
           dbdoc = secVN.getFirstDocument().getDocument();
-          // If there is more than one document in the category, we
-          // will need to check for document level reader access
-          // lists
-          int securityCount = secVN.getCount();
-          LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD,
-              "Count for viewNavigator is  " + securityCount);
-
           boolean dballow = checkDatabaseAccess(notesName, dbdoc, userGroups);
 
-          // Only check document level security if it exists
-          if (dballow && (securityCount > 1)) {
+          // Only check document level security if we are allowed at the database level
+          if (dballow) {
             Vector<String> searchKey = new Vector<String>(3);
             searchKey.addElement(repId);
             // Database documents are type '1' in this view.
@@ -382,7 +376,7 @@ class NotesAuthorizationManager implements AuthorizationManager {
       throws RepositoryException {
     final String METHOD = "checkDatabaseAccess";
     LOGGER.entering(CLASS_NAME, METHOD);
-
+    
     String CommonName = getCommonName(notesName);
     if (checkDenyUser(notesName, DbDoc)) {
       LOGGER.exiting(CLASS_NAME, METHOD);
