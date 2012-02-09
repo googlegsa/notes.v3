@@ -851,6 +851,10 @@ public class NotesCrawlerThread extends Thread {
         // while we are crawling We don't want to fill up the
         // logs with errors so go to sleep after 5 exceptions
         exceptionCount++;
+        
+        // If we run into an exception we should close our session.
+        disconnectQueue();
+        
         if (exceptionCount > 5) {
           LOGGER.logp(Level.WARNING, CLASS_NAME, METHOD,
               "Too many exceptions.  Crawler thread sleeping.");
