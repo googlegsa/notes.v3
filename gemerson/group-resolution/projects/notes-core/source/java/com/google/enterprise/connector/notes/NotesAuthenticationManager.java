@@ -159,7 +159,12 @@ class NotesAuthenticationManager implements AuthenticationManager {
       } else {
         LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
             "No password; returning groups only: " + idLog);
-        return new AuthenticationResponse(false, null, prefixedGroups);
+        //return new AuthenticationResponse(false, null, prefixedGroups);
+
+        // Experimental: return true to avoid having the GSA
+        // treat the false response as a refutation of the
+        // identity.
+        return new AuthenticationResponse(true, null, prefixedGroups);
       }
     } catch (Exception e) {
       // TODO: what kinds of Notes exceptions can be caught here?
