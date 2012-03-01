@@ -76,7 +76,7 @@ public class NotesAuthenticationManagerTest extends TestCase {
     AuthenticationManager authN = connectorSession.getAuthenticationManager();
     AuthenticationResponse response =
         authN.authenticate(new SimpleAuthenticationIdentity("testuser"));
-    assertFalse(response.isValid());
+    assertTrue(response.isValid());
     verifyGroups(connectorSession, response);
   }
 

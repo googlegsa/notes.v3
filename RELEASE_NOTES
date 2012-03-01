@@ -9,6 +9,49 @@ documentation.
 
 Web Site: http://code.google.com/p/google-enterprise-connector-notes/
 
+Release 2.8.4, March 2012
+=======================
+
+This version of the connector is a major update to the Google
+Search Appliance Connector for Lotus Notes.
+
+There is no migration from previous versions of the connector to
+version 2.8 since the connectors have completely different
+architectures.
+
+The following are new or changed features of the connector:
+
+* The connector is now implemented using the Connector Manager
+  and runs on Apache Tomcat using the Lotus Notes client to access
+  applications on the Domino server.
+* The Agent Manager and HTTP Server task are no longer used to
+  run agents and are no longer required.
+* Connector authentication and authorization replace SAML
+  authentication and authorization.
+* Connector code run entirely in Tomcat however the configuration
+  database remains in Domino.
+* Significant improvements in reliability, scalability for
+  traversal.
+* The Domino XML export and transformation is no longer used.
+* Formulas replace field lists for generating default document
+  titles and descriptions.
+* Custom meta data fields can be configured in the application
+  template.
+* Domino application ACLs can be sent to the GSA as Policy ACLs
+  improving authorization performance and eliminating the need to
+  re-index documents when application ACLs change.
+* Connector Authorization enforces "No Access" for users in an
+  application ACL.
+* Mapping of file extensions to MIME types is exposed.
+* Default Meta data names have been changed.
+* Attachments are extracted to a directory on the local Notes
+  client greatly reducing the size of the GSA connector database.
+* Up to 2MB of text in richtext fields are sent to the GSA for
+  indexing.
+* The directory monitor now does a progressive update so
+  authentication and authorization can continue uninterrrupted.
+
+
 
 Release 2.6.10, Sep 15, 2011
 ============================

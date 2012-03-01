@@ -159,7 +159,13 @@ class NotesAuthenticationManager implements AuthenticationManager {
       } else {
         LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
             "No password; returning groups only: " + idLog);
-        return new AuthenticationResponse(false, null, prefixedGroups);
+        // Although we don't actually know that the entity that
+        // submitted this username has a valid password, we have
+        // to return true because the GSA will refute the
+        // identity otherwise. This situation occurs when the GSA
+        // uses another authentication mechanism and uses the
+        // connector for group resolution only.
+        return new AuthenticationResponse(true, null, prefixedGroups);
       }
     } catch (Exception e) {
       // TODO: what kinds of Notes exceptions can be caught here?
