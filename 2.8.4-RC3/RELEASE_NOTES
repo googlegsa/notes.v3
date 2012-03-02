@@ -1,0 +1,138 @@
+
+           Google Search Appliance Connector for Lotus Notes
+                             Release Notes
+
+This document contains the release notes for Google Search Appliance
+Connector for Lotus Notes. The following sections describe the release
+in detail and provide information that supplements the main
+documentation.
+
+Web Site: http://code.google.com/p/google-enterprise-connector-notes/
+
+Release 2.8.4, March 2012
+=======================
+
+This version of the connector is a major update to the Google
+Search Appliance Connector for Lotus Notes.
+
+There is no migration from previous versions of the connector to
+version 2.8 since the connectors have completely different
+architectures.
+
+The following are new or changed features of the connector:
+
+* The connector is now implemented using the Connector Manager
+  and runs on Apache Tomcat using the Lotus Notes client to access
+  applications on the Domino server.
+* The Agent Manager and HTTP Server task are no longer used to
+  run agents and are no longer required.
+* Connector authentication and authorization replace SAML
+  authentication and authorization.
+* Connector code run entirely in Tomcat however the configuration
+  database remains in Domino.
+* Significant improvements in reliability, scalability for
+  traversal.
+* The Domino XML export and transformation is no longer used.
+* Formulas replace field lists for generating default document
+  titles and descriptions.
+* Custom meta data fields can be configured in the application
+  template.
+* Domino application ACLs can be sent to the GSA as Policy ACLs
+  improving authorization performance and eliminating the need to
+  re-index documents when application ACLs change.
+* Connector Authorization enforces "No Access" for users in an
+  application ACL.
+* Mapping of file extensions to MIME types is exposed.
+* Default Meta data names have been changed.
+* Attachments are extracted to a directory on the local Notes
+  client greatly reducing the size of the GSA connector database.
+* Up to 2MB of text in richtext fields are sent to the GSA for
+  indexing.
+* The directory monitor now does a progressive update so
+  authentication and authorization can continue uninterrrupted.
+
+
+
+Release 2.6.10, Sep 15, 2011
+============================
+
+Introduction
+------------
+This is an upgrade release with some enhancements. Users of previous
+releases are encouraged to upgrade. It also contains some new
+features. Users of previous releases should check the "Version
+Compatibility" section below for instructions on how to use existing
+data with this new release.
+
+Summary of Changes
+------------------
+  * GSA SAML 6.8 Compliant: The connector is now Compliant with and
+    certified for the GSA 6.8 Patch 6
+  * Per URL ACL Support: The Connector can be configured to feed ACLs
+    to the GSA for the Databases.
+  * The GSA's SAML Artifact consumer URL used by Lotus Notes Connector
+    is configurable.
+  * Fixed issue: Notes links do not work: The server name in the Notes
+    URL is now in the format <Servername>.<Domain>
+  * Fixed issue: Server Level Access Check: The connector checks if
+    the user has server level access before authorizing the documents
+
+Version Compatibility
+---------------------
+
+
+Lotus Connector Features
+------------------------
+  * Native Lotus Notes Application
+
+    The Connector is a native Notes application and can be installed
+    on any Notes server platform R6 or later. The Connector supports
+    any Notes database regardless of its design and search results at
+    the GSA can be opened in the browser or using the Notes client.
+
+  * Full and Incremental Crawling
+
+    For each database, you can choose which documents and fields you
+    wish to index using the template configurations The Connector will
+    crawl the registered databases in "Full" mode the first time and
+    the subsequent crawls will be incremental with only the
+    added/modified/deleted documents getting crawled and submitted to
+    the GSA.
+
+  * Honors Document Level Security
+
+    The system integrates with GSA security to ensure that only
+    documents that a user has at least Reader access to in the source
+    databases are displayed in the search results. The Connector
+    respects all levels of security (database ACL and document level
+    items) including ACL roles present in Readers/Authors fields. The
+    Connector also monitors the ACL of each database and where changes
+    are made that impact the confidentiality of contained documents,
+    the system will automatically recreate index entries with the
+    updated security information.
+
+  * Replica Awareness
+
+    Built in understanding of the location of your servers. This
+    ensures that duplicate content can never be submitted to the GSA
+    where replicas of databases reside on multiple servers.
+
+  * Support for Notes Field conversion to GSA Meta Field
+
+    Any Notes field can be made available as GSA <Meta > value using
+    the stylesheet.
+
+  * Notes Document Versioning Support 
+
+    Where a Notes application saves each update as a new Notes
+    document, (such as a document management application) you can
+    choose to have the Connector remove all prior versions of the
+    saved document from the GSA as the new version is added to the
+    index. This ensures that your users are only ever presented with
+    the latest version of the document in the search results.
+
+Known Issues
+------------
+  * "No Access" rules are not currently supported if using Per-URL ACLs.
+  * Crawl Interval not configurable up to seconds interval.
+  * Domino HTTP Port Number is not configurable.
