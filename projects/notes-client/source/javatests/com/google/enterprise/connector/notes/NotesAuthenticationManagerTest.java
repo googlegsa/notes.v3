@@ -98,7 +98,7 @@ public class NotesAuthenticationManagerTest extends ConnectorFixture {
     AuthenticationManager manager = session.getAuthenticationManager();
     AuthenticationResponse response = manager.authenticate(
         new SimpleAuthenticationIdentity(username, null));
-    assertFalse("Authenticated: " + username, response.isValid());
+    assertTrue("Authenticated: " + username, response.isValid());
     Collection<String> groups = response.getGroups();
     if (groups != null) {
       String groupPrefix = ((NotesConnectorSession) session)
