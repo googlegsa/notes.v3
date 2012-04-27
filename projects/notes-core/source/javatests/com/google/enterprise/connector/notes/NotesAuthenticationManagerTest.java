@@ -92,7 +92,7 @@ public class NotesAuthenticationManagerTest extends TestCase {
 
   private void verifyGroups(NotesConnectorSession connectorSession,
       AuthenticationResponse response) throws Exception {
-    Collection<String> groups = response.getGroups();
+    Collection<?> groups = response.getGroups();
     assertNotNull("Missing groups", groups);
     assertEquals(2, groups.size());
     String groupPrefix = connectorSession.getGsaGroupPrefix();

@@ -77,7 +77,8 @@ public class NotesAuthenticationManagerTest extends ConnectorFixture {
     AuthenticationResponse response = manager.authenticate(
         new SimpleAuthenticationIdentity(username, password));
     assertTrue("Failed to authenticate: " + username, response.isValid());
-    Collection<String> groups = response.getGroups();
+    @SuppressWarnings({ "unchecked", "cast" })
+        Collection<String> groups = (Collection<String>) response.getGroups();
     if (groups != null) {
       String groupPrefix = ((NotesConnectorSession) session)
           .getGsaGroupPrefix();
@@ -99,7 +100,8 @@ public class NotesAuthenticationManagerTest extends ConnectorFixture {
     AuthenticationResponse response = manager.authenticate(
         new SimpleAuthenticationIdentity(username, null));
     assertTrue("Authenticated: " + username, response.isValid());
-    Collection<String> groups = response.getGroups();
+    @SuppressWarnings({ "unchecked", "cast" })
+        Collection<String> groups = (Collection<String>) response.getGroups();
     if (groups != null) {
       String groupPrefix = ((NotesConnectorSession) session)
           .getGsaGroupPrefix();
