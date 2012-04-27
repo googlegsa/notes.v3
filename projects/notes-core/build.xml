@@ -66,6 +66,8 @@
   <property name="coverage.html.dir" value="${reports.dir}/cobertura-html" />
 
   <!-- =========================== TASKS =============================== -->
+  <include file="${connector-manager-projects.dir}/svnbuild.xml" as="svn"/>
+
   <target name="build" depends="init,compile,compile_tests,jar">
   </target>
 
@@ -79,8 +81,6 @@
     <mkdir dir="${reports.dir}" />
     <mkdir dir="${tests.todir}" />
     <mkdir dir="${jar.dir}" />
-
-    <tstamp/>
   </target>
 
   <target name="compile" depends="init"
@@ -181,14 +181,7 @@
   </target>
 
   <target name="jar" description="notes-connector"
-          depends="compile,compile_tests">
-    <exec executable="svnversion" spawn="false"
-      failifexecutionfails="false"
-      dir="${basedir}"
-      outputproperty="svnversion">
-      <arg line="." />
-    </exec>
-
+          depends="compile,compile_tests,svn.svn-branch-version">
     <copy todir="${config.build}">
       <fileset dir="${config}" />
       <filterset>
@@ -196,6 +189,7 @@
                 value="&lt;constructor-arg value=&quot;com.google.enterprise.connector.notes.client.mock.SessionFactoryMock&quot; /&gt;" />
       </filterset>
     </copy>
+
     <tstamp />
     <jar jarfile="${jarfile}">
       <fileset dir="${classes}" />
@@ -207,7 +201,7 @@
         <attribute name="Implementation-Title"
                    value="Google Search Appliance Connector for Lotus Notes" />
         <attribute name="Implementation-Version"
-                   value="${version} (build ${svnversion}  ${TODAY})" />
+                   value="${version} (build ${svn.branch.version} ${TODAY})" />
         <attribute name="Implementation-Vendor" value="Google Inc." />
         <attribute name="Specification-Title" value="Connector Manager SPI" />
         <attribute name="Specification-Version" value="${version.spi}" />
