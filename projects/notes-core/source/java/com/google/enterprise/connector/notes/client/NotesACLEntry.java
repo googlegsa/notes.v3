@@ -16,6 +16,8 @@ package com.google.enterprise.connector.notes.client;
 
 import com.google.enterprise.connector.spi.RepositoryException;
 
+import java.util.Vector;
+
 public interface NotesACLEntry extends NotesBase {
 
   static final int TYPE_MIXED_GROUP = 3;
@@ -57,4 +59,12 @@ public interface NotesACLEntry extends NotesBase {
    * @throws RepositoryException
    */
   String getName() throws RepositoryException;
+
+  /**
+   * Returns the roles that are enabled for this entry.
+   *
+   * @return the roles that are enabled for this entry
+   * @throws RepositoryException
+   */
+  Vector getRoles() throws RepositoryException;
 }

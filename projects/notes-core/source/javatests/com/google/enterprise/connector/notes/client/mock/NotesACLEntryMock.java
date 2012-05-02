@@ -17,9 +17,11 @@ package com.google.enterprise.connector.notes.client.mock;
 import com.google.enterprise.connector.notes.client.NotesACLEntry;
 import com.google.enterprise.connector.spi.RepositoryException;
 
+import java.util.Arrays;
+import java.util.Vector;
 import java.util.logging.Logger;
 
-class NotesACLEntryMock extends NotesBaseMock
+public class NotesACLEntryMock extends NotesBaseMock
     implements NotesACLEntry {
   private static final String CLASS_NAME = NotesACLEntryMock.class.getName();
 
@@ -27,21 +29,36 @@ class NotesACLEntryMock extends NotesBaseMock
   private static final Logger LOGGER =
       Logger.getLogger(CLASS_NAME);
 
-  NotesACLEntryMock() {
+  private String name;
+  private int userType;
+  private int level;
+  private Vector<String> roles;
+
+
+  public NotesACLEntryMock(String name, int userType, int level,
+      String... roles) {
+    this.name = name;
+    this.userType = userType;
+    this.level = level;
+    if (roles != null) {
+      this.roles = new Vector<String>(Arrays.asList(roles));
+    } else {
+      this.roles = new Vector<String>();
+    }
   }
 
   /** {@inheritDoc} */
   /* @Override */
   public int getUserType() throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "getUserType");
-    return -1;
+    return userType;
   }
 
   /** {@inheritDoc} */
   /* @Override */
   public int getLevel() throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "getLevel");
-    return -1;
+    return level;
   }
 
   /** {@inheritDoc} */
@@ -55,7 +72,14 @@ class NotesACLEntryMock extends NotesBaseMock
   /* @Override */
   public String getName() throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "getName");
-    return "ACL Entry Name";
+    return name;
+  }
+
+  /** {@inheritDoc} */
+  /* @Override */
+  public Vector getRoles() throws RepositoryException {
+    LOGGER.entering(CLASS_NAME, "getRoles");
+    return roles;
   }
 
   public String toString() {

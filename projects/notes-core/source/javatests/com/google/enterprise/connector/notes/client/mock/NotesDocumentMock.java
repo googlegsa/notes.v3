@@ -73,11 +73,11 @@ public class NotesDocumentMock extends NotesBaseMock
   public String getItemValueString(String name) throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "getItemValueString");
     NotesItemMock item = items.get(name.toLowerCase());
-    if (null == item) {
+    if (item == null) {
       return "";
     }
     Vector values = item.getValues();
-    if (null == values || values.size() == 0) {
+    if (values == null || values.size() == 0) {
       return "";
     }
     switch (item.getType()) {
@@ -98,11 +98,11 @@ public class NotesDocumentMock extends NotesBaseMock
   public int getItemValueInteger(String name) throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "getItemValueInteger");
     NotesItemMock item = items.get(name.toLowerCase());
-    if (null == item) {
+    if (item == null) {
       return 0;
     }
     Vector values = item.getValues();
-    if (null == values) {
+    if (values == null) {
       return 0;
     }
     switch (item.getType()) {
@@ -118,11 +118,11 @@ public class NotesDocumentMock extends NotesBaseMock
   public Vector getItemValue(String name) throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "getItemValue");
     NotesItemMock item = items.get(name.toLowerCase());
-    if (null == item) {
+    if (item == null) {
       return new Vector();
     }
     Vector values = item.getValues();
-    if (null == values) {
+    if (values == null) {
       return new Vector();
     }
     return values;
@@ -148,11 +148,11 @@ public class NotesDocumentMock extends NotesBaseMock
       throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "getItemValueDateTimeArray");
     NotesItemMock item = items.get(name);
-    if (null == item) {
+    if (item == null) {
       return new Vector(); // TODO: check that this is right.
     }
     Vector values = item.getValues();
-    if (null == values) {
+    if (values == null) {
       return new Vector();
     }
     if (values.size() == 0) {
@@ -200,7 +200,22 @@ public class NotesDocumentMock extends NotesBaseMock
   public NotesItem appendItemValue(String name, Object value)
       throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "appendItemValue");
-    return null;
+    NotesItemMock item = null;
+    for (Map.Entry<String, NotesItemMock> entry: items.entrySet()) {
+      if (entry.getKey().equals(name)) {
+        item = entry.getValue();
+        break;
+      }
+    }
+    if (item == null) {
+      return replaceItemValue(name, value);
+    }
+    if (value instanceof Vector) {
+      item.appendToTextList((Vector) value);
+    } else {
+      item.appendToTextList(value.toString());
+    }
+    return item;
   }
 
   /** {@inheritDoc} */
@@ -290,9 +305,17 @@ public class NotesDocumentMock extends NotesBaseMock
   }
 
   public String toString() {
+    StringBuilder buf = new StringBuilder();
     try {
-      return getUniversalID();
-    } catch (RepositoryException e) {
+      for (NotesItemMock item : items.values()) {
+        buf.append(item.toString()).append("\n");
+      }
+      return buf.toString();
+      // In the Notes API, this method returns getUniversalID,
+      // but for testing purposes it's more interesting to see
+      // the items comprising this document.
+      //return getUniversalID();
+    } catch (Exception e) {
       return "";
     }
   }

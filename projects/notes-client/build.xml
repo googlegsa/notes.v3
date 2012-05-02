@@ -296,8 +296,8 @@
     <!-- Generate a series of HTML files containing the coverage
          data in a user-readable form using nested source filesets.
     -->
-    <cobertura-report destdir="${coverage.html.dir}">
-      <fileset dir="${src}">
+    <cobertura-report destdir="${coverage.html.dir}" >
+      <fileset dir="${core.dir}/source/java">
         <include name="**/*.java"/>
       </fileset>
     </cobertura-report>

@@ -59,7 +59,8 @@ class NotesACLEntryImpl extends NotesBaseImpl<ACLEntry>
 
   /** {@inheritDoc} */
   /* @Override */
-  public boolean isRoleEnabled(String role) throws NotesConnectorExceptionImpl {
+  public boolean isRoleEnabled(String role)
+      throws NotesConnectorExceptionImpl {
     try {
       return getNotesObject().isRoleEnabled(role);
     } catch (NotesException e) {
@@ -72,6 +73,16 @@ class NotesACLEntryImpl extends NotesBaseImpl<ACLEntry>
   public String getName() throws NotesConnectorExceptionImpl {
     try {
       return getNotesObject().getName();
+    } catch (NotesException e) {
+      throw new NotesConnectorExceptionImpl(e);
+    }
+  }
+
+  /** {@inheritDoc} */
+  /* @Override */
+  public Vector getRoles() throws NotesConnectorExceptionImpl {
+    try {
+      return TypeConverter.toConnectorValues(getNotesObject().getRoles());
     } catch (NotesException e) {
       throw new NotesConnectorExceptionImpl(e);
     }

@@ -4,7 +4,7 @@
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
+//     http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -130,12 +130,30 @@ public class NotesItemMock extends NotesBaseMock implements NotesItem {
   /* @Override */
   public void appendToTextList(String value) throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "appendToTextList");
+    @SuppressWarnings("unchecked")
+    Vector<String> values = (Vector<String>) getValues();
+    if (values == null) {
+      Vector<String> v = new Vector<String>();
+      v.add(value);
+      properties.put("values", v);
+    } else {
+      values.add(value);
+    }
   }
 
   /** {@inheritDoc} */
   /* @Override */
+  @SuppressWarnings("unchecked")
   public void appendToTextList(Vector values) throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "appendToTextList");
+    Vector currentValues = getValues();
+    if (currentValues == null) {
+      Vector v = new Vector();
+      v.addAll(values);
+      properties.put("values", v);
+    } else {
+      currentValues.addAll(values);
+    }
   }
 
   /** {@inheritDoc} */
@@ -146,7 +164,7 @@ public class NotesItemMock extends NotesBaseMock implements NotesItem {
 
   public String toString() {
     try {
-      return getName();
+      return getName() + " = " + getText(256);
     } catch (RepositoryException e) {
       return "";
     }

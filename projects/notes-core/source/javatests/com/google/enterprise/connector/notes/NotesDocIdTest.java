@@ -34,6 +34,9 @@ public class NotesDocIdTest extends TestCase {
     assertEquals(
         "http://NewYork/852578CE004AF5F8/0/A882F2482DCAC783852578CE004B0346",
         id.toString());
+    assertEquals(
+        "http://NewYork/852578CE004AF5F8",
+        id.getReplicaUrl());
   }
 
   /**

@@ -27,6 +27,7 @@ import com.google.enterprise.connector.spi.Session;
 import com.google.enterprise.connector.spi.SimpleAuthenticationIdentity;
 import com.google.enterprise.connector.spi.SpiConstants;
 import com.google.enterprise.connector.spi.TraversalManager;
+import com.google.enterprise.connector.spi.Value;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -44,6 +45,9 @@ public class NotesAuthorizationManagerTest extends ConnectorFixture {
   protected void setUp() throws Exception {
     allowCrawlerThread = true;
     super.setUp();
+    Session session = connector.login();
+    NotesUserGroupManager ug = new NotesUserGroupManager();
+    ug.updatePeopleGroups((NotesConnectorSession) session, true);
     username = ConnectorFixture.getRequiredProperty(
         "javatest.authorization.username");
   }
@@ -107,8 +111,7 @@ public class NotesAuthorizationManagerTest extends ConnectorFixture {
     }
   }
 
-  public void testAuthorizeDocids()
-      throws RepositoryLoginException, RepositoryException {
+  public void testAuthorizeDocids() throws Exception {
     Session session = connector.login();
     List<String> docIds = getDocIds(session);
     assertEquals(5, docIds.size());
@@ -130,8 +133,7 @@ public class NotesAuthorizationManagerTest extends ConnectorFixture {
     }
   }
 
-  public void testAuthorizeDocidsMalformedDocid()
-      throws RepositoryLoginException, RepositoryException {
+  public void testAuthorizeDocidsMalformedDocid() throws Exception {
     Session session = connector.login();
     List<String> docIds = getDocIds(session);
     assertEquals(5, docIds.size());
@@ -170,19 +172,26 @@ public class NotesAuthorizationManagerTest extends ConnectorFixture {
     }
   }
 
-  // Get a few valid docids.
-  private List<String> getDocIds(Session session) throws RepositoryException {
-    TraversalManager tm = session.getTraversalManager();
-    tm.setBatchHint(5);
-    DocumentList docList = tm.startTraversal();
-    Document doc;
+  // Get 5 valid docids.
+  private List<String> getDocIds(Session session) throws Exception {
+    List<Document> docs = ConnectorFixture.traverseAll(
+        (NotesConnectorSession) session);
     List<String> docIdList = new ArrayList<String>(10);
-    assertNotNull("startTraversal returned a null document list", docList);
-    while (null != (doc = docList.nextDocument())) {
+    for (Document doc : docs) {
       String docId = doc.findProperty(SpiConstants.PROPNAME_DOCID)
           .nextValue().toString();
       assertNotNull("Missing doc id", docId);
+
+      // Skip database ACL records.
+      if (SpiConstants.DocumentType.ACL.toString().equals(
+          Value.getSingleValueString(doc,
+          SpiConstants.PROPNAME_DOCUMENTTYPE))) {
+        continue;
+      }
       docIdList.add(docId);
+      if (docIdList.size() == 5) {
+        break;
+      }
     }
     return docIdList;
   }

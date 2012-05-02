@@ -20,6 +20,8 @@ import com.google.enterprise.connector.notes.client.NotesView;
 import com.google.enterprise.connector.notes.client.NotesViewEntry;
 import com.google.enterprise.connector.notes.client.NotesViewNavigator;
 import com.google.enterprise.connector.spi.DocumentList;
+import com.google.enterprise.connector.spi.TraversalContext;
+import com.google.enterprise.connector.spi.TraversalContextAware;
 import com.google.enterprise.connector.spi.TraversalManager;
 
 import java.util.ArrayList;
@@ -27,16 +29,30 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public class NotesTraversalManager implements TraversalManager {
-  //private static final int MAX_DOCID = 1000;
-  private int batchHint = 10;
+public class NotesTraversalManager implements TraversalManager,
+    TraversalContextAware {
+
   private static final String CLASS_NAME =
       NotesTraversalManager.class.getName();
   private static final Logger LOGGER = Logger.getLogger(CLASS_NAME);
+
+  private int batchHint = 10;
   private NotesConnectorSession ncs = null;
+  private TraversalContext traversalContext;
 
   public NotesTraversalManager(NotesConnectorSession session) {
     ncs = session;
+  }
+
+  /** {@inheritDoc} */
+  public void setTraversalContext(TraversalContext traversalContext) {
+    this.traversalContext = traversalContext;
+    LOGGER.info("Got traversal context. Supports ACLs? "
+        + traversalContext.supportsInheritedAcls());
+  }
+
+  TraversalContext getTraversalContext() {
+    return traversalContext;
   }
 
   /* @Override */
@@ -102,7 +118,7 @@ public class NotesTraversalManager implements TraversalManager {
         batchSize++;
         String unid = ve.getColumnValues().elementAt(1).toString();
         LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD,
-            "Adding document to list" + unid);
+            "Adding document to list: " + unid);
         unidList.add(unid);
         NotesViewEntry prevVe = ve;
         ve = submitQNav.getNext(prevVe);
@@ -122,6 +138,7 @@ public class NotesTraversalManager implements TraversalManager {
     if (unidList.size() == 0) {
       return null;
     }
+    LOGGER.fine("Returning docs: " + unidList.size());
     return new NotesConnectorDocumentList(ncs, unidList);
   }
 }

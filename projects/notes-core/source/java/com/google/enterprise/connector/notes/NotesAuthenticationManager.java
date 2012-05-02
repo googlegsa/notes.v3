@@ -28,6 +28,7 @@ import com.google.enterprise.connector.spi.AuthenticationResponse;
 
 import java.net.URLEncoder;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Vector;
 import java.util.logging.Level;
@@ -82,6 +83,7 @@ class NotesAuthenticationManager implements AuthenticationManager {
   }
 
   /* @Override */
+  @SuppressWarnings("unchecked")
   public AuthenticationResponse authenticate(AuthenticationIdentity id) {
     final String METHOD = "authenticate";
 
@@ -108,6 +110,8 @@ class NotesAuthenticationManager implements AuthenticationManager {
           notesName = personDoc.getItemValueString(NCCONST.PCITM_NOTESNAME)
               .toLowerCase();
           groups = personDoc.getItemValue(NCCONST.PCITM_GROUPS);
+          groups.addAll(NotesUserGroupManager.getRolesForGroups(
+              ncs, acDb, groups));
         } else {
           LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
               "Person not found in connector user database " + pvi);
@@ -116,9 +120,9 @@ class NotesAuthenticationManager implements AuthenticationManager {
       }
       LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
           "Authentication user using Notes name " + notesName);
+      // Verify that the notesName (mapped pvi->notesName) is
+      // really in Notes right now.
       usersVw = namesDb.getView("($Users)");
-
-      // Resolve the PVI to their Notes names and groups
       authDoc = usersVw.getDocumentByKey(notesName, true);
       if (null == authDoc) {
         LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
@@ -126,23 +130,9 @@ class NotesAuthenticationManager implements AuthenticationManager {
         return new AuthenticationResponse(false, null);
       }
 
-      ArrayList<String> prefixedGroups = null;
+      Collection<String> prefixedGroups = null;
       if (groups.size() > 0) {
-        String groupPrefix = ncs.getGsaGroupPrefix();
-        if (Strings.isNullOrEmpty(groupPrefix)) {
-          groupPrefix = "";
-        } else if (!groupPrefix.endsWith("/")) {
-          groupPrefix += "/";
-        }
-        prefixedGroups = new ArrayList<String>(groups.size());
-        for (Object group : groups) {
-          // Group names are sent to the GSA in lower case in
-          // NotesDatabasePoller, and the GSA seems to be
-          // case-sensitive here, so be sure to lower-case the
-          // groups.
-          prefixedGroups.add(URLEncoder.encode(
-              groupPrefix + group.toString().toLowerCase(), "UTF-8"));
-        }
+        prefixedGroups = NotesUserGroupManager.getGsaGroups(ncs, groups);
       }
       String idLog = getIdentityLog(pvi, notesName, groups, prefixedGroups);
       if (null != id.getPassword()) {
@@ -182,7 +172,7 @@ class NotesAuthenticationManager implements AuthenticationManager {
   }
 
   private String getIdentityLog(String pvi, String notesName,
-      Vector groups, List<String> prefixedGroups) {
+      Vector groups, Collection<String> prefixedGroups) {
     return "pvi: " + pvi + "; Notes name: " + notesName
         + "; groups: " + groups + "; groups sent: " + prefixedGroups;
   }

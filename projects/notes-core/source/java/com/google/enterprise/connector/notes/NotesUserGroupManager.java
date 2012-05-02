@@ -14,6 +14,8 @@
 
 package com.google.enterprise.connector.notes;
 
+import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Strings;
 import com.google.enterprise.connector.notes.client.NotesDatabase;
 import com.google.enterprise.connector.notes.client.NotesDateTime;
 import com.google.enterprise.connector.notes.client.NotesDocument;
@@ -27,8 +29,13 @@ import com.google.enterprise.connector.notes.client.NotesViewEntry;
 import com.google.enterprise.connector.notes.client.NotesViewNavigator;
 import com.google.enterprise.connector.spi.RepositoryException;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -48,6 +55,296 @@ public class NotesUserGroupManager {
       .getName();
   private static final Logger LOGGER = Logger.getLogger(CLASS_NAME);
 
+  static Collection<String> getGsaUsers(
+      NotesConnectorSession notesConnectorSession,
+      NotesDatabase connectorDatabase,
+      Collection notesUsers) throws RepositoryException {
+    return getGsaUsers(notesConnectorSession, connectorDatabase,
+        notesUsers, false);
+  }
+
+  /**
+   * Returns a collection of distinct GSA usernames. Each name in
+   * notesUsers is checked against the connector's user cache. If
+   * found, the corresponding GSA username is returned. If the
+   * removeUsers parameter is true, the Notes name is removed
+   * from notesUsers to allow the caller to process the remaining
+   * items as non-user data. For example, document Reader names
+   * are not marked in a way that lets us distinguish between
+   * users and groups, so we can use this to help when
+   * construting ACLs.
+   */
+  static Collection<String> getGsaUsers(
+      NotesConnectorSession notesConnectorSession,
+      NotesDatabase connectorDatabase, Collection<?> notesUsers,
+      boolean removeUsers) throws RepositoryException {
+    final String METHOD = "getGsaUsers";
+    LinkedHashSet<String> gsaUsers =
+        new LinkedHashSet<String>(notesUsers.size());
+    List<Object> verifiedUsers = new ArrayList<Object>();
+    NotesView people = null;
+    try {
+      synchronized(notesConnectorSession.getConnector().getPeopleCacheLock()) {
+        people = connectorDatabase.getView(NCCONST.VIEWNOTESNAMELOOKUP);
+        people.refresh();
+        for (Object userObj : notesUsers) {
+          //  Notes names are cached in lower case.
+          String user = userObj.toString().toLowerCase();
+          NotesDocument personDoc = null;
+          try {
+            personDoc = findPersonDocument(people, user);
+            if (personDoc == null) {
+              continue;
+            }
+            verifiedUsers.add(userObj);
+            String pvi = personDoc.getItemValueString(NCCONST.PCITM_USERNAME)
+                .toLowerCase();
+            if (LOGGER.isLoggable(Level.FINEST)) {
+              LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD,
+                  "GSA mapping: " + user + " = " + pvi);
+            }
+            gsaUsers.add(pvi);
+          } finally {
+            if (personDoc != null) {
+              personDoc.recycle();
+            }
+          }
+        }
+      }
+    } finally {
+      if (people != null) {
+        people.recycle();
+      }
+    }
+    if (removeUsers) {
+      notesUsers.removeAll(verifiedUsers);
+    }
+    return gsaUsers;
+  }
+
+  /* It seems as if we might see groups here that aren't
+   * otherwise known to the connector, so just accept all names
+   * passed in and convert them to GSA format.
+   */
+  static Collection<String> getGsaGroups(
+      NotesConnectorSession notesConnectorSession,
+      Collection notesGroups) throws RepositoryException {
+    final String METHOD = "getGsaGroups";
+    LinkedHashSet<String> gsaGroups =
+        new LinkedHashSet<String>(notesGroups.size());
+    // Prefix group names with the configured prefix.
+    String groupPrefix = notesConnectorSession.getGsaGroupPrefix();
+    if (LOGGER.isLoggable(Level.FINEST)) {
+      LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD,
+          "Using group prefix '" + groupPrefix + "'");
+    }
+    // Allow no prefix.
+    if (Strings.isNullOrEmpty(groupPrefix)) {
+      groupPrefix = "";
+    } else if (!groupPrefix.endsWith("/")) {
+      groupPrefix += "/";
+    }
+    for (Object groupObj : notesGroups) {
+      String group = groupObj.toString();
+      try {
+        gsaGroups.add(
+            URLEncoder.encode(groupPrefix + group.toLowerCase(), "UTF-8"));
+      } catch (UnsupportedEncodingException e) {
+        throw new AssertionError(e);
+      }
+    }
+    return gsaGroups;
+  }
+
+  @VisibleForTesting
+  static NotesDocument findPersonDocument(NotesView people, String user)
+      throws RepositoryException {
+    final String METHOD = "findPersonDocument";
+    NotesDocument personDoc = null;
+    if (user.startsWith("cn=")) {
+      personDoc = people.getDocumentByKey(user, true);
+      if (personDoc == null) {
+        if (LOGGER.isLoggable(Level.FINEST)) {
+          LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD,
+              "Person not found in user cache: " + user);
+        }
+      }
+    } else {
+      String userLookup = "cn=" + user + "/";
+      personDoc = people.getDocumentByKey(userLookup, false);
+      if (personDoc == null) {
+        if (LOGGER.isLoggable(Level.FINEST)) {
+          LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD,
+              "Person not found in user cache: " + userLookup);
+        }
+      }
+    }
+    return personDoc;
+  }
+
+  /**
+   * Replaces all groups with the given replicaid prefix with the
+   * current list given in the roles parameter.
+   */
+  @SuppressWarnings("unchecked")
+  static void replaceRoleGroupsForUser(
+      NotesConnectorSession notesConnectorSession,
+      NotesDatabase connectorDatabase, String user, String replicaId,
+      Collection roles) throws RepositoryException {
+    final String METHOD = "replaceRoleGroupsForUser";
+    if (roles == null) {
+      roles = new Vector<String>();
+    }
+    synchronized(notesConnectorSession.getConnector().getPeopleCacheLock()) {
+      NotesView people = null;
+      NotesDocument personDoc = null;
+      try {
+        people = connectorDatabase.getView(NCCONST.VIEWNOTESNAMELOOKUP);
+        people.refresh();
+        personDoc = findPersonDocument(people, user);
+        if (personDoc == null) {
+          return;
+        }
+        Vector currentGroups = personDoc.getItemValue(NCCONST.PCITM_GROUPS);
+        // Remove previous role entries for this database.
+        ArrayList<String> tmpRoles = new ArrayList<String>();
+        for (Object groupObj : currentGroups) {
+          String group = groupObj.toString();
+          if (group.startsWith(replicaId)) {
+            tmpRoles.add(group);
+          }
+        }
+        currentGroups.removeAll(tmpRoles);
+        tmpRoles.clear();
+
+        // Prefix roles with replica id and add to existing groups.
+        for (Object role : roles) {
+          tmpRoles.add(replicaId + "/" + role.toString());
+        }
+        currentGroups.addAll(tmpRoles);
+        if (LOGGER.isLoggable(Level.FINEST)) {
+          LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD,
+              "Updating groups for " + user + " to " + currentGroups);
+        }
+        personDoc.replaceItemValue(NCCONST.PCITM_GROUPS, currentGroups);
+        personDoc.save();
+      } finally {
+        if (personDoc != null) {
+          personDoc.recycle();
+        }
+        if (people != null) {
+          people.recycle();
+        }
+      }
+    }
+  }
+
+  /**
+   * Replaces the values in the GCITM_GROUPROLES field with
+   * the given replicaId prefix with the values in the roles
+   * parameter.
+   */
+  @SuppressWarnings("unchecked")
+  static void replaceRoleGroupsForGroup(
+      NotesConnectorSession notesConnectorSession,
+      NotesDatabase connectorDatabase, String group, String replicaId,
+      Collection roles) throws RepositoryException {
+    final String METHOD = "replaceRoleGroupsForGroup";
+    if (roles == null) {
+      roles = new Vector<String>();
+    }
+    synchronized(notesConnectorSession.getConnector().getPeopleCacheLock()) {
+      NotesView groups = null;
+      NotesDocument groupDoc = null;
+      try {
+        groups = connectorDatabase.getView(NCCONST.VIEWGROUPCACHE);
+        groups.refresh();
+        groupDoc = groups.getDocumentByKey(group, true);
+        if (groupDoc == null) {
+          if (LOGGER.isLoggable(Level.FINEST)) {
+            LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD,
+                "Didn't find group in group cache; creating " + group);
+          }
+          groupDoc = connectorDatabase.createDocument();
+          groupDoc.replaceItemValue(NCCONST.ITMFORM, NCCONST.DIRFORM_GROUP);
+          groupDoc.replaceItemValue(NCCONST.GCITM_GROUPNAME, group);
+        }
+        Vector currentRoles = groupDoc.getItemValue(NCCONST.GCITM_GROUPROLES);
+        // Remove previous role entries for this database.
+        ArrayList<String> tmpRoles = new ArrayList<String>();
+        for (Object roleObj : currentRoles) {
+          String role = roleObj.toString();
+          if (role.startsWith(replicaId)) {
+            tmpRoles.add(role);
+          }
+        }
+        currentRoles.removeAll(tmpRoles);
+        tmpRoles.clear();
+
+        // Prefix roles with replica id and add to existing groups.
+        for (Object role : roles) {
+          tmpRoles.add(replicaId + "/" + role.toString());
+        }
+        currentRoles.addAll(tmpRoles);
+        if (LOGGER.isLoggable(Level.FINEST)) {
+          LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD,
+              "Updating roles for " + replicaId + "/" + group
+              + " to " + currentRoles);
+        }
+        groupDoc.replaceItemValue(NCCONST.GCITM_GROUPROLES, currentRoles);
+        groupDoc.save();
+      } finally {
+        if (groupDoc != null) {
+          groupDoc.recycle();
+        }
+        if (groups != null) {
+          groups.recycle();
+        }
+      }
+    }
+  }
+
+  /**
+   * Returns all the roles for the given list of groups in a single list.
+   */
+  @SuppressWarnings("unchecked")
+  static Collection<String> getRolesForGroups(
+      NotesConnectorSession notesConnectorSession,
+      NotesDatabase connectorDatabase, Collection groups)
+      throws RepositoryException {
+    final String METHOD = "getRolesForGroups";
+
+    ArrayList<String> roles = new ArrayList<String>();
+    synchronized(notesConnectorSession.getConnector().getPeopleCacheLock()) {
+      NotesView groupsView = connectorDatabase.getView(NCCONST.VIEWGROUPCACHE);
+      if (groupsView == null) {
+        LOGGER.logp(Level.WARNING, CLASS_NAME, METHOD,
+            "Failed to open group cache view");
+        return roles;
+      }
+      try {
+        groupsView.refresh();
+        for (Object groupObj : groups) {
+          String group = groupObj.toString();
+          NotesDocument groupDoc = groupsView.getDocumentByKey(group, true);
+          if (groupDoc == null) {
+            continue;
+          }
+          try {
+            Vector currentRoles = groupDoc.getItemValue(
+                NCCONST.GCITM_GROUPROLES);
+            roles.addAll((Vector<String>) currentRoles);
+          } finally {
+            groupDoc.recycle();
+          }
+        }
+      } finally {
+        groupsView.recycle();
+      }
+    }
+    return roles;
+  }
+
   private NotesSession ns = null;
   private NotesDatabase cdb = null;
   private NotesDatabase dirdb = null;
@@ -66,23 +363,23 @@ public class NotesUserGroupManager {
     final String METHOD = "cleanUpNotesObjects";
     try {
       LOGGER.entering(CLASS_NAME, METHOD);
-      if (null != vwPG)
+      if (vwPG != null)
         vwPG.recycle();
-      if (null != vwGroupCache)
+      if (vwGroupCache != null)
         vwGroupCache.recycle();
-      if (null != vwPeopleCache)
+      if (vwPeopleCache != null)
         vwPeopleCache.recycle();
-      if (null != vwServerAccess)
+      if (vwServerAccess != null)
         vwServerAccess.recycle();
-      if (null != vwParentGroups)
+      if (vwParentGroups != null)
         vwParentGroups.recycle();
-      if (null != vwVimUsers)
+      if (vwVimUsers != null)
         vwVimUsers.recycle();
-      if (null != vwVimGroups)
+      if (vwVimGroups != null)
         vwVimGroups.recycle();
-      if (null != cdb)
+      if (cdb != null)
         cdb.recycle();
-      if (null != dirdb)
+      if (dirdb != null)
         dirdb.recycle();
     } catch (RepositoryException e) {
       LOGGER.log(Level.SEVERE, CLASS_NAME, e);
@@ -166,7 +463,7 @@ public class NotesUserGroupManager {
 
       NotesView vw = cdb.getView(NCCONST.VIEWSYSTEMSETUP);
       NotesDocument systemDoc = vw.getFirstDocument();
-      if (null == systemDoc) {
+      if (systemDoc == null) {
         LOGGER.logp(Level.SEVERE, CLASS_NAME, METHOD,
             "System configuration document not found.");
         return;
@@ -196,7 +493,7 @@ public class NotesUserGroupManager {
 
     NotesView vw = cdb.getView(NCCONST.VIEWSYSTEMSETUP);
     NotesDocument systemDoc = vw.getFirstDocument();
-    if (null == systemDoc) {
+    if (systemDoc == null) {
       LOGGER.logp(Level.SEVERE, CLASS_NAME, METHOD,
           "System configuration document not found.");
       return false;
@@ -249,7 +546,7 @@ public class NotesUserGroupManager {
         + checkView.getEntryCount());
     String userSelectionFormula = ncs.getUserSelectionFormula();
     NotesDocument doc = checkView.getFirstDocument();
-    while (null != doc) {
+    while (doc != null) {
       try {
         remove = false;
         isPerson = false;
@@ -268,7 +565,7 @@ public class NotesUserGroupManager {
         NotesDocument searchDoc = vwPG.getDocumentByKey(key);
         LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD,
             "Directory deletion check for: " + key);
-        if (null == searchDoc) {
+        if (searchDoc == null) {
           // This person or group no longer exists. Remove them
           LOGGER.logp(Level.INFO, CLASS_NAME, METHOD,
               "User/Group no longer exists in source directory "
@@ -322,7 +619,7 @@ public class NotesUserGroupManager {
 
     // Get the group document
     NotesDocument groupDoc = vwPG.getDocumentByKey(groupName, true);
-    if (null == groupDoc) {
+    if (groupDoc == null) {
       LOGGER.logp(Level.WARNING, CLASS_NAME, METHOD,
           "Failed to find document for group: " + groupName);
       return;
@@ -331,7 +628,7 @@ public class NotesUserGroupManager {
 
     for (String mem : grpMembers) {
       NotesDocument memDoc = vwPG.getDocumentByKey(mem);
-      if (null == memDoc) {
+      if (memDoc == null) {
         continue;
       }
       if (!memDoc.getItemValueString(NCCONST.ITMFORM).contentEquals(
@@ -363,7 +660,7 @@ public class NotesUserGroupManager {
     LOGGER.logp(Level.FINE, CLASS_NAME, METHOD, "Starting group cache update");
     NotesDocument doc = vwPG.getFirstDocument();
     // Pass 1 - Update all the groups and work out nested groups
-    while (null != doc) {
+    while (doc != null) {
       try {
         prevDoc = doc;
         String groupName = doc.getItemValueString(NCCONST.GITM_LISTNAME);
@@ -405,7 +702,7 @@ public class NotesUserGroupManager {
             + existingMembers);
         groupDoc = vwParentGroups.getDocumentByKey(groupName, true);
         synchronized(ncs.getConnector().getPeopleCacheLock()) {
-          if (null == groupDoc) {
+          if (groupDoc == null) {
             LOGGER.logp(Level.INFO, CLASS_NAME, METHOD, "Creating group "
                 + groupName);
             groupDoc = cdb.createDocument();
@@ -421,7 +718,7 @@ public class NotesUserGroupManager {
         prevDoc.recycle();
       } catch (RepositoryException e) {
         LOGGER.log(Level.SEVERE, CLASS_NAME, e);
-        if (null != groupDoc)
+        if (groupDoc != null)
           groupDoc.recycle();
         vwPG.refresh();
         doc = vwPG.getNextDocument(prevDoc);
@@ -461,7 +758,7 @@ public class NotesUserGroupManager {
     LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD,
         "User name formula result is: " + userNameFormula);
 
-    while (null != doc) {
+    while (doc != null) {
       try {
         prevDoc = doc;
 
@@ -496,7 +793,7 @@ public class NotesUserGroupManager {
 
         personDoc = vwPeopleCache.getDocumentByKey(pvi);
         // If the person no longer fits the criteria - remove them
-        if (!selected && (null != personDoc)) {
+        if (!selected && (personDoc != null)) {
           LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD,
               "Removing user as they no longer fit selection criteria: "
               + fullName);
@@ -522,7 +819,7 @@ public class NotesUserGroupManager {
         // block, but I don't know that.
         synchronized(ncs.getConnector().getPeopleCacheLock()) {
           // This person doesn't exist yet, create them
-          if (null == personDoc) {
+          if (personDoc == null) {
             LOGGER.logp(Level.INFO, CLASS_NAME, METHOD, "Creating user: "
                 + fullName + " using PVI: " + pvi);
             personDoc = cdb.createDocument();
@@ -566,7 +863,7 @@ public class NotesUserGroupManager {
         prevDoc.recycle();
       } catch (RepositoryException e) {
         LOGGER.log(Level.SEVERE, CLASS_NAME, e);
-        if (null != personDoc) {
+        if (personDoc != null) {
           personDoc.recycle();
           personDoc = null;
         }
@@ -602,7 +899,7 @@ public class NotesUserGroupManager {
     NotesViewNavigator nvnAccess = vwServerAccess
         .createViewNavFromCategory(name);
     NotesViewEntry nveAccessEntry = nvnAccess.getFirst();
-    while (null != nveAccessEntry) {
+    while (nveAccessEntry != null) {
       NotesDocument accessdoc = nveAccessEntry.getDocument();
       String listName = accessdoc.getItemValueString(NCCONST.GITM_LISTNAME);
       LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD, "LIST NAME IS " + listName);
@@ -613,7 +910,7 @@ public class NotesUserGroupManager {
       NotesViewNavigator nvnParentGroups = vwGroupCache
           .createViewNavFromCategory(listName);
       NotesViewEntry nveParentGroupEntry = nvnParentGroups.getFirst();
-      while (null != nveParentGroupEntry) {
+      while (nveParentGroupEntry != null) {
         NotesDocument listDoc = nveParentGroupEntry.getDocument();
         userNestedGroups.addAll(listDoc.getItemValue(NCCONST.GCITM_GROUPNAME));
         listDoc.recycle();

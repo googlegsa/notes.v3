@@ -90,14 +90,22 @@ public class NotesAuthenticationManagerTest extends TestCase {
     verifyGroups(connectorSession, response);
   }
 
+  // Checks the default test data created in
+  // NotesConnectorSessionTest.configureFactoryForSession.
   private void verifyGroups(NotesConnectorSession connectorSession,
       AuthenticationResponse response) throws Exception {
     Collection<?> groups = response.getGroups();
     assertNotNull("Missing groups", groups);
-    assertEquals(2, groups.size());
+    assertEquals(4, groups.size());
     String groupPrefix = connectorSession.getGsaGroupPrefix();
-    assertTrue(groups.contains(groupPrefix + "%2Fgroup1"));
-    assertTrue(groups.contains(groupPrefix + "%2Fgroup2"));
+    assertTrue("Missing group 1: " + groups,
+        groups.contains(groupPrefix + "%2Fgroup1"));
+    assertTrue("Missing group 2: " + groups,
+        groups.contains(groupPrefix + "%2Fgroup2"));
+    assertTrue(groups.contains(
+            groupPrefix + "%2Freplicaid%2F%5Btestrole%5D"));
+    assertTrue(groups.contains(
+            groupPrefix + "%2Freplicaid%2F%5Bgrouprole%5D"));
   }
 }
 

@@ -108,6 +108,7 @@ public class NCCONST {
   // Item names used in the group cache documents
   public static final String GCITM_GROUPNAME = "GroupName";
   public static final String GCITM_CHILDGROUPS = "ChildGroups";
+  public static final String GCITM_GROUPROLES = "GroupRoles";
 
   // Item names used in the person cache documents
   public static final String PCITM_USERNAME = "UserName";
@@ -117,7 +118,7 @@ public class NCCONST {
 
   //Item names used by the connector for crawling documents
 
-  /** The source database for this  */
+  /** The source database for this document */
   public static final String NCITM_DB = "NC.Database";
 
   /** The UNID of the source document */
@@ -126,20 +127,26 @@ public class NCCONST {
   /** The state of the document */
   public static final String NCITM_STATE = "NC.State";
 
-  /** The source database for this */
+  /** The replica id of the database for this document */
   public static final String NCITM_REPLICAID = "NC.ReplicaID";
 
-  /** The source database for this */
+  /** The source server for this document */
   public static final String NCITM_SERVER = "NC.Server";
 
-  /** The source database for this */
+  /** The connector template for this document */
   public static final String NCITM_TEMPLATE = "NC.Template";
 
   /** The domain for this document */
   public static final String NCITM_DOMAIN = "NC.Domain";
 
-  /** The type of authorization for the document */
+  /** The type of authorization for the document (derived from the database) */
   public static final String NCITM_AUTHTYPE = "NC.AuthType";
+
+  /** Field set to "true" for database acl crawl documents. */
+  public static final String NCITM_DBACL = "NC.DbAcl";
+
+  /** Field set to the inherit type for database acl crawl documents. */
+  public static final String NCITM_DBACLINHERITTYPE = "NC.DbAclInheritType";
 
   /** Whether to lock the document or not */
   public static final String NCITM_LOCK = "NC.Lock";
@@ -151,7 +158,7 @@ public class NCCONST {
   /** The readers of this document */
   public static final String NCITM_DOCAUTHORS = "NC.DocAuthors";
 
-  /** Users explicitly listed with no-access */
+  /** Users explicitly listed with no-access to the database */
   public static final String NCITM_DBNOACCESSUSERS = "NC.NoAccessUsers";
 
   /** The readers of this document */
@@ -159,36 +166,28 @@ public class NCCONST {
 
   public static final String NCITM_CONFLICT = "$Conflict";
 
-  /** Users with access */
+  /** Users with database access */
   public static final String NCITM_DBPERMITUSERS = "NC.DBPermitUsers";
 
-  /** Users with access */
+  /** Groups with database access */
   public static final String NCITM_DBPERMITGROUPS = "NC.DBPermitGroups";
+
+  /** Groups with no database access */
+  public static final String NCITM_DBNOACCESSGROUPS = "NC.DBNoAccessGroups";
 
   /** Prefix for roles */
   public static final String NCITM_ROLEPREFIX = "NC.DBROLES";
 
-  /** New document to be crawled */
+  /** Possible States for documents */
   public static final String STATENEW = "New";
-
   // NOT USED Previously submitted document needs to be updated
   //public static final String STATEUPDATED = "Update";
-
   public static final String STATEDELETED =  "DeletePending";
-
-  /** Possible States for documents */
   public static final String STATEINCRAWL = "InCrawl";
-
-  /** Possible States for documents */
   public static final String STATEFETCHED = "Fetched";
-
-  // NOT USED Possible States for documents
+  // NOT USED
   //public static final String STATEINSUBMIT = "InSubmit";
-
-  /** Possible States for documents */
   public static final String STATEINDEXED = "Indexed";
-
-  /** Possible States for documents */
   public static final String STATEERROR = "Error";
 
 
@@ -327,6 +326,10 @@ public class NCCONST {
   public static final String PROPNAME_NCAUTHORS = "dom_authors";
   public static final String PROPNAME_NCFORM = "dom_docform";
   public static final String PROPNAME_CREATEDATE = "dom_createdate";
+
+  public static final String DB_ACL_INHERIT_TYPE_ANDBOTH = "AndBoth";
+  public static final String DB_ACL_INHERIT_TYPE_PARENTOVERRIDES
+      = "ParentOverrides";
 }
 
 

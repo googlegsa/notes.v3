@@ -59,7 +59,7 @@ class NotesConnectorDocumentList implements DocumentList {
   /* @Override */
   public Document nextDocument() {
     final String METHOD = "nextDocument";
-
+    LOGGER.entering(CLASS_NAME, METHOD);
     try {
       // The connector manager has finished last doc so recycle it
       if (null != crawldoc) {
@@ -83,13 +83,14 @@ class NotesConnectorDocumentList implements DocumentList {
       }
       crawldoc = db.getDocumentByUNID(unid);
       if (null == ncdoc) {
-        ncdoc = new NotesConnectorDocument();
+        ncdoc = new NotesConnectorDocument(ncs, db);
       }
-      ncdoc.setCrawlDoc(unid,crawldoc);
+      ncdoc.setCrawlDoc(unid, crawldoc);
     } catch (Exception e) {
       LOGGER.log(Level.SEVERE, CLASS_NAME, e);
     } finally {
     }
+    LOGGER.exiting(CLASS_NAME, METHOD);
     return ncdoc;
   }
 
@@ -189,7 +190,11 @@ class NotesConnectorDocumentList implements DocumentList {
               db.getDocumentByUNID(indexedDocUnid);
           if (indexedDoc.getItemValueString(NCCONST.ITM_ACTION)
               .equalsIgnoreCase(SpiConstants.ActionType.ADD.toString())) {
-            checkpointAdd(indexedDoc, docidvw);
+            if (indexedDoc.hasItem(NCCONST.NCITM_DBACL)) {
+              checkpointDelete(indexedDoc, docidvw);
+            } else {
+              checkpointAdd(indexedDoc, docidvw);
+            }
           } else if (indexedDoc.getItemValueString(NCCONST.ITM_ACTION)
               .equalsIgnoreCase(SpiConstants.ActionType.DELETE.toString())) {
             checkpointDelete(indexedDoc, docidvw);

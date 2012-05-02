@@ -46,7 +46,7 @@ class NotesDocId {
       path = path.substring(1);
     }
     String[] parts = path.split("/");
-    if (parts.length == 3) {
+    if (parts.length >= 3) { // extra path elements for attachments
       this.replicaId = parts[0];
       this.docId = parts[2];
     } else if (parts.length == 1) {
@@ -99,6 +99,16 @@ class NotesDocId {
       return "/" + replicaId;
     }
     return "/" + replicaId + "/0/" + docId;
+  }
+
+  String getReplicaUrl() {
+    try {
+      URL url = new URL(protocol, host, port, "/" + replicaId);
+      return url.toString();
+    } catch (MalformedURLException e) {
+      // TODO
+      return null;
+    }
   }
 
   public String toString() {

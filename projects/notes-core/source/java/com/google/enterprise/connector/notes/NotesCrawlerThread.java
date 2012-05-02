@@ -202,7 +202,9 @@ public class NotesCrawlerThread extends Thread {
       }
 
       LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD,
-          "Document readers are " + authorReaders);
+          "Document readers for "
+          + crawlDoc.getItemValueString(NCCONST.ITM_DOCID)
+          + " are " + authorReaders);
       if (authorReaders.size() > 0) {
         crawlDoc.replaceItemValue(NCCONST.NCITM_DOCAUTHORREADERS,
             authorReaders);
@@ -554,11 +556,17 @@ public class NotesCrawlerThread extends Thread {
       if (hasReaders) {
         if (NCCONST.AUTH_ACL.equals(
             crawlDoc.getItemValueString(NCCONST.NCITM_AUTHTYPE))) {
-          LOGGER.logp(Level.WARNING, CLASS_NAME, METHOD,
-              "Document " + NotesURL + " has document-level security, "
-              + "but the connector is configured to use database-level "
-              + "Policy ACLs. This document will not be indexed.");
-          return false;
+
+          // Continue processing doc if GSA supports inherited
+          // ACLs. Return false if not; doc won't be indexed.
+          if (!((NotesTraversalManager) ncs.getTraversalManager())
+              .getTraversalContext().supportsInheritedAcls()) {
+            LOGGER.logp(Level.WARNING, CLASS_NAME, METHOD,
+                "Document " + NotesURL + " has document-level security, "
+                + "but the connector is configured to use database-level "
+                + "Policy ACLs. This document will not be indexed.");
+            return false;
+          }
         }
       }
       setDocumentSecurity(crawlDoc, srcDoc);
@@ -612,7 +620,7 @@ public class NotesCrawlerThread extends Thread {
       crawlDoc.replaceItemValue(NCCONST.ITM_ACTION, ActionType.ADD.toString());
       srcDoc.recycle();
       return true;
-    } catch(Exception e) {
+    } catch (Exception e) {
       LOGGER.log(Level.SEVERE, CLASS_NAME, e);
       return false;
     } finally {

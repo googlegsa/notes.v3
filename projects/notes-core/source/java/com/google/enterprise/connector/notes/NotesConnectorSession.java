@@ -14,6 +14,7 @@
 
 package com.google.enterprise.connector.notes;
 
+import com.google.common.base.Strings;
 import com.google.enterprise.connector.notes.client.NotesDatabase;
 import com.google.enterprise.connector.notes.client.NotesDocument;
 import com.google.enterprise.connector.notes.client.NotesSession;
@@ -36,6 +37,8 @@ import java.util.logging.Logger;
 public class NotesConnectorSession implements Session {
   private static final String CLASS_NAME = NotesConnectorSession.class.getName();
   private static final Logger LOGGER = Logger.getLogger(CLASS_NAME);
+
+  private TraversalManager traversalManager;
   private String server = null;
   private String database = null;
   private String password = "";
@@ -273,6 +276,11 @@ public class NotesConnectorSession implements Session {
       while (null != sve) {
         Vector<?> columnVals = sve.getColumnValues();
         String domain = columnVals.elementAt(2).toString().toLowerCase();
+        if (!Strings.isNullOrEmpty(domain)) {
+          if (!domain.trim().startsWith(".")) {
+            domain = "." + domain.trim();
+          }
+        }
 
         // This is a problem with the Notes Java API. When the
         // server field for a given region has 1 element we get a
@@ -445,9 +453,11 @@ public class NotesConnectorSession implements Session {
   }
 
   /* @Override */
-  public TraversalManager getTraversalManager() {
-    //TODO: Should we always return the same TraversalManager?
-    return new NotesTraversalManager(this);
+  public synchronized TraversalManager getTraversalManager() {
+    if (traversalManager == null) {
+      traversalManager = new NotesTraversalManager(this);
+    }
+    return traversalManager;
   }
 
   public boolean isExcludedExtension(String extension) {

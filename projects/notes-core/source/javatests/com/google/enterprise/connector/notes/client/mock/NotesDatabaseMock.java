@@ -14,6 +14,7 @@
 
 package com.google.enterprise.connector.notes.client.mock;
 
+import com.google.enterprise.connector.notes.NCCONST;
 import com.google.enterprise.connector.notes.client.NotesACL;
 import com.google.enterprise.connector.notes.client.NotesDatabase;
 import com.google.enterprise.connector.notes.client.NotesDateTime;
@@ -45,6 +46,8 @@ public class NotesDatabaseMock extends NotesBaseMock
       new HashMap<String, String[]>();
   private String server;
   private String name;
+  private Vector<String> aclActivityLog = new Vector<String>();
+  private NotesACLMock acl;
 
   public NotesDatabaseMock(String server, String name) {
     this.server = server;
@@ -76,6 +79,14 @@ public class NotesDatabaseMock extends NotesBaseMock
     viewFields.put(viewName, fields);
   }
 
+  public void setACLActivityLog(String aclActivityLog) {
+    this.aclActivityLog.add(aclActivityLog);
+  }
+
+  public void setACL(NotesACLMock acl) {
+    this.acl = acl;
+  }
+
   /** {@inheritDoc} */
   /* @Override */
   public NotesView getView(String view) throws RepositoryException {
@@ -105,6 +116,11 @@ public class NotesDatabaseMock extends NotesBaseMock
   public NotesDocument getDocumentByUNID(String unid)
       throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "getDocumentByUNID");
+    for (NotesDocumentMock doc: documents) {
+      if (unid.equals(doc.getItemValueString(NCCONST.NCITM_UNID))) {
+        return doc;
+      }
+    }
     return null;
   }
 
@@ -112,7 +128,9 @@ public class NotesDatabaseMock extends NotesBaseMock
   /* @Override */
   public NotesDocument createDocument() throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "createDocument");
-    return null;
+    NotesDocumentMock document = new NotesDocumentMock();
+    addDocument(document);
+    return document;
   }
 
   /** {@inheritDoc} */
@@ -157,14 +175,14 @@ public class NotesDatabaseMock extends NotesBaseMock
   /* @Override */
   public NotesACL getACL() throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "getACL");
-    return null;
+    return acl;
   }
 
   /** {@inheritDoc} */
   /* @Override */
   public Vector getACLActivityLog() throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "getACLActivityLog");
-    return null;
+    return aclActivityLog;
   }
 
   /** {@inheritDoc} */

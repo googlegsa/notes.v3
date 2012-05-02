@@ -40,3 +40,6 @@ javatest.authentication.password = password
 # Set this user name to the name of the traversal user
 # Use the PVI (GSA login name), not the Notes name
 javatest.authorization.username = UserName
+
+# Set to true to test inherited ACL support.
+javatest.supportsinheritedacls = true

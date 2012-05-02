@@ -45,19 +45,31 @@ public class NotesConnectorSessionTest extends TestCase {
     namesDatabase.addDocument(notesPerson, "($Users)");
     namesDatabase.setViewFields("($Users)", "userid", "HTTPPassword");
     notesPerson.addItem(new NotesItemMock("name", "userid",
-            "type", NotesItem.TEXT, "values", "cn=Test User/ou=Tests/o=Tests"));
+        "type", NotesItem.TEXT, "values", "cn=Test User/ou=Tests/o=Tests"));
     notesPerson.addItem(new NotesItemMock("name", "HTTPPassword",
-            "type", NotesItem.TEXT, "values", "password"));
+        "type", NotesItem.TEXT, "values", "password"));
     NotesDocumentMock connectorPerson = new NotesDocumentMock();
-    configDatabase.addDocument(connectorPerson, NCCONST.VIEWPEOPLECACHE);
-    configDatabase.setViewFields( NCCONST.VIEWPEOPLECACHE,
+    configDatabase.addDocument(connectorPerson, NCCONST.VIEWPEOPLECACHE,
+        NCCONST.VIEWNOTESNAMELOOKUP);
+    configDatabase.setViewFields(NCCONST.VIEWPEOPLECACHE,
         NCCONST.PCITM_USERNAME, NCCONST.PCITM_NOTESNAME, NCCONST.PCITM_GROUPS);
+    configDatabase.setViewFields(NCCONST.VIEWNOTESNAMELOOKUP,
+        NCCONST.PCITM_NOTESNAME, NCCONST.PCITM_USERNAME);
     connectorPerson.addItem(new NotesItemMock("name", NCCONST.PCITM_USERNAME,
             "type", NotesItem.TEXT, "values", "testuser"));
     connectorPerson.addItem(new NotesItemMock("name", NCCONST.PCITM_NOTESNAME,
             "type", NotesItem.TEXT, "values", "cn=Test User/ou=Tests/o=Tests"));
     connectorPerson.addItem(new NotesItemMock("name", NCCONST.PCITM_GROUPS,
-            "type", NotesItem.TEXT, "values", "Group1", "Group2"));
+            "type", NotesItem.TEXT, "values", "Group1", "Group2",
+            "replicaid/[testrole]"));
+    configDatabase.setViewFields(NCCONST.VIEWGROUPCACHE,
+        NCCONST.GCITM_GROUPNAME, NCCONST.GCITM_GROUPROLES);
+    NotesDocumentMock connectorGroup = new NotesDocumentMock();
+    connectorGroup.addItem(new NotesItemMock("name", NCCONST.GCITM_GROUPNAME,
+            "type", NotesItem.TEXT, "values", "Group1"));
+    connectorGroup.addItem(new NotesItemMock("name", NCCONST.GCITM_GROUPROLES,
+            "type", NotesItem.TEXT, "values", "replicaid/[grouprole]"));
+    configDatabase.addDocument(connectorGroup, NCCONST.VIEWGROUPCACHE);
 
     // Create config document.
     NotesDocumentMock systemConfig = new NotesDocumentMock();
@@ -130,7 +142,7 @@ public class NotesConnectorSessionTest extends TestCase {
     assertEquals(0, session.getNumCrawlerThreads());
     assertEquals(System.getProperty("javatest.inidirectory") + "/gsaSpool",
         session.getSpoolDir());
-    assertEquals("testdomain", session.getDomain("testserver"));
+    assertEquals(".testdomain", session.getDomain("testserver"));
     assertEquals("", session.getDomain("notatestserver"));
     assertEquals("", session.getMimeType("notanext"));
     assertEquals("text/plain", session.getMimeType("txt"));
