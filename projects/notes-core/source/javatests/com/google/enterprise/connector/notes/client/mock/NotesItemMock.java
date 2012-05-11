@@ -54,6 +54,10 @@ public class NotesItemMock extends NotesBaseMock implements NotesItem {
           for (Object o : (Vector) args[i]) {
             values.add(o);
           }
+        } else if (args[i] instanceof Object[]) {
+          for (Object o : (Object[]) args[i]) {
+            values.add(o);
+          }
         } else {
           values.add(args[i]);
         }
@@ -131,7 +135,7 @@ public class NotesItemMock extends NotesBaseMock implements NotesItem {
   public void appendToTextList(String value) throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "appendToTextList");
     @SuppressWarnings("unchecked")
-    Vector<String> values = (Vector<String>) getValues();
+        Vector<String> values = (Vector<String>) getValues();
     if (values == null) {
       Vector<String> v = new Vector<String>();
       v.add(value);

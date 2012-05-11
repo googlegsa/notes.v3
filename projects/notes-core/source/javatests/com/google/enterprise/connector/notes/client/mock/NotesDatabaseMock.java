@@ -38,20 +38,30 @@ public class NotesDatabaseMock extends NotesBaseMock
   private static final Logger LOGGER =
       Logger.getLogger(CLASS_NAME);
 
+  private NotesSessionMock session;
+
   private List<NotesDocumentMock> documents =
       new ArrayList<NotesDocumentMock>();
   private Map<String, List<NotesDocumentMock>> views =
       new HashMap<String, List<NotesDocumentMock>>();
   private Map<String, String[]> viewFields =
       new HashMap<String, String[]>();
+  private Map<String, ViewNavFromCategoryCreator> viewNavFromCategoryCreators =
+      new HashMap<String, ViewNavFromCategoryCreator>();
   private String server;
   private String name;
+  private String replicaId;
   private Vector<String> aclActivityLog = new Vector<String>();
   private NotesACLMock acl;
 
   public NotesDatabaseMock(String server, String name) {
+    this(server, name, null);
+  }
+
+  public NotesDatabaseMock(String server, String name, String replicaId) {
     this.server = server;
     this.name = name;
+    this.replicaId = replicaId;
   }
 
   public String getServer() {
@@ -62,21 +72,41 @@ public class NotesDatabaseMock extends NotesBaseMock
     return name;
   }
 
+  void setSession(NotesSessionMock session) {
+    this.session = session;
+  }
+
   public void addDocument(NotesDocumentMock document,
       String... documentViewNames) {
     documents.add(document);
+    document.setDatabase(this);
     for (String documentViewName : documentViewNames) {
       List<NotesDocumentMock> view = views.get(documentViewName);
       if (null == view) {
         view = new ArrayList<NotesDocumentMock>();
         views.put(documentViewName, view);
       }
+      LOGGER.fine("Adding document " + document + " to view "
+          + documentViewName);
       view.add(document);
+    }
+  }
+
+  void removeDocument(NotesDocumentMock document) {
+    documents.remove(document);
+    for (String viewName : views.keySet()) {
+      List<NotesDocumentMock> docs = views.get(viewName);
+      docs.remove(document);
     }
   }
 
   public void setViewFields(String viewName, String... fields) {
     viewFields.put(viewName, fields);
+  }
+
+  public void addViewNavFromCategoryCreator(String viewName,
+      ViewNavFromCategoryCreator creator) {
+    viewNavFromCategoryCreators.put(viewName, creator);
   }
 
   public void setACLActivityLog(String aclActivityLog) {
@@ -90,14 +120,16 @@ public class NotesDatabaseMock extends NotesBaseMock
   /** {@inheritDoc} */
   /* @Override */
   public NotesView getView(String view) throws RepositoryException {
-    LOGGER.entering(CLASS_NAME, "getView");
+    LOGGER.fine("getting view: " + view);
+
     List<NotesDocumentMock> documents = views.get(view);
     if (null != documents) {
-      NotesViewMock v = new NotesViewMock(documents);
+      NotesViewMock v = new NotesViewMock(view, documents);
       String[] fields = viewFields.get(view);
       if (null != fields) {
         v.setFields(fields);
       }
+      v.setViewNavFromCategoryCreator(viewNavFromCategoryCreators.get(view));
       return v;
     }
     return null;
@@ -108,6 +140,21 @@ public class NotesDatabaseMock extends NotesBaseMock
   public boolean openByReplicaID(String server, String replicaId)
       throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "openByReplicaID");
+    NotesDatabaseMock db = (NotesDatabaseMock) session.getDatabaseByReplicaId(
+        server, replicaId);
+    if (null == db) {
+      return false;
+    }
+    this.documents = db.documents;
+    this.views = db.views;
+    this.viewFields = db.viewFields;
+    this.viewNavFromCategoryCreators = db.viewNavFromCategoryCreators;
+    this.server = db.server;
+    this.name = db.name;
+    this.replicaId = db.replicaId;
+    this.aclActivityLog = db.aclActivityLog;
+    this.acl = db.acl;
+
     return true;
   }
 
@@ -137,7 +184,7 @@ public class NotesDatabaseMock extends NotesBaseMock
   /* @Override */
   public String getReplicaID() throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "getReplicaID");
-    return null;
+    return replicaId;
   }
 
   /** {@inheritDoc} */
@@ -189,7 +236,7 @@ public class NotesDatabaseMock extends NotesBaseMock
   /* @Override */
   public boolean isOpen() throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "isOpen");
-    return false;
+    return true;
   }
 
   public String toString() {

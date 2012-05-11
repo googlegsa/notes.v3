@@ -37,17 +37,21 @@ public class NotesConnectorSessionTest extends TestCase {
     configDatabase.setViewFields(NCCONST.VIEWSERVERS, "server",
         "region", "domain");
 
-    // Create stub names database.
+    // Create Notes names database.
     NotesDatabaseMock namesDatabase = new NotesDatabaseMock("testserver",
         "testnames.nsf");
     factory.addDatabase(namesDatabase);
     NotesDocumentMock notesPerson = new NotesDocumentMock();
     namesDatabase.addDocument(notesPerson, "($Users)");
     namesDatabase.setViewFields("($Users)", "userid", "HTTPPassword");
+    namesDatabase.setViewFields(NCCONST.DIRVIEW_PEOPLEGROUPFLAT,
+        NCCONST.GITM_LISTNAME);
     notesPerson.addItem(new NotesItemMock("name", "userid",
         "type", NotesItem.TEXT, "values", "cn=Test User/ou=Tests/o=Tests"));
     notesPerson.addItem(new NotesItemMock("name", "HTTPPassword",
         "type", NotesItem.TEXT, "values", "password"));
+
+    // Create connector user cache.
     NotesDocumentMock connectorPerson = new NotesDocumentMock();
     configDatabase.addDocument(connectorPerson, NCCONST.VIEWPEOPLECACHE,
         NCCONST.VIEWNOTESNAMELOOKUP);

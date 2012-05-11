@@ -17,14 +17,19 @@ package com.google.enterprise.connector.notes;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.enterprise.connector.notes.client.SessionFactory;
 import com.google.enterprise.connector.spi.Connector;
+import com.google.enterprise.connector.spi.ConnectorPersistentStore;
+import com.google.enterprise.connector.spi.ConnectorPersistentStoreAware;
 import com.google.enterprise.connector.spi.ConnectorShutdownAware;
+import com.google.enterprise.connector.spi.LocalDatabase;
 import com.google.enterprise.connector.spi.RepositoryException;
+import com.google.enterprise.connector.util.database.JdbcDatabase;
 
 import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public class NotesConnector implements Connector, ConnectorShutdownAware  {
+public class NotesConnector implements Connector,
+    ConnectorPersistentStoreAware, ConnectorShutdownAware  {
   private static final String CLASS_NAME = NotesConnector.class.getName();
   private static final Logger LOGGER = Logger.getLogger(CLASS_NAME);
   private String password = "";
@@ -45,6 +50,8 @@ public class NotesConnector implements Connector, ConnectorShutdownAware  {
   Vector<NotesCrawlerThread> vecCrawlerThreads = null;
   SessionFactory sessionFactory;
   private final Object peopleCacheLock = new Object();
+  private ConnectorPersistentStore connectorPersistentStore;
+  private JdbcDatabase jdbcDatabase;
 
   NotesConnector() {
     this(
@@ -171,6 +178,25 @@ public class NotesConnector implements Connector, ConnectorShutdownAware  {
     LOGGER.logp(Level.CONFIG, CLASS_NAME, METHOD,
         "Connector config gsaPassword set");
     this.gsaPassword = gsaPassword;
+  }
+
+  @Override
+  public void setDatabaseAccess(
+      ConnectorPersistentStore connectorPersistentStore) {
+    final String METHOD = "setDatabaseAccess";
+    LOGGER.logp(Level.CONFIG, CLASS_NAME, METHOD,
+        "Connector config databaseAccess = " + connectorPersistentStore);
+    this.connectorPersistentStore = connectorPersistentStore;
+    this.jdbcDatabase = new JdbcDatabase(
+        connectorPersistentStore.getLocalDatabase().getDataSource());
+  }
+
+  public ConnectorPersistentStore getDatabaseAccess() {
+    return connectorPersistentStore;
+  }
+
+  public JdbcDatabase getJdbcDatabase() {
+    return jdbcDatabase;
   }
 
   public String getIdPassword() {

@@ -39,6 +39,8 @@ public class NotesDocumentMock extends NotesBaseMock
   private static final Logger LOGGER =
       Logger.getLogger(CLASS_NAME);
 
+  private NotesDatabaseMock database;
+
   private Map<String, NotesItemMock> items =
       new HashMap<String, NotesItemMock>();
 
@@ -51,6 +53,10 @@ public class NotesDocumentMock extends NotesBaseMock
    * objects explicitly.
    */
   public NotesDocumentMock() {
+  }
+
+  public void setDatabase(NotesDatabaseMock database) {
+    this.database = database;
   }
 
   public void addItem(NotesItemMock item) throws RepositoryException {
@@ -236,7 +242,8 @@ public class NotesDocumentMock extends NotesBaseMock
   /* @Override */
   public boolean remove(boolean force) throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "remove");
-    return false;
+    database.removeDocument(this);
+    return true;
   }
 
   /** {@inheritDoc} */
@@ -265,7 +272,7 @@ public class NotesDocumentMock extends NotesBaseMock
   /* @Override */
   public String getUniversalID() throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "getUniversalID");
-    return null;
+    return getItemValueString("unid");
   }
 
   /** {@inheritDoc} */

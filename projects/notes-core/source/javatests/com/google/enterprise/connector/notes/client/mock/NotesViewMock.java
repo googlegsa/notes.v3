@@ -20,6 +20,7 @@ import com.google.enterprise.connector.notes.client.NotesViewEntryCollection;
 import com.google.enterprise.connector.notes.client.NotesViewNavigator;
 import com.google.enterprise.connector.spi.RepositoryException;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Vector;
 import java.util.logging.Logger;
@@ -31,11 +32,13 @@ class NotesViewMock extends NotesBaseMock implements NotesView {
   private static final Logger LOGGER =
       Logger.getLogger(CLASS_NAME);
 
+  private String viewName;
   private List<NotesDocumentMock> documents;
-
   private String[] fields;
+  ViewNavFromCategoryCreator viewNavFromCategoryCreator;
 
-  NotesViewMock(List<NotesDocumentMock> documents) {
+  NotesViewMock(String viewName, List<NotesDocumentMock> documents) {
+    this.viewName = viewName;
     this.documents = documents;
   }
 
@@ -45,6 +48,10 @@ class NotesViewMock extends NotesBaseMock implements NotesView {
 
   String[] getFields() {
     return fields;
+  }
+
+  void setViewNavFromCategoryCreator(ViewNavFromCategoryCreator creator) {
+    this.viewNavFromCategoryCreator = creator;
   }
 
   /** {@inheritDoc} */
@@ -59,6 +66,9 @@ class NotesViewMock extends NotesBaseMock implements NotesView {
   public NotesDocument getFirstDocument()
       throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "getFirstDocument");
+    if (null == documents || documents.size() == 0) {
+      return null;
+    }
     return documents.get(0);
   }
 
@@ -134,7 +144,18 @@ class NotesViewMock extends NotesBaseMock implements NotesView {
   /* @Override */
   public NotesViewNavigator createViewNavFromCategory(String category)
       throws RepositoryException {
-    LOGGER.entering(CLASS_NAME, "createViewNavFromCategory");
+    if (null != viewNavFromCategoryCreator) {
+      ArrayList<NotesDocumentMock> docsInCategory =
+          new ArrayList<NotesDocumentMock>();
+      for (NotesDocumentMock doc : documents) {
+        if (viewNavFromCategoryCreator.documentIsInCategory(category, doc)) {
+          docsInCategory.add(doc);
+          LOGGER.finest("Adding doc " + doc + " to category " + category);
+        }
+      }
+      return new NotesViewNavigatorMock(
+          new NotesViewMock(viewName, docsInCategory));
+    }
     return null;
   }
 
@@ -150,6 +171,8 @@ class NotesViewMock extends NotesBaseMock implements NotesView {
   /* @Override */
   public void refresh() throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "refresh");
+
+    LOGGER.finest("View " + viewName + " has documents: " + documents);
   }
 
   /** {@inheritDoc} */

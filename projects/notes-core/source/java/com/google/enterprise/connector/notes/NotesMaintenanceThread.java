@@ -28,17 +28,23 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 
-// The purpose of this class is check for deletions of indexed documents
-// Documents should be deleted if the meet either of the following criteria
-// 1.  They no longer exist in the source database
-// 2.  They belong to database which is marked for deletion
+/**
+ * This class checks for deletions of indexed documents and
+ * updates the user and group cache.
+ *
+ * Documents should be deleted if they meet either of the
+ * following criteria.
+ * 1.  They no longer exist in the source database.
+ * 2.  They belong to a database which is marked for deletion.
+ */
 public class NotesMaintenanceThread extends Thread {
   private static final String CLASS_NAME =
       NotesMaintenanceThread.class.getName();
   private static final Logger LOGGER = Logger.getLogger(CLASS_NAME);
 
   NotesConnector nc = null;
-  NotesConnectorSession ncs = null;
+  NotesConnectorSession ncs;
+  NotesUserGroupManager nugm;
   NotesDatabase cdb = null;
   NotesPollerNotifier npn = null;
   String OpenDbRepId = "";
@@ -52,14 +58,18 @@ public class NotesMaintenanceThread extends Thread {
   NotesDocument SourceDocument = null;
   NotesDocument IndexedDoc = null;
 
-  NotesMaintenanceThread(NotesConnector Connector,
-      NotesConnectorSession Session) {
+  NotesMaintenanceThread() {
+  }
+
+  NotesMaintenanceThread(NotesConnector connector,
+      NotesConnectorSession session) throws RepositoryException {
     final String METHOD = "NotesMaintenanceThread";
     LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD,
         "NotesMaintenanceThread being created.");
 
-    nc = Connector;
-    ncs = Session;
+    nc = connector;
+    ncs = session;
+    nugm = new NotesUserGroupManager();
   }
 
   @Override
@@ -71,7 +81,6 @@ public class NotesMaintenanceThread extends Thread {
     int batchsize = ncs.getDeletionBatchSize();
     String lastdocid = "";
     NotesPollerNotifier npn = ncs.getNotifier();
-    NotesUserGroupManager nugm = new NotesUserGroupManager();
     while (nc.getShutdown() == false) {
       try {
        LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,

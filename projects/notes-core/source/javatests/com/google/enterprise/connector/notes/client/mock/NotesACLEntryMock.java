@@ -4,7 +4,7 @@
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
+//     http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -29,14 +29,16 @@ public class NotesACLEntryMock extends NotesBaseMock
   private static final Logger LOGGER =
       Logger.getLogger(CLASS_NAME);
 
-  private String name;
-  private int userType;
-  private int level;
-  private Vector<String> roles;
-
+  private final String name;
+  private final int userType;
+  private final int level;
+  private final Vector<String> roles;
 
   public NotesACLEntryMock(String name, int userType, int level,
       String... roles) {
+    LOGGER.fine("creating acl entry for " + name +
+        " with roles " + Arrays.asList(roles));
+
     this.name = name;
     this.userType = userType;
     this.level = level;

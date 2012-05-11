@@ -4,7 +4,7 @@
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
+//     http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -15,14 +15,20 @@
 package com.google.enterprise.connector.notes;
 
 import com.google.enterprise.connector.notes.NotesConnector;
+
 import com.google.enterprise.connector.notes.NotesConnectorDocument;
+import com.google.enterprise.connector.spi.ConnectorPersistentStore;
 import com.google.enterprise.connector.spi.Document;
 import com.google.enterprise.connector.spi.DocumentList;
+import com.google.enterprise.connector.spi.LocalDatabase;
+import com.google.enterprise.connector.spi.LocalDocumentStore;
 import com.google.enterprise.connector.spi.RepositoryException;
 import com.google.enterprise.connector.spi.RepositoryLoginException;
 import com.google.enterprise.connector.spi.Session;
 import com.google.enterprise.connector.spi.SimpleTraversalContext;
 import com.google.enterprise.connector.spi.TraversalManager;
+import com.google.enterprise.connector.util.database.testing.TestJdbcDatabase;
+import com.google.enterprise.connector.util.database.testing.TestLocalDatabase;
 
 import junit.framework.TestCase;
 
@@ -56,7 +62,7 @@ public class ConnectorFixture extends TestCase {
   }
 
   static NotesConnector getConnector(boolean allowMaintenanceThread,
-      boolean allowCrawlerThread) {
+      boolean allowCrawlerThread) throws RepositoryException {
     // Get test properties.
     ConnectorFixture.server = ConnectorFixture.getRequiredProperty(
         "javatest.server");
@@ -94,6 +100,17 @@ public class ConnectorFixture extends TestCase {
     connector.setGoogleConnectorName("javatests");
     connector.setPolicyAclPattern(
         "^googleconnector://{0}.localhost/doc?docid={1}");
+
+    connector.setGoogleConnectorName("notestest");
+    connector.setDatabaseAccess(new ConnectorPersistentStore() {
+        public LocalDocumentStore getLocalDocumentStore() {
+          return null;
+        }
+        public LocalDatabase getLocalDatabase() {
+          // TODO: update resource directory when resources are implemented
+          return new TestLocalDatabase("Lotus_Notes", null);
+        }
+      });
 
     return connector;
   }

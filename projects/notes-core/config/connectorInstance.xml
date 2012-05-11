@@ -5,7 +5,7 @@
   <bean id="notes-connector-instance"
     class="com.google.enterprise.connector.notes.NotesConnector"
     parent="notes-connector-defaults"
-    dependency-check="all" scope="prototype">
+    scope="prototype">
 
       <!-- SET CUSTOM PROPERTY VALUES HERE -->
 

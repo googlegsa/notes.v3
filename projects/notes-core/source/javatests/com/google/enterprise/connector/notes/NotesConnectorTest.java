@@ -16,20 +16,35 @@ package com.google.enterprise.connector.notes;
 
 import com.google.enterprise.connector.notes.NotesConnector;
 import com.google.enterprise.connector.notes.client.mock.SessionFactoryMock;
+import com.google.enterprise.connector.spi.ConnectorPersistentStore;
+import com.google.enterprise.connector.spi.LocalDatabase;
+import com.google.enterprise.connector.spi.LocalDocumentStore;
 import com.google.enterprise.connector.spi.Session;
+import com.google.enterprise.connector.util.database.testing.TestJdbcDatabase;
+import com.google.enterprise.connector.util.database.testing.TestLocalDatabase;
 
 import junit.framework.TestCase;
 
 public class NotesConnectorTest extends TestCase {
 
-  static NotesConnector getConnector() {
+  static NotesConnector getConnector() throws Exception {
     NotesConnector connector = new NotesConnector(
         "com.google.enterprise.connector.notes.client.mock.SessionFactoryMock");
     connector.setIdPassword("testpassword");
     connector.setServer("testserver");
     connector.setDatabase("testconfig.nsf");
     // Initialize this to prevent NotesConnector from creating one.
-    connector.maintThread = new NotesMaintenanceThread(null, null);
+    connector.maintThread = new NotesMaintenanceThread();
+    connector.setGoogleConnectorName("notestest");
+    connector.setDatabaseAccess(new ConnectorPersistentStore() {
+        public LocalDocumentStore getLocalDocumentStore() {
+          return null;
+        }
+        public LocalDatabase getLocalDatabase() {
+          // TODO: update resource directory when resources are implemented
+          return new TestLocalDatabase("Lotus_Notes", null);
+        }
+      });
     return connector;
   }
 
