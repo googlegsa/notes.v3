@@ -35,12 +35,15 @@ public class NotesConnector implements Connector,
   private String password = "";
   private String server = null;
   private String database = null;
+  private boolean gsaNamesAreGlobal = true;
   private String workingDir = null;
   private String connectorName;
   private String policyAclPattern;
   private String googleFeedHost;
   private String gsaUsername;
   private String gsaPassword;
+  private String globalNamespace;
+  private String localNamespace;
   private boolean shutdown = false;
   private boolean deleted = false;
   NotesConnectorSession ncs = null;
@@ -138,6 +141,13 @@ public class NotesConnector implements Connector,
     this.database = database;
   }
 
+  public void setGsaNamesAreGlobal(boolean gsaNamesAreGlobal) {
+    final String METHOD = "setGsaNamesAreGlobal";
+    LOGGER.logp(Level.CONFIG, CLASS_NAME, METHOD,
+        "GSA names are global = " + gsaNamesAreGlobal);
+    this.gsaNamesAreGlobal = gsaNamesAreGlobal;
+  }
+
   public void setGoogleConnectorWorkDir(String googleConnectorWorkDir) {
     final String METHOD = "setGoogleConnectorWorkDir";
     LOGGER.logp(Level.CONFIG, CLASS_NAME, METHOD,
@@ -180,6 +190,20 @@ public class NotesConnector implements Connector,
     this.gsaPassword = gsaPassword;
   }
 
+  public void setGoogleLocalNamespace(String namespace) {
+    final String METHOD = "setGoogleLocalNamespace";
+    LOGGER.logp(Level.CONFIG, CLASS_NAME, METHOD,
+        "Connector config googleLocalNamespace = " + namespace);
+    this.localNamespace = namespace;
+  }
+
+  public void setGoogleGlobalNamespace(String namespace) {
+    final String METHOD = "setGoogleGlobalNamespace";
+    LOGGER.logp(Level.CONFIG, CLASS_NAME, METHOD,
+        "Connector config googleGlobalNamespace = " + namespace);
+    this.globalNamespace = namespace;
+  }
+
   @Override
   public void setDatabaseAccess(
       ConnectorPersistentStore connectorPersistentStore) {
@@ -209,6 +233,10 @@ public class NotesConnector implements Connector,
 
   public String getDatabase() {
     return database;
+  }
+
+  public boolean getGsaNamesAreGlobal() {
+    return gsaNamesAreGlobal;
   }
 
   public String getGoogleConnectorWorkDir(String googleConnectorWorkDir) {
@@ -241,6 +269,14 @@ public class NotesConnector implements Connector,
 
   public String getGsaPassword() {
     return gsaPassword;
+  }
+
+  public String getGlobalNamespace() {
+    return globalNamespace;
+  }
+
+  public String getLocalNamespace() {
+    return localNamespace;
   }
 
   /**

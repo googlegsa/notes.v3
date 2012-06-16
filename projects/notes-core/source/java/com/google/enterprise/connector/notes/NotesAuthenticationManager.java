@@ -25,6 +25,9 @@ import com.google.enterprise.connector.notes.client.NotesViewNavigator;
 import com.google.enterprise.connector.spi.AuthenticationIdentity;
 import com.google.enterprise.connector.spi.AuthenticationManager;
 import com.google.enterprise.connector.spi.AuthenticationResponse;
+import com.google.enterprise.connector.spi.Principal;
+import com.google.enterprise.connector.spi.SpiConstants.CaseSensitivityType;
+import com.google.enterprise.connector.spi.SpiConstants.PrincipalType;
 
 import java.net.URLEncoder;
 import java.util.ArrayList;
@@ -122,7 +125,7 @@ class NotesAuthenticationManager implements AuthenticationManager {
           "Authentication user using Notes name " + notesName);
       // Verify that the notesName (mapped pvi->notesName) is
       // really in Notes right now.
-      usersVw = namesDb.getView("($Users)");
+      usersVw = namesDb.getView(NCCONST.DIRVIEW_USERS);
       authDoc = usersVw.getDocumentByKey(notesName, true);
       if (null == authDoc) {
         LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
@@ -131,8 +134,16 @@ class NotesAuthenticationManager implements AuthenticationManager {
       }
 
       Collection<String> prefixedGroups = null;
+      Collection<Principal> principalGroups = null;
       if (groups.size() > 0) {
         prefixedGroups = NotesUserGroupManager.getGsaGroups(ncs, groups);
+        principalGroups = new ArrayList<Principal>(prefixedGroups.size());
+        for (String group : prefixedGroups) {
+          Principal principal = new Principal(PrincipalType.UNQUALIFIED,
+              ncs.getConnector().getLocalNamespace(),
+              group, CaseSensitivityType.EVERYTHING_CASE_INSENSITIVE);
+          principalGroups.add(principal);
+        }
       }
       String idLog = getIdentityLog(pvi, notesName, groups, prefixedGroups);
       if (null != id.getPassword()) {
@@ -140,11 +151,11 @@ class NotesAuthenticationManager implements AuthenticationManager {
         if (nSession.verifyPassword(id.getPassword(), hashedPassword)) {
           LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
               "User succesfully authenticated: " + idLog);
-          return new AuthenticationResponse(true, null, prefixedGroups);
+          return new AuthenticationResponse(true, null, principalGroups);
         } else {
           LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
               "User failed authentication: " + idLog);
-          return new AuthenticationResponse(false, null, prefixedGroups);
+          return new AuthenticationResponse(false, null, principalGroups);
         }
       } else {
         LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
@@ -155,7 +166,7 @@ class NotesAuthenticationManager implements AuthenticationManager {
         // identity otherwise. This situation occurs when the GSA
         // uses another authentication mechanism and uses the
         // connector for group resolution only.
-        return new AuthenticationResponse(true, null, prefixedGroups);
+        return new AuthenticationResponse(true, null, principalGroups);
       }
     } catch (Exception e) {
       // TODO: what kinds of Notes exceptions can be caught here?

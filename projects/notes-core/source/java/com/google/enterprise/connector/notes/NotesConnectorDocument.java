@@ -21,6 +21,7 @@ import com.google.enterprise.connector.notes.client.NotesDateTime;
 import com.google.enterprise.connector.notes.client.NotesDocument;
 import com.google.enterprise.connector.notes.client.NotesItem;
 import com.google.enterprise.connector.spi.Document;
+import com.google.enterprise.connector.spi.Principal;
 import com.google.enterprise.connector.spi.Property;
 import com.google.enterprise.connector.spi.RepositoryException;
 import com.google.enterprise.connector.spi.SecureDocument;
@@ -30,6 +31,9 @@ import com.google.enterprise.connector.spi.SpiConstants.AclAccess;
 import com.google.enterprise.connector.spi.SpiConstants.AclInheritanceType;
 import com.google.enterprise.connector.spi.SpiConstants.AclScope;
 import com.google.enterprise.connector.spi.SpiConstants.ActionType;
+import com.google.enterprise.connector.spi.SpiConstants.CaseSensitivityType;
+import com.google.enterprise.connector.spi.SpiConstants.DocumentType;
+import com.google.enterprise.connector.spi.SpiConstants.PrincipalType;
 import com.google.enterprise.connector.spi.SpiConstants;
 import com.google.enterprise.connector.spi.Value;
 
@@ -61,7 +65,6 @@ public class NotesConnectorDocument implements Document {
   private FileInputStream fin = null;
   private String docid = null;
   private boolean isAttachment = false;
-  private Document document;
 
   @VisibleForTesting
   NotesDocument crawlDoc = null;
@@ -85,10 +88,6 @@ public class NotesConnectorDocument implements Document {
       // Changed log level to WARNING.
       LOGGER.log(Level.WARNING, CLASS_NAME, e);
     }
-  }
-
-  public Document getDocument() {
-    return document;
   }
 
   public void setCrawlDoc(String unid, NotesDocument backenddoc) {
@@ -126,7 +125,6 @@ public class NotesConnectorDocument implements Document {
           "Delete Request document properties for " + docid);
       putTextItem(SpiConstants.PROPNAME_DOCID, NCCONST.ITM_DOCID, null);
       putTextItem(SpiConstants.PROPNAME_ACTION, NCCONST.ITM_ACTION, null);
-      document = new SimpleDocument(docProps);
     } catch (Exception e) {
       LOGGER.log(Level.SEVERE, CLASS_NAME, e);
     } finally {
@@ -145,6 +143,8 @@ public class NotesConnectorDocument implements Document {
       isAttachment = docid.contains("/$File/");
 
       // Load the Connector Manager SPI Properties first
+      docProps.put(SpiConstants.PROPNAME_DOCUMENTTYPE,
+          asList(Value.getStringValue(DocumentType.RECORD.toString())));
       putTextItem(SpiConstants.PROPNAME_DOCID, NCCONST.ITM_DOCID, null);
       putTextItem(SpiConstants.PROPNAME_TITLE, NCCONST.ITM_TITLE, null);
       setDateProperties();
@@ -217,14 +217,10 @@ public class NotesConnectorDocument implements Document {
         Vector readers =
             crawlDoc.getItemValue(NCCONST.NCITM_DOCAUTHORREADERS);
         if (readers.size() > 0) {
-          document = createSecureDocumentWithReaders(replicaUrl, readers);
+          createSecureDocumentWithReaders(replicaUrl, readers);
         } else {
-          document = createSecureDocumentWithoutReaders(replicaUrl);
+          createSecureDocumentWithoutReaders(replicaUrl);
         }
-      } else {
-        // GSA ACLs not supported or ACLs not being used for this
-        // database.
-        document = new SimpleDocument(docProps);
       }
     } catch (Exception e) {
       // TODO: Handle errors correctly so that we remove the
@@ -235,36 +231,36 @@ public class NotesConnectorDocument implements Document {
     }
   }
 
-  private Document createSecureDocumentWithoutReaders(String replicaUrl)
+  private void createSecureDocumentWithoutReaders(String replicaUrl)
       throws RepositoryException {
     final String METHOD = "createSecureDocumentWithoutReaders";
 
     docProps.put(SpiConstants.PROPNAME_ACLINHERITFROM_DOCID,
         asList(Value.getStringValue(
         replicaUrl + "/" + NCCONST.DB_ACL_INHERIT_TYPE_PARENTOVERRIDES)));
-    SecureDocument document = SecureDocument.createDocumentWithAcl(docProps);
     if (LOGGER.isLoggable(Level.FINEST)) {
       LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD,
           "inherit from: " + replicaUrl
           + "/" + NCCONST.DB_ACL_INHERIT_TYPE_PARENTOVERRIDES);
     }
-    return document;
   }
 
-  private Document createSecureDocumentWithReaders(String replicaUrl,
+  private void createSecureDocumentWithReaders(String replicaUrl,
       Vector readers) throws RepositoryException {
     final String METHOD = "createSecureDocumentWithReaders";
 
+    // getGsaUsers modifies the readers Vector, so create a copy here.
+    @SuppressWarnings("unchecked")
+        Vector localReaders = new Vector(readers);
     docProps.put(SpiConstants.PROPNAME_ACLINHERITFROM_DOCID,
         asList(Value.getStringValue(
         replicaUrl + "/" + NCCONST.DB_ACL_INHERIT_TYPE_ANDBOTH)));
-    SecureDocument document = SecureDocument.createDocumentWithAcl(docProps);
     Collection<String> gsaReaders = NotesUserGroupManager.getGsaUsers(
-        notesConnectorSession, connectorDatabase, readers, true);
+        notesConnectorSession, connectorDatabase, localReaders, true);
     // Add the replica id prefix to each role in the readers list.
     ArrayList<String> modifiedReaders = new ArrayList<String>();
-    for (int i = 0; i < readers.size(); i++) {
-      String reader = readers.elementAt(i).toString().trim();
+    for (int i = 0; i < localReaders.size(); i++) {
+      String reader = localReaders.elementAt(i).toString().trim();
       // The only way to tell if an entry is a role, as far
       // as I can tell, is to look for [] around the name.
       if (reader.startsWith("[") && reader.endsWith("]")) {
@@ -275,12 +271,34 @@ public class NotesConnectorDocument implements Document {
     }
     Collection<String> gsaGroups = NotesUserGroupManager.getGsaGroups(
         notesConnectorSession, modifiedReaders);
+    String userNamespace;
+    PrincipalType principalType;
+    if (notesConnectorSession.getConnector().getGsaNamesAreGlobal()) {
+      userNamespace =
+          notesConnectorSession.getConnector().getGlobalNamespace();
+      principalType = PrincipalType.UNKNOWN;
+    } else {
+      userNamespace =
+          notesConnectorSession.getConnector().getLocalNamespace();
+      principalType = PrincipalType.UNQUALIFIED;
+    }
+    ArrayList<Value> values = new ArrayList<Value>();
     for (String reader : gsaReaders) {
-      document.addPrincipal(reader, AclScope.USER, AclAccess.PERMIT);
+      Principal principal = new Principal(principalType, userNamespace,
+          reader, CaseSensitivityType.EVERYTHING_CASE_INSENSITIVE);
+      values.add(Value.getPrincipalValue(principal));
     }
+    docProps.put(SpiConstants.PROPNAME_ACLUSERS, values);
+
+    values = new ArrayList<Value>();
     for (String group : gsaGroups) {
-      document.addPrincipal(group, AclScope.GROUP, AclAccess.PERMIT);
+      Principal principal = new Principal(PrincipalType.UNQUALIFIED,
+          notesConnectorSession.getConnector().getLocalNamespace(),
+          group, CaseSensitivityType.EVERYTHING_CASE_INSENSITIVE);
+      values.add(Value.getPrincipalValue(principal));
     }
+    docProps.put(SpiConstants.PROPNAME_ACLGROUPS, values);
+
     if (LOGGER.isLoggable(Level.FINEST)) {
       LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD,
           "inherit from: " + replicaUrl
@@ -288,9 +306,10 @@ public class NotesConnectorDocument implements Document {
       LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD,
           "readers:users: " + gsaReaders);
       LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD,
+          "Using namespace for user names: " + userNamespace);
+      LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD,
           "readers:groups: " + gsaGroups);
     }
-    return document;
   }
 
   public void addDatabaseAcl() {
@@ -298,21 +317,23 @@ public class NotesConnectorDocument implements Document {
     LOGGER.entering(CLASS_NAME, METHOD);
     try {
       docProps = new HashMap<String, List<Value>>();
+      docProps.put(SpiConstants.PROPNAME_DOCUMENTTYPE,
+          asList(Value.getStringValue(DocumentType.ACL.toString())));
       putTextItem(SpiConstants.PROPNAME_ACTION, NCCONST.ITM_ACTION, null);
       docProps.put(SpiConstants.PROPNAME_DOCID,
           asList(Value.getStringValue(
           crawlDoc.getItemValueString(NCCONST.ITM_DOCID))));
-      document = SecureDocument.createAcl(docProps);
-
       String inheritType = crawlDoc.getItemValueString(
           NCCONST.NCITM_DBACLINHERITTYPE);
       if (inheritType.equals(NCCONST.DB_ACL_INHERIT_TYPE_ANDBOTH)) {
-        ((SecureDocument) document).setInheritanceType(
-            AclInheritanceType.AND_BOTH_PERMIT);
+        docProps.put(SpiConstants.PROPNAME_ACLINHERITANCETYPE,
+            asList(Value.getStringValue(
+            AclInheritanceType.AND_BOTH_PERMIT.toString())));
       } else if (inheritType.equals(
               NCCONST.DB_ACL_INHERIT_TYPE_PARENTOVERRIDES)) {
-        ((SecureDocument) document).setInheritanceType(
-            AclInheritanceType.PARENT_OVERRIDES);
+        docProps.put(SpiConstants.PROPNAME_ACLINHERITANCETYPE,
+            asList(Value.getStringValue(
+            AclInheritanceType.PARENT_OVERRIDES.toString())));
       } else {
         // Since we create the crawl docs, this would be a
         // development-time error rather than a possible run-time
@@ -320,14 +341,30 @@ public class NotesConnectorDocument implements Document {
         LOGGER.logp(Level.WARNING, CLASS_NAME, METHOD,
             "Unexpected inheritance type: " + inheritType);
       }
-      putAclPrincipals(NCCONST.NCITM_DBPERMITUSERS,
-          AclScope.USER, AclAccess.PERMIT);
-      putAclPrincipals(NCCONST.NCITM_DBNOACCESSUSERS,
-          AclScope.USER, AclAccess.DENY);
-      putAclPrincipals(NCCONST.NCITM_DBPERMITGROUPS,
-          AclScope.GROUP, AclAccess.PERMIT);
-      putAclPrincipals(NCCONST.NCITM_DBNOACCESSGROUPS,
-          AclScope.GROUP, AclAccess.DENY);
+      String userNamespace;
+      PrincipalType principalType;
+      if (notesConnectorSession.getConnector().getGsaNamesAreGlobal()) {
+        userNamespace =
+            notesConnectorSession.getConnector().getGlobalNamespace();
+        principalType = PrincipalType.UNKNOWN;
+      } else {
+        userNamespace =
+            notesConnectorSession.getConnector().getLocalNamespace();
+        principalType = PrincipalType.UNQUALIFIED;
+      }
+      LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD,
+          "Using namespace for user names: " + userNamespace);
+
+      putAclPrincipals(principalType, NCCONST.NCITM_DBPERMITUSERS,
+          SpiConstants.PROPNAME_ACLUSERS, userNamespace);
+      putAclPrincipals(principalType, NCCONST.NCITM_DBNOACCESSUSERS,
+          SpiConstants.PROPNAME_ACLDENYUSERS, userNamespace);
+      putAclPrincipals(PrincipalType.UNQUALIFIED, NCCONST.NCITM_DBPERMITGROUPS,
+          SpiConstants.PROPNAME_ACLGROUPS,
+          notesConnectorSession.getConnector().getLocalNamespace());
+      putAclPrincipals(PrincipalType.UNQUALIFIED,
+          NCCONST.NCITM_DBNOACCESSGROUPS, SpiConstants.PROPNAME_ACLDENYGROUPS,
+          notesConnectorSession.getConnector().getLocalNamespace());
     } catch (Exception e) {
       // TODO: Handle errors correctly so that we remove the
       // document from the queue if it is corrupt.
@@ -526,18 +563,22 @@ public class NotesConnectorDocument implements Document {
     }
   }
 
-  private void putAclPrincipals(String principalItemName,
-      SpiConstants.AclScope scope, SpiConstants.AclAccess access)
+  private void putAclPrincipals(PrincipalType principalType,
+      String principalItemName, String propertyName, String namespace)
       throws RepositoryException {
     final String METHOD = "putAclPrincipals";
     Vector values = crawlDoc.getItemValue(principalItemName);
     if (values.size() == 0) {
       return;
     }
+    ArrayList<Value> docValues = new ArrayList<Value>(values.size());
     for (Object principal : values) {
-      ((SecureDocument) document).addPrincipal(
-          principal.toString(), scope, access);
+      Principal docPrincipal = new Principal(principalType, namespace,
+          principal.toString(),
+          CaseSensitivityType.EVERYTHING_CASE_INSENSITIVE);
+      docValues.add(Value.getPrincipalValue(docPrincipal));
     }
+    docProps.put(propertyName, docValues);
   }
 
   public String getUNID() {
@@ -546,9 +587,6 @@ public class NotesConnectorDocument implements Document {
 
   /* @Override */
   public Property findProperty(String name) throws RepositoryException {
-    if (document != null) {
-      return document.findProperty(name);
-    }
     // Maintain the ability to check docProps directly for testing.
     List<Value> list = docProps.get(name);
     Property prop = null;
@@ -560,9 +598,6 @@ public class NotesConnectorDocument implements Document {
 
   /* @Override */
   public Set<String> getPropertyNames() throws RepositoryException {
-    if (document != null) {
-      return document.getPropertyNames();
-    }
     return docProps.keySet();
   }
 

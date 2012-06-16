@@ -22,6 +22,7 @@ import com.google.enterprise.connector.spi.AuthenticationResponse;
 import com.google.enterprise.connector.spi.Connector;
 import com.google.enterprise.connector.spi.Document;
 import com.google.enterprise.connector.spi.DocumentList;
+import com.google.enterprise.connector.spi.Principal;
 import com.google.enterprise.connector.spi.RepositoryException;
 import com.google.enterprise.connector.spi.RepositoryLoginException;
 import com.google.enterprise.connector.spi.Session;
@@ -78,13 +79,14 @@ public class NotesAuthenticationManagerTest extends ConnectorFixture {
         new SimpleAuthenticationIdentity(username, password));
     assertTrue("Failed to authenticate: " + username, response.isValid());
     @SuppressWarnings({ "unchecked", "cast" })
-        Collection<String> groups = (Collection<String>) response.getGroups();
+        Collection<Principal> groups = (Collection<Principal>) response.getGroups();
     if (groups != null) {
       String groupPrefix = ((NotesConnectorSession) session)
           .getGsaGroupPrefix();
-      for (String group : groups) {
-          assertTrue(group, group.startsWith(groupPrefix));
-          assertTrue(group, group.indexOf(" ") < 0);
+      for (Principal group : groups) {
+        String name = group.getName();
+        assertTrue(name, name.startsWith(groupPrefix));
+        assertTrue(name, name.indexOf(" ") < 0);
       }
     }
   }
@@ -101,13 +103,14 @@ public class NotesAuthenticationManagerTest extends ConnectorFixture {
         new SimpleAuthenticationIdentity(username, null));
     assertTrue("Authenticated: " + username, response.isValid());
     @SuppressWarnings({ "unchecked", "cast" })
-        Collection<String> groups = (Collection<String>) response.getGroups();
+        Collection<Principal> groups = (Collection<Principal>) response.getGroups();
     if (groups != null) {
       String groupPrefix = ((NotesConnectorSession) session)
           .getGsaGroupPrefix();
-      for (String group : groups) {
-          assertTrue(group, group.startsWith(groupPrefix));
-          assertTrue(group, group.indexOf(" ") < 0);
+      for (Principal group : groups) {
+        String name = group.getName();
+        assertTrue(name, name.startsWith(groupPrefix));
+        assertTrue(name, name.indexOf(" ") < 0);
       }
     }
   }

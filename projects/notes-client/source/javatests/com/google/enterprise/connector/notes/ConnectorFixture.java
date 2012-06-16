@@ -120,6 +120,8 @@ public class ConnectorFixture extends TestCase {
     NotesTraversalManager traversalManager =
         (NotesTraversalManager) connectorSession.getTraversalManager();
     SimpleTraversalContext context = new SimpleTraversalContext();
+    // TODO: handle both versions of acl support within the tests
+    // and avoid manual property editing.
     context.setSupportsInheritedAcls(
         Boolean.getBoolean("javatest.supportsinheritedacls"));
     traversalManager.setTraversalContext(context);
@@ -138,7 +140,7 @@ public class ConnectorFixture extends TestCase {
     while (docList != null) {
       Document doc;
       while (null != (doc = docList.nextDocument())) {
-        documents.add(((NotesConnectorDocument) doc).getDocument());
+        documents.add((NotesConnectorDocument) doc);
       }
       String checkpoint = docList.checkpoint();
       // Resume traversal.

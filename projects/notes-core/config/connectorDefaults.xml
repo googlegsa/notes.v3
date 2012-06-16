@@ -11,14 +11,26 @@
     <property name="idPassword" value="${idPassword}"/>
     <property name="database" value="${database}"/>
     <property name="server" value="${server}"/>
+    <property name="gsaNamesAreGlobal" value="${gsaNamesAreGlobal}"/>
     <property name="googleConnectorName" value="${googleConnectorName}"/>
     <property name="googleFeedHost" value="${googleFeedHost}"/>
     <property name="gsaUsername" value="${gsaUsername}"/>
     <property name="gsaPassword" value="${gsaPassword}"/>
-
+    <property name="googleLocalNamespace" value="${googleLocalNamespace}"/>
+    <property name="googleGlobalNamespace" value="${googleGlobalNamespace}"/>
     <property name="policyAclPattern"
               value="^googleconnector://{0}.localhost/doc?docid={1}"/>
 
     @constructor-arg@
   </bean>
+
+  <bean id="propertyPlaceholderConfigurer"
+          class="com.google.enterprise.connector.instantiator.EncryptedPropertyPlaceholderConfigurer">
+        <property name="properties">
+            <props>
+                <prop key="gsaNamesAreGlobal">true</prop>
+            </props>
+        </property>
+    </bean>
+
 </beans>

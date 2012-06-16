@@ -33,6 +33,10 @@ public class NotesConnectorTest extends TestCase {
     connector.setIdPassword("testpassword");
     connector.setServer("testserver");
     connector.setDatabase("testconfig.nsf");
+    connector.setGsaNamesAreGlobal(true);
+    connector.setGoogleLocalNamespace("LocalNamespace");
+    connector.setGoogleGlobalNamespace("GlobalNamespace");
+
     // Initialize this to prevent NotesConnector from creating one.
     connector.maintThread = new NotesMaintenanceThread();
     connector.setGoogleConnectorName("notestest");

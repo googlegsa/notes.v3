@@ -94,6 +94,8 @@ public class NotesDatabasePollerTest extends TestCase {
 
   protected void setUp() throws Exception {
     super.setUp();
+    // TODO: handle both versions of acl support within the tests
+    // and avoid manual property editing.
     supportsInheritedAcls =
         Boolean.getBoolean("javatest.supportsinheritedacls");
     connector = NotesConnectorTest.getConnector();

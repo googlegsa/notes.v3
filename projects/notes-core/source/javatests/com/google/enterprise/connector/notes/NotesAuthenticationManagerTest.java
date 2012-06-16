@@ -27,6 +27,7 @@ import com.google.enterprise.connector.notes.client.mock.NotesItemMock;
 import com.google.enterprise.connector.notes.client.mock.SessionFactoryMock;
 import com.google.enterprise.connector.spi.AuthenticationManager;
 import com.google.enterprise.connector.spi.AuthenticationResponse;
+import com.google.enterprise.connector.spi.Principal;
 import com.google.enterprise.connector.spi.Session;
 import com.google.enterprise.connector.spi.SimpleAuthenticationIdentity;
 
@@ -94,17 +95,23 @@ public class NotesAuthenticationManagerTest extends TestCase {
   // NotesConnectorSessionTest.configureFactoryForSession.
   private void verifyGroups(NotesConnectorSession connectorSession,
       AuthenticationResponse response) throws Exception {
-    Collection<?> groups = response.getGroups();
+    @SuppressWarnings("unchecked")
+        Collection<Principal> groups =
+        (Collection<Principal>) response.getGroups();
     assertNotNull("Missing groups", groups);
     assertEquals(4, groups.size());
+    Collection<String> groupNames = new ArrayList<String>();
+    for (Principal principal : groups) {
+      groupNames.add(principal.getName());
+    }
     String groupPrefix = connectorSession.getGsaGroupPrefix();
-    assertTrue("Missing group 1: " + groups,
-        groups.contains(groupPrefix + "%2Fgroup1"));
-    assertTrue("Missing group 2: " + groups,
-        groups.contains(groupPrefix + "%2Fgroup2"));
-    assertTrue(groups.contains(
+    assertTrue("Missing group 1: " + groupNames,
+        groupNames.contains(groupPrefix + "%2Fgroup1"));
+    assertTrue("Missing group 2: " + groupNames,
+        groupNames.contains(groupPrefix + "%2Fgroup2"));
+    assertTrue(groupNames.contains(
             groupPrefix + "%2Freplicaid%2F%5Btestrole%5D"));
-    assertTrue(groups.contains(
+    assertTrue(groupNames.contains(
             groupPrefix + "%2Freplicaid%2F%5Bgrouprole%5D"));
   }
 }
