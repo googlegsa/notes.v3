@@ -20,6 +20,7 @@ import com.google.enterprise.connector.notes.client.NotesDatabase;
 import com.google.enterprise.connector.notes.client.NotesDateTime;
 import com.google.enterprise.connector.notes.client.NotesDocument;
 import com.google.enterprise.connector.notes.client.NotesItem;
+import com.google.enterprise.connector.notes.client.NotesSession;
 import com.google.enterprise.connector.spi.Document;
 import com.google.enterprise.connector.spi.Principal;
 import com.google.enterprise.connector.spi.Property;
@@ -60,6 +61,7 @@ public class NotesConnectorDocument implements Document {
   HashMap<String, List<Value>> docProps;
 
   private final NotesConnectorSession notesConnectorSession;
+  private final NotesSession notesSession;
   private final NotesDatabase connectorDatabase;
   private String UNID = null;
   private FileInputStream fin = null;
@@ -70,11 +72,12 @@ public class NotesConnectorDocument implements Document {
   NotesDocument crawlDoc = null;
 
   NotesConnectorDocument(NotesConnectorSession notesConnectorSession,
-      NotesDatabase connectorDatabase) {
+      NotesSession notesSession, NotesDatabase connectorDatabase) {
     final String METHOD = "NotesConnectorDocument";
     LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD,
         "NotesConnectorDocument being created.");
     this.notesConnectorSession = notesConnectorSession;
+    this.notesSession = notesSession;
     this.connectorDatabase = connectorDatabase;
   }
 
@@ -249,14 +252,16 @@ public class NotesConnectorDocument implements Document {
       Vector readers) throws RepositoryException {
     final String METHOD = "createSecureDocumentWithReaders";
 
-    // getGsaUsers modifies the readers Vector, so create a copy here.
-    @SuppressWarnings("unchecked")
-        Vector localReaders = new Vector(readers);
     docProps.put(SpiConstants.PROPNAME_ACLINHERITFROM_DOCID,
         asList(Value.getStringValue(
         replicaUrl + "/" + NCCONST.DB_ACL_INHERIT_TYPE_ANDBOTH)));
-    Collection<String> gsaReaders = NotesUserGroupManager.getGsaUsers(
-        notesConnectorSession, connectorDatabase, localReaders, true);
+    // mapNotesNamesToGsaNames modifies the readers Vector, so
+    // create a copy here.
+    @SuppressWarnings("unchecked")
+        Vector localReaders = new Vector(readers);
+    Collection<String> gsaReaders = notesConnectorSession
+        .getUserGroupManager().mapNotesNamesToGsaNames(
+            notesSession, localReaders, true);
     // Add the replica id prefix to each role in the readers list.
     ArrayList<String> modifiedReaders = new ArrayList<String>();
     for (int i = 0; i < localReaders.size(); i++) {
@@ -269,8 +274,8 @@ public class NotesConnectorDocument implements Document {
       }
       modifiedReaders.add(reader);
     }
-    Collection<String> gsaGroups = NotesUserGroupManager.getGsaGroups(
-        notesConnectorSession, modifiedReaders);
+    Collection<String> gsaGroups = GsaUtil.getGsaGroups(
+        modifiedReaders, notesConnectorSession.getGsaGroupPrefix());
     String userNamespace;
     PrincipalType principalType;
     if (notesConnectorSession.getConnector().getGsaNamesAreGlobal()) {

@@ -14,10 +14,11 @@
 
 package com.google.enterprise.connector.notes.client.mock;
 
-import com.google.enterprise.connector.notes.client.NotesSession;
 import com.google.enterprise.connector.notes.client.NotesDatabase;
 import com.google.enterprise.connector.notes.client.NotesDateTime;
 import com.google.enterprise.connector.notes.client.NotesDocument;
+import com.google.enterprise.connector.notes.client.NotesName;
+import com.google.enterprise.connector.notes.client.NotesSession;
 import com.google.enterprise.connector.notes.client.NotesView;
 import com.google.enterprise.connector.spi.RepositoryException;
 
@@ -158,6 +159,12 @@ public class NotesSessionMock extends NotesBaseMock
    } catch (ParseException e) {
      throw new RepositoryException(e);
    }
+  }
+
+  /** {@inheritDoc} */
+  /* @Override */
+  public NotesName createName(String name) throws RepositoryException {
+    return new NotesNameMock(name);
   }
 
   /* TODO: implement getUserName.

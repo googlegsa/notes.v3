@@ -39,6 +39,7 @@ public class NotesConnectorSession implements Session {
   private static final Logger LOGGER = Logger.getLogger(CLASS_NAME);
 
   private TraversalManager traversalManager;
+  private NotesUserGroupManager userGroupManager;
   private String server = null;
   private String database = null;
   private String password = "";
@@ -458,6 +459,14 @@ public class NotesConnectorSession implements Session {
       traversalManager = new NotesTraversalManager(this);
     }
     return traversalManager;
+  }
+
+  public synchronized NotesUserGroupManager getUserGroupManager()
+      throws RepositoryException {
+    if (userGroupManager == null) {
+      userGroupManager = new NotesUserGroupManager(this);
+    }
+    return userGroupManager;
   }
 
   public boolean isExcludedExtension(String extension) {

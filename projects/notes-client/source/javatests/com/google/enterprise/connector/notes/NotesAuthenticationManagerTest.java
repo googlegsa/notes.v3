@@ -49,9 +49,12 @@ public class NotesAuthenticationManagerTest extends ConnectorFixture {
         "javatest.authentication.password");
 
     // Temporary fix for the need to create user/group cache.
+    // TODO: Create a better fixture that handles the need to set
+    // up data before tests.
     Session session = connector.login();
-    NotesUserGroupManager ug = new NotesUserGroupManager();
-    ug.updatePeopleGroups((NotesConnectorSession) session, true);
+    NotesUserGroupManager userGroupManager =
+        new NotesUserGroupManager((NotesConnectorSession) session);
+    userGroupManager.updateUsersGroups(true);
   }
 
   /**

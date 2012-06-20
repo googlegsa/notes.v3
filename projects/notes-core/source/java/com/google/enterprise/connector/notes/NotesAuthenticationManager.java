@@ -22,6 +22,7 @@ import com.google.enterprise.connector.notes.client.NotesThread;
 import com.google.enterprise.connector.notes.client.NotesView;
 import com.google.enterprise.connector.notes.client.NotesViewEntry;
 import com.google.enterprise.connector.notes.client.NotesViewNavigator;
+import com.google.enterprise.connector.notes.NotesUserGroupManager.User;
 import com.google.enterprise.connector.spi.AuthenticationIdentity;
 import com.google.enterprise.connector.spi.AuthenticationManager;
 import com.google.enterprise.connector.spi.AuthenticationResponse;
@@ -42,113 +43,84 @@ class NotesAuthenticationManager implements AuthenticationManager {
       NotesAuthenticationManager.class.getName();
   private static final Logger LOGGER = Logger.getLogger(CLASS_NAME);
 
-  private NotesConnectorSession ncs = null;
-  private NotesSession nSession = null;
-  private NotesDatabase namesDb = null;
-  private NotesDatabase acDb = null;
-  private NotesView usersVw = null;
-  private NotesView peopleVw = null;
-  private NotesDocument authDoc = null;
-  private NotesDocument personDoc = null;
+  private NotesConnectorSession connectorSession;
 
-  public NotesAuthenticationManager(NotesConnectorSession session) {
-    final String METHOD = "NotesAuthenticationManager";
-    LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD,
-        "NotesAuthenticationManager being created.");
-
-    ncs = session;
-  }
-
-  public void recycleDominoObjects() {
-    try {
-      if (null != personDoc) {
-        personDoc.recycle();
-      }
-      if (null != authDoc) {
-        authDoc.recycle();
-      }
-      if (null != usersVw) {
-        usersVw.recycle();
-      }
-      if (null != peopleVw) {
-        peopleVw.recycle();
-      }
-      if (null != acDb) {
-        acDb.recycle();
-      }
-      if (null != namesDb) {
-        namesDb.recycle();
-      }
-    }
-    catch (Exception e) {
-      LOGGER.log(Level.WARNING, CLASS_NAME, e);
-    }
+  public NotesAuthenticationManager(NotesConnectorSession connectorSession) {
+    final String METHOD = "<init>";
+    LOGGER.entering(CLASS_NAME, METHOD);
+    this.connectorSession = connectorSession;
+    LOGGER.exiting(CLASS_NAME, METHOD);
   }
 
   /* @Override */
   @SuppressWarnings("unchecked")
   public AuthenticationResponse authenticate(AuthenticationIdentity id) {
     final String METHOD = "authenticate";
+    LOGGER.entering(CLASS_NAME, METHOD);
 
     try {
-      String pvi = id.getUsername();
+      String gsaName = id.getUsername();
       LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
-          "Authenticating user " + pvi);
+          "Authenticating user: " + gsaName);
 
-      nSession = ncs.createNotesSession();
-
-      // TODO: Check what we need to support here
-      namesDb = nSession.getDatabase(ncs.getServer(), ncs.getDirectory());
-      NotesDatabase acDb = nSession.getDatabase(ncs.getServer(),
-          ncs.getDatabase());
-
-      String notesName;
-      Vector groups;
-      synchronized(ncs.getConnector().getPeopleCacheLock()) {
-        peopleVw = acDb.getView(NCCONST.VIEWPEOPLECACHE);
-        peopleVw.refresh();
-        // Resolve the PVI to their Notes names and groups
-        personDoc = peopleVw.getDocumentByKey(pvi, true);
-        if (null != personDoc) {
-          notesName = personDoc.getItemValueString(NCCONST.PCITM_NOTESNAME)
-              .toLowerCase();
-          groups = personDoc.getItemValue(NCCONST.PCITM_GROUPS);
-          groups.addAll(NotesUserGroupManager.getRolesForGroups(
-              ncs, acDb, groups));
-        } else {
-          LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
-              "Person not found in connector user database " + pvi);
-          return new AuthenticationResponse(false, null);
-        }
-      }
-      LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
-          "Authentication user using Notes name " + notesName);
-      // Verify that the notesName (mapped pvi->notesName) is
-      // really in Notes right now.
-      usersVw = namesDb.getView(NCCONST.DIRVIEW_USERS);
-      authDoc = usersVw.getDocumentByKey(notesName, true);
-      if (null == authDoc) {
+      // Find the user in the connector cache.
+      User user =
+          connectorSession.getUserGroupManager().getUserByGsaName(gsaName);
+      if (user == null) {
         LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
-            "Username not found in Notes");
+            "Person not found in connector user database: " + gsaName);
         return new AuthenticationResponse(false, null);
       }
+      LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
+          "Authentication user using Notes name: " + user.getNotesName());
 
-      Collection<String> prefixedGroups = null;
+      // Find the user in Notes.
+      NotesSession notesSession = connectorSession.createNotesSession();
+      NotesDatabase notesDirectory = null;
+      NotesView notesUsersView = null;
+      NotesDocument notesUserDoc = null;
+      boolean hasValidPassword = false;
+      try {
+        notesDirectory = notesSession.getDatabase(
+            connectorSession.getServer(), connectorSession.getDirectory());
+        notesUsersView = notesDirectory.getView(NCCONST.DIRVIEW_USERS);
+        notesUserDoc =
+            notesUsersView.getDocumentByKey(user.getNotesName(), true);
+        if (notesUserDoc == null) {
+          LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
+              "Username not found in Notes directory");
+          return new AuthenticationResponse(false, null);
+        }
+        if (id.getPassword() != null) {
+          String hashedPassword =
+              notesUserDoc.getItemValueString("HTTPPassword");
+          hasValidPassword =
+              notesSession.verifyPassword(id.getPassword(), hashedPassword);
+        }
+      } finally {
+        Util.recycle(notesUserDoc);
+        Util.recycle(notesUsersView);
+        Util.recycle(notesDirectory);
+        connectorSession.closeNotesSession(notesSession);
+      }
+
+      Collection<String> groupsAndRoles = user.getGroupsAndRoles();
+      Collection<String> prefixedGroups = GsaUtil.getGsaGroups(
+          groupsAndRoles, connectorSession.getGsaGroupPrefix());
       Collection<Principal> principalGroups = null;
-      if (groups.size() > 0) {
-        prefixedGroups = NotesUserGroupManager.getGsaGroups(ncs, groups);
+      if (prefixedGroups.size() != 0) {
         principalGroups = new ArrayList<Principal>(prefixedGroups.size());
         for (String group : prefixedGroups) {
           Principal principal = new Principal(PrincipalType.UNQUALIFIED,
-              ncs.getConnector().getLocalNamespace(),
+              connectorSession.getConnector().getLocalNamespace(),
               group, CaseSensitivityType.EVERYTHING_CASE_INSENSITIVE);
           principalGroups.add(principal);
         }
       }
-      String idLog = getIdentityLog(pvi, notesName, groups, prefixedGroups);
-      if (null != id.getPassword()) {
-        String hashedPassword = authDoc.getItemValueString("HTTPPassword");
-        if (nSession.verifyPassword(id.getPassword(), hashedPassword)) {
+      String idLog = getIdentityLog(gsaName, user.getNotesName(),
+          groupsAndRoles, prefixedGroups);
+      if (id.getPassword() != null) {
+        if (hasValidPassword) {
           LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
               "User succesfully authenticated: " + idLog);
           return new AuthenticationResponse(true, null, principalGroups);
@@ -166,24 +138,19 @@ class NotesAuthenticationManager implements AuthenticationManager {
         // identity otherwise. This situation occurs when the GSA
         // uses another authentication mechanism and uses the
         // connector for group resolution only.
+        LOGGER.fine("principalgroups: " + principalGroups);
         return new AuthenticationResponse(true, null, principalGroups);
       }
     } catch (Exception e) {
-      // TODO: what kinds of Notes exceptions can be caught here?
-      // Should we rethrow an exception (RepositoryException?)
-      // rather than just returning false?
       LOGGER.log(Level.SEVERE, CLASS_NAME, e);
     } finally {
-      recycleDominoObjects();
-      // TODO: Is it ok to close the session here? Is there a
-      // reason it wasn't closed?
-      ncs.closeNotesSession(nSession);
+      LOGGER.exiting(CLASS_NAME, METHOD);
     }
     return new AuthenticationResponse(false, null);
   }
 
   private String getIdentityLog(String pvi, String notesName,
-      Vector groups, Collection<String> prefixedGroups) {
+      Collection<String> groups, Collection<String> prefixedGroups) {
     return "pvi: " + pvi + "; Notes name: " + notesName
         + "; groups: " + groups + "; groups sent: " + prefixedGroups;
   }

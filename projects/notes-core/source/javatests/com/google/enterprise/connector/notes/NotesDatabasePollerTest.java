@@ -54,9 +54,10 @@ public class NotesDatabasePollerTest extends TestCase {
     }
 
     @Override
-    boolean updateGsaPolicyAcl(NotesDatabase connectorDatabase,
-      NotesDocument dbdoc, Collection<String> permitUsers,
-      Collection<String> permitGroups) throws RepositoryException {
+    boolean updateGsaPolicyAcl(NotesSession session,
+        NotesDatabase connectorDatabase, NotesDocument dbdoc,
+        Collection<String> permitUsers, Collection<String> permitGroups)
+        throws RepositoryException {
       calledUpdateGsaPolicyAcl = true;
       return true;
     }
@@ -69,15 +70,13 @@ public class NotesDatabasePollerTest extends TestCase {
     acl.addAclEntry(new NotesACLEntryMock("allowed user1",
         NotesACLEntry.TYPE_PERSON, NotesACL.LEVEL_READER));
     acl.addAclEntry(new NotesACLEntryMock("allowed user2",
-        NotesACLEntry.TYPE_PERSON, NotesACL.LEVEL_READER,
-        "[role1]", "[role2]"));
+        NotesACLEntry.TYPE_PERSON, NotesACL.LEVEL_READER));
     acl.addAclEntry(new NotesACLEntryMock("denied user1",
         NotesACLEntry.TYPE_PERSON, NotesACL.LEVEL_NOACCESS));
     acl.addAclEntry(new NotesACLEntryMock("allowed group1",
         NotesACLEntry.TYPE_PERSON_GROUP, NotesACL.LEVEL_READER));
     acl.addAclEntry(new NotesACLEntryMock("allowed group2",
-        NotesACLEntry.TYPE_PERSON_GROUP, NotesACL.LEVEL_READER,
-        "[role3]", "[role2]"));
+        NotesACLEntry.TYPE_PERSON_GROUP, NotesACL.LEVEL_READER));
     acl.addAclEntry(new NotesACLEntryMock("denied group1",
         NotesACLEntry.TYPE_PERSON_GROUP, NotesACL.LEVEL_NOACCESS));
   }
@@ -162,11 +161,13 @@ public class NotesDatabasePollerTest extends TestCase {
         (NotesDatabaseMock) session.getDatabase(
         connectorSession.getServer(), connectorSession.getDatabase());
 
+    /*
     // Add the test groups to the group cache.
     NotesDocumentMock connectorGroup = new NotesDocumentMock();
     connectorGroup.addItem(new NotesItemMock("name", NCCONST.GCITM_GROUPNAME,
             "type", NotesItem.TEXT, "values", "allowed group2"));
     connectorDatabase.addDocument(connectorGroup, NCCONST.VIEWGROUPCACHE);
+    */
 
     assertFalse(databaseDocument.hasItem(NCCONST.NCITM_DBPERMITUSERS));
     assertFalse(databaseDocument.hasItem(NCCONST.NCITM_DBPERMITGROUPS));
@@ -174,7 +175,8 @@ public class NotesDatabasePollerTest extends TestCase {
     assertFalse(databaseDocument.hasItem(NCCONST.NCITM_DBNOACCESSGROUPS));
     assertNull(connectorDatabase.getDocumentByUNID("replica_id_16chr"));
 
-    poller.processACL(connectorDatabase, sourceDatabase, databaseDocument);
+    poller.processACL(session, connectorDatabase,
+        sourceDatabase, databaseDocument);
 
     assertTrue(databaseDocument.hasItem(NCCONST.NCITM_DBPERMITUSERS));
     assertTrue(databaseDocument.hasItem(NCCONST.NCITM_DBPERMITGROUPS));
@@ -194,16 +196,5 @@ public class NotesDatabasePollerTest extends TestCase {
       assertTrue(poller.calledUpdateGsaPolicyAcl);
       assertNull(aclCrawlDoc);
     }
-
-    // Check that role information was cached.
-    NotesView groups = connectorDatabase.getView(NCCONST.VIEWGROUPCACHE);
-    NotesDocument groupDoc = groups.getDocumentByKey("allowed group2", true);
-    assertNotNull(groupDoc);
-    Vector currentGroups = groupDoc.getItemValue(NCCONST.GCITM_GROUPROLES);
-    assertNotNull(currentGroups);
-    assertTrue(currentGroups.toString(),
-        currentGroups.contains("replica_id_16chr/[role3]"));
-    assertTrue(currentGroups.toString(),
-        currentGroups.contains("replica_id_16chr/[role2]"));
   }
 }

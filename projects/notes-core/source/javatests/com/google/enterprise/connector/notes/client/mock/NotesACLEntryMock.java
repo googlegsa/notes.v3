@@ -15,6 +15,7 @@
 package com.google.enterprise.connector.notes.client.mock;
 
 import com.google.enterprise.connector.notes.client.NotesACLEntry;
+import com.google.enterprise.connector.notes.client.NotesName;
 import com.google.enterprise.connector.spi.RepositoryException;
 
 import java.util.Arrays;
@@ -75,6 +76,12 @@ public class NotesACLEntryMock extends NotesBaseMock
   public String getName() throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "getName");
     return name;
+  }
+
+  /** {@inheritDoc} */
+  /* @Override */
+  public NotesName getNameObject() throws RepositoryException {
+    return new NotesNameMock(name);
   }
 
   /** {@inheritDoc} */

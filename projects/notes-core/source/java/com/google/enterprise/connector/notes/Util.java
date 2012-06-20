@@ -21,17 +21,23 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Vector;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Helpers.
  */
 class Util {
+  private static final String CLASS_NAME = Util.class.getName();
+  private static final Logger LOGGER = Logger.getLogger(CLASS_NAME);
 
   static void recycle(NotesBase obj) {
     if (null != obj) {
       try {
         obj.recycle();
       } catch (RepositoryException e) {
+        LOGGER.logp(Level.WARNING, CLASS_NAME, "recycle(obj)",
+            "Error calling recycle on Notes object: " + obj, e);
       }
     }
   }
@@ -41,6 +47,9 @@ class Util {
       try {
         obj.recycle(vec);
       } catch (RepositoryException e) {
+        LOGGER.logp(Level.WARNING, CLASS_NAME, "recycle(obj, vec)",
+            "Error calling recycle on Notes object: " + obj
+            + " with data: " + vec, e);
       }
     }
   }
@@ -50,6 +59,8 @@ class Util {
       try {
         stmt.close();
       } catch (SQLException e) {
+        LOGGER.logp(Level.WARNING, CLASS_NAME, "close",
+            "Error closing statement", e);
       }
     }
   }
@@ -59,6 +70,8 @@ class Util {
       try {
         rs.close();
       } catch (SQLException e) {
+        LOGGER.logp(Level.WARNING, CLASS_NAME, "close",
+            "Error closing result set", e);
       }
     }
   }

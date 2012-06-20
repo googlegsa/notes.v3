@@ -4,7 +4,7 @@
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
+//     http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -14,10 +14,11 @@
 
 package com.google.enterprise.connector.notes.client.notes;
 
-import com.google.enterprise.connector.notes.client.NotesSession;
 import com.google.enterprise.connector.notes.client.NotesDatabase;
 import com.google.enterprise.connector.notes.client.NotesDateTime;
 import com.google.enterprise.connector.notes.client.NotesDocument;
+import com.google.enterprise.connector.notes.client.NotesName;
+import com.google.enterprise.connector.notes.client.NotesSession;
 import com.google.enterprise.connector.notes.client.NotesView;
 
 import lotus.domino.Database;
@@ -120,6 +121,17 @@ class NotesSessionImpl extends NotesBaseImpl<Session>
       throws NotesConnectorExceptionImpl {
     try {
       return new NotesDateTimeImpl(getNotesObject().createDateTime(date));
+    } catch (NotesException e) {
+      throw new NotesConnectorExceptionImpl(e);
+    }
+  }
+
+  /** {@inheritDoc} */
+  /* @Override */
+  public NotesName createName(String name)
+      throws NotesConnectorExceptionImpl {
+    try {
+      return new NotesNameImpl(getNotesObject().createName(name));
     } catch (NotesException e) {
       throw new NotesConnectorExceptionImpl(e);
     }

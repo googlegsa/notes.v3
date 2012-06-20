@@ -42,11 +42,11 @@ import java.util.Map;
 import java.util.Vector;
 import javax.sql.DataSource;
 
-public class NotesUserGroupManagerDatabaseTest extends ConnectorFixture {
+public class NotesUserGroupManagerTest extends ConnectorFixture {
 
   private NotesConnectorSession connectorSession;
   private NotesSession session;
-  private NotesUserGroupManagerDatabase userGroupManager;
+  private NotesUserGroupManager userGroupManager;
   private Connection conn;
   private HashMap<String, Long> groups = new HashMap<String, Long>();
   private HashMap<Long, HashSet<Long>> groupChildren =
@@ -64,14 +64,14 @@ public class NotesUserGroupManagerDatabaseTest extends ConnectorFixture {
   private int userCount = 15;
   private int groupCount = 12;
 
-  public NotesUserGroupManagerDatabaseTest() {
+  public NotesUserGroupManagerTest() {
     super();
   }
 
   protected void setUp() throws Exception {
     super.setUp();
     connectorSession = (NotesConnectorSession) connector.login();
-    userGroupManager = new NotesUserGroupManagerDatabase(connectorSession);
+    userGroupManager = new NotesUserGroupManager(connectorSession);
     userGroupManager.setUpResources(true);
     conn = userGroupManager.getConnection();
   }
@@ -110,6 +110,28 @@ public class NotesUserGroupManagerDatabaseTest extends ConnectorFixture {
       assertEquals(userCount, notesUserNames.size());
       assertEquals(groupCount, groups.size());
     }
+  }
+
+  /**
+   * Test mapping canonical and common names.
+   * TODO: abbreviated names?
+   */
+  public void testMapNotesNamesToGsaNames() throws Exception {
+    getGroupData();
+    getUserData();
+    String[] names = new String[0];
+    names = notesUserNames.keySet().toArray(names);
+    for (int i = 0; i < names.length; i++) {
+      if (i % 2 == 0) {
+        names[i] = NotesAuthorizationManager.getCommonName(names[i]);
+      }
+    }
+    Collection<String> gsaNames = userGroupManager.mapNotesNamesToGsaNames(
+        userGroupManager.getNotesSession(),
+        Arrays.asList(names), false);
+    assertEquals(names.length, gsaNames.size());
+    // TODO: consider adding an invalid name and verifying that
+    // it's not included in the returned collection.
   }
 
   private void getGroupData() throws Exception {

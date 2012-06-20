@@ -15,6 +15,7 @@
 package com.google.enterprise.connector.notes.client.notes;
 
 import com.google.enterprise.connector.notes.client.NotesACLEntry;
+import com.google.enterprise.connector.notes.client.NotesName;
 
 import lotus.domino.ACLEntry;
 import lotus.domino.NotesException;
@@ -73,6 +74,16 @@ class NotesACLEntryImpl extends NotesBaseImpl<ACLEntry>
   public String getName() throws NotesConnectorExceptionImpl {
     try {
       return getNotesObject().getName();
+    } catch (NotesException e) {
+      throw new NotesConnectorExceptionImpl(e);
+    }
+  }
+
+  /** {@inheritDoc} */
+  /* @Override */
+  public NotesName getNameObject() throws NotesConnectorExceptionImpl {
+    try {
+      return new NotesNameImpl(getNotesObject().getNameObject());
     } catch (NotesException e) {
       throw new NotesConnectorExceptionImpl(e);
     }

@@ -46,8 +46,9 @@ public class NotesAuthorizationManagerTest extends ConnectorFixture {
     allowCrawlerThread = true;
     super.setUp();
     Session session = connector.login();
-    NotesUserGroupManager ug = new NotesUserGroupManager();
-    ug.updatePeopleGroups((NotesConnectorSession) session, true);
+    NotesUserGroupManager userGroupManager =
+        new NotesUserGroupManager((NotesConnectorSession) session);
+    userGroupManager.updateUsersGroups(true);
     username = ConnectorFixture.getRequiredProperty(
         "javatest.authorization.username");
   }
@@ -152,23 +153,6 @@ public class NotesAuthorizationManagerTest extends ConnectorFixture {
       } else {
         assertTrue(response.getDocid(), response.isValid());
       }
-    }
-  }
-
-  public void testNullUserId() throws RepositoryException {
-    Session session = connector.login();
-    List<String> docIds = new ArrayList<String>();
-    docIds.add("id 1");
-    docIds.add("id 2");
-    docIds.add("id 3");
-    NotesAuthorizationManager manager =
-        (NotesAuthorizationManager) session.getAuthorizationManager();
-    Collection<AuthorizationResponse> responseList = manager.authorizeDocids(
-        docIds, new SimpleAuthenticationIdentity(null));
-    assertEquals(0, responseList.size());
-    for (AuthorizationResponse response : responseList) {
-      assertEquals(AuthorizationResponse.Status.INDETERMINATE,
-          response.getStatus());
     }
   }
 

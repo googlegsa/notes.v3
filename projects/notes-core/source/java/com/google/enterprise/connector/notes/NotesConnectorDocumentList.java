@@ -83,7 +83,7 @@ class NotesConnectorDocumentList implements DocumentList {
       }
       crawldoc = db.getDocumentByUNID(unid);
       if (null == ncdoc) {
-        ncdoc = new NotesConnectorDocument(ncs, db);
+        ncdoc = new NotesConnectorDocument(ncs, ns, db);
       }
       ncdoc.setCrawlDoc(unid, crawldoc);
     } catch (Exception e) {

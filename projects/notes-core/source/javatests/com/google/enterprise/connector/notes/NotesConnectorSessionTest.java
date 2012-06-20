@@ -19,8 +19,11 @@ import com.google.enterprise.connector.notes.client.mock.NotesDatabaseMock;
 import com.google.enterprise.connector.notes.client.mock.NotesDocumentMock;
 import com.google.enterprise.connector.notes.client.mock.NotesItemMock;
 import com.google.enterprise.connector.notes.client.mock.SessionFactoryMock;
+import com.google.enterprise.connector.notes.client.mock.ViewNavFromCategoryCreator;
 
 import junit.framework.TestCase;
+
+import java.util.Vector;
 
 public class NotesConnectorSessionTest extends TestCase {
 
@@ -36,44 +39,52 @@ public class NotesConnectorSessionTest extends TestCase {
     factory.addDatabase(configDatabase);
     configDatabase.setViewFields(NCCONST.VIEWSERVERS, "server",
         "region", "domain");
+    configDatabase.addViewNavFromCategoryCreator(
+        NCCONST.VIEWSECURITY,
+        new ViewNavFromCategoryCreator() {
+          public boolean documentIsInCategory(String category,
+              NotesDocumentMock document) {
+            try {
+              String repId =
+                  document.getItemValueString(NCCONST.DITM_REPLICAID);
+              return category.equals(repId);
+            } catch (Exception e) {
+              return false;
+            }
+          }
+        });
 
     // Create Notes names database.
     NotesDatabaseMock namesDatabase = new NotesDatabaseMock("testserver",
         "testnames.nsf");
     factory.addDatabase(namesDatabase);
-    NotesDocumentMock notesPerson = new NotesDocumentMock();
-    namesDatabase.addDocument(notesPerson, "($Users)");
-    namesDatabase.setViewFields("($Users)", "userid", "HTTPPassword");
+    namesDatabase.setViewFields(NCCONST.DIRVIEW_USERS, NCCONST.PITM_FULLNAME,
+        "HTTPPassword");
     namesDatabase.setViewFields(NCCONST.DIRVIEW_PEOPLEGROUPFLAT,
         NCCONST.GITM_LISTNAME);
-    notesPerson.addItem(new NotesItemMock("name", "userid",
-        "type", NotesItem.TEXT, "values", "cn=Test User/ou=Tests/o=Tests"));
-    notesPerson.addItem(new NotesItemMock("name", "HTTPPassword",
-        "type", NotesItem.TEXT, "values", "password"));
-
-    // Create connector user cache.
-    NotesDocumentMock connectorPerson = new NotesDocumentMock();
-    configDatabase.addDocument(connectorPerson, NCCONST.VIEWPEOPLECACHE,
-        NCCONST.VIEWNOTESNAMELOOKUP);
-    configDatabase.setViewFields(NCCONST.VIEWPEOPLECACHE,
-        NCCONST.PCITM_USERNAME, NCCONST.PCITM_NOTESNAME, NCCONST.PCITM_GROUPS);
-    configDatabase.setViewFields(NCCONST.VIEWNOTESNAMELOOKUP,
-        NCCONST.PCITM_NOTESNAME, NCCONST.PCITM_USERNAME);
-    connectorPerson.addItem(new NotesItemMock("name", NCCONST.PCITM_USERNAME,
-            "type", NotesItem.TEXT, "values", "testuser"));
-    connectorPerson.addItem(new NotesItemMock("name", NCCONST.PCITM_NOTESNAME,
-            "type", NotesItem.TEXT, "values", "cn=Test User/ou=Tests/o=Tests"));
-    connectorPerson.addItem(new NotesItemMock("name", NCCONST.PCITM_GROUPS,
-            "type", NotesItem.TEXT, "values", "Group1", "Group2",
-            "replicaid/[testrole]"));
-    configDatabase.setViewFields(NCCONST.VIEWGROUPCACHE,
-        NCCONST.GCITM_GROUPNAME, NCCONST.GCITM_GROUPROLES);
-    NotesDocumentMock connectorGroup = new NotesDocumentMock();
-    connectorGroup.addItem(new NotesItemMock("name", NCCONST.GCITM_GROUPNAME,
-            "type", NotesItem.TEXT, "values", "Group1"));
-    connectorGroup.addItem(new NotesItemMock("name", NCCONST.GCITM_GROUPROLES,
-            "type", NotesItem.TEXT, "values", "replicaid/[grouprole]"));
-    configDatabase.addDocument(connectorGroup, NCCONST.VIEWGROUPCACHE);
+    namesDatabase.setViewFields(NCCONST.DIRVIEW_VIMUSERS,
+        NCCONST.PITM_FULLNAME);
+    namesDatabase.setViewFields(NCCONST.DIRVIEW_VIMGROUPS,
+        NCCONST.GITM_LISTNAME);
+    namesDatabase.addViewNavFromCategoryCreator(
+        NCCONST.DIRVIEW_SERVERACCESS,
+        new ViewNavFromCategoryCreator() {
+          public boolean documentIsInCategory(String category,
+              NotesDocumentMock document) {
+            try {
+              Vector members = document.getItemValue(NCCONST.GITM_MEMBERS);
+              for (Object member : members) {
+                if (member.toString().toLowerCase()
+                    .equals(category.toLowerCase())) {
+                  return true;
+                }
+              }
+              return false;
+            } catch (Exception e) {
+              return false;
+            }
+          }
+        });
 
     // Create config document.
     NotesDocumentMock systemConfig = new NotesDocumentMock();

@@ -22,6 +22,7 @@ import com.google.enterprise.connector.notes.client.NotesView;
 import com.google.enterprise.connector.spi.Document;
 import com.google.enterprise.connector.spi.Property;
 import com.google.enterprise.connector.spi.SpiConstants;
+import com.google.enterprise.connector.spi.Session;
 import com.google.enterprise.connector.spi.Value;
 
 import junit.extensions.TestSetup;
@@ -50,6 +51,9 @@ public class InheritableAclTest extends TestCase {
         protected void setUp() throws Exception {
           connector = ConnectorFixture.getConnector(false, true);
           connectorSession = (NotesConnectorSession) connector.login();
+          NotesUserGroupManager userGroupManager =
+              new NotesUserGroupManager(connectorSession);
+          userGroupManager.updateUsersGroups(true);
           documents = ConnectorFixture.traverseAll(connectorSession);
         }
 

@@ -31,13 +31,6 @@ public class NCCONST {
   public static final String VIEWSYSTEMSETUP = "NCSystemSetup";
   public static final String VIEWSERVERS = "NCServers";
   public static final String VIEWSECURITY = "NCSecurity";
-  public static final String VIEWGROUPCACHE = "NCGroupCache";
-  public static final String VIEWPEOPLECACHE = "NCPeopleCache";
-
-  public static final String VIEWNOTESNAMELOOKUP = "NCNotesNameLookup";
-  public static final String VIEWPEOPLENAMELOOKUP = "NCPeopleNameLookup";
-
-  public static final String VIEWPARENTGROUPS = "NCParentGroups";
 
   // Form Names
   public static final String ITMFORM = "Form";
@@ -81,11 +74,6 @@ public class NCCONST {
   public static final String FITM_SEARCHRESULTSFORMULA = "SearchResultsFormula";
   public static final String FITM_DESCRIPTIONFORMULA = "DescriptionFormula";
 
-
-  // Access Control Database Views
-  public static final String ACITM_GROUPS = "Groups";
-  public static final String ACITM_NOTESNAME = "NotesName";
-
   // Directory View
   /** These are default views in the Domino directory and must exist */
   public static final String DIRVIEW_PEOPLEGROUPFLAT = "($PeopleGroupsFlat)";
@@ -105,17 +93,6 @@ public class NCCONST {
 
   // Person Items from Domino Directory
   public static final String PITM_FULLNAME = "FullName";
-
-  // Item names used in the group cache documents
-  public static final String GCITM_GROUPNAME = "GroupName";
-  public static final String GCITM_CHILDGROUPS = "ChildGroups";
-  public static final String GCITM_GROUPROLES = "GroupRoles";
-
-  // Item names used in the person cache documents
-  public static final String PCITM_USERNAME = "UserName";
-  public static final String PCITM_NOTESNAME = "NotesName";
-  public static final String PCITM_GROUPS = "Groups";
-
 
   //Item names used by the connector for crawling documents
 

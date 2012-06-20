@@ -222,7 +222,10 @@ public class NotesDatabaseMock extends NotesBaseMock
   /* @Override */
   public NotesACL getACL() throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "getACL");
-    return acl;
+    if (acl != null) {
+      return acl;
+    }
+    return new NotesACLMock();
   }
 
   /** {@inheritDoc} */

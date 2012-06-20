@@ -42,8 +42,9 @@ public class NotesTraversalManagerTest extends ConnectorFixture {
     super.setUp();
     // Temporary fix for the need to create user/group cache.
     Session session = connector.login();
-    NotesUserGroupManager ug = new NotesUserGroupManager();
-    ug.updatePeopleGroups((NotesConnectorSession) session, true);
+    NotesUserGroupManager userGroupManager =
+        new NotesUserGroupManager((NotesConnectorSession) session);
+    userGroupManager.updateUsersGroups(true);
   }
 
   /**

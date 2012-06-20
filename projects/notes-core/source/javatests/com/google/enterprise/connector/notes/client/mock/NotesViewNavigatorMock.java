@@ -35,8 +35,9 @@ class NotesViewNavigatorMock extends NotesBaseMock
 
   private NotesDocument currentDoc;
 
-  NotesViewNavigatorMock(NotesViewMock view) {
+  NotesViewNavigatorMock(NotesViewMock view) throws RepositoryException {
     this.view = view;
+    LOGGER.fine("created viewnav with view of size: " + getCount());
   }
 
   /** {@inheritDoc} */
@@ -80,6 +81,6 @@ class NotesViewNavigatorMock extends NotesBaseMock
   /* @Override */
   public NotesViewEntry getFirstDocument() throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "getFirstDocument");
-    return null;
+    return getFirst();
  }
 }

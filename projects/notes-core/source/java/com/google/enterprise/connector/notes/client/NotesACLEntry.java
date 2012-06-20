@@ -61,6 +61,14 @@ public interface NotesACLEntry extends NotesBase {
   String getName() throws RepositoryException;
 
   /**
+   * Returns a Name object for the entry.
+   *
+   * @return a Name object
+   * @throws RepositoryException
+   */
+  NotesName getNameObject() throws RepositoryException;
+
+  /**
    * Returns the roles that are enabled for this entry.
    *
    * @return the roles that are enabled for this entry

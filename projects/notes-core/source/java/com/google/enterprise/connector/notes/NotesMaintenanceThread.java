@@ -69,7 +69,9 @@ public class NotesMaintenanceThread extends Thread {
 
     nc = connector;
     ncs = session;
-    nugm = new NotesUserGroupManager();
+    if (session != null) {
+      nugm = session.getUserGroupManager();
+    }
   }
 
   @Override
@@ -83,9 +85,9 @@ public class NotesMaintenanceThread extends Thread {
     NotesPollerNotifier npn = ncs.getNotifier();
     while (nc.getShutdown() == false) {
       try {
-       LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
+        LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
             "Maintenance thread is updating User Group Cache.");
-       	nugm.updatePeopleGroups(ncs);
+        nugm.updateUsersGroups();
         LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
             "Maintenance thread checking for deletions.");
         checkForDeletions(lastdocid, batchsize);
