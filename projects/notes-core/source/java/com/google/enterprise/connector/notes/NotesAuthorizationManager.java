@@ -15,6 +15,7 @@
 package com.google.enterprise.connector.notes;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
 import com.google.enterprise.connector.notes.client.NotesDatabase;
 import com.google.enterprise.connector.notes.client.NotesDocument;
@@ -136,8 +137,9 @@ class NotesAuthorizationManager implements AuthorizationManager {
               // otherwise...
               boolean docallow = true;
               if (dballow) {
-                Collection<String> readers =
-                    getDocumentReaders(securityView, repId, unid);
+                Collection<String> readers = 
+                    ncs.getNotesDocumentManagerDatabase()
+                        .getDocumentReaders(unid, repId);
                 if (readers.size() > 0) {
                   docallow = checkDocumentReaders(user, readers, repId);
                 } else {
@@ -197,39 +199,6 @@ class NotesAuthorizationManager implements AuthorizationManager {
         return notesName.substring(3, index);
     }
     return null;
-  }
-
-  private Collection<String> getDocumentReaders(NotesView securityView,
-      String repId, String unid) throws RepositoryException {
-    final String METHOD = "getDocumentReaders";
-    LOGGER.entering(CLASS_NAME, METHOD);
-
-    try {
-      Vector<String> searchKey = new Vector<String>(3);
-      searchKey.addElement(repId);
-      // Database documents are type '1' in this view.
-      // Crawler documents are type '2'
-      searchKey.addElement("2");
-      searchKey.addElement(unid);
-      LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD,
-          "Search key is  " + searchKey.toString());
-
-      NotesDocument crawlDoc = null;
-      try {
-        crawlDoc = securityView.getDocumentByKey(searchKey, true);
-        if (crawlDoc != null) {
-          @SuppressWarnings({ "unchecked", "cast" })
-              Vector<String> allowAuthors = (Vector<String>) crawlDoc
-              .getItemValue(NCCONST.NCITM_DOCAUTHORREADERS);
-          return toLowerCase(allowAuthors);
-        }
-      } finally {
-        Util.recycle(crawlDoc);
-      }
-      return Collections.emptyList();
-    } finally {
-      LOGGER.exiting(CLASS_NAME, METHOD);
-    }
   }
 
   /* getDocumentReaders lower-cases the readers list. */

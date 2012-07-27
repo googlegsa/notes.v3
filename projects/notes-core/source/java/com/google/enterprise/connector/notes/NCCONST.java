@@ -308,8 +308,15 @@ public class NCCONST {
   public static final String DB_ACL_INHERIT_TYPE_ANDBOTH = "AndBoth";
   public static final String DB_ACL_INHERIT_TYPE_PARENTOVERRIDES
       = "ParentOverrides";
+  
+  //Constants for Indexed and Readers tables
+  public static final String TABLE_INDEXED_PREFIX = "NCIndexed_";
+  public static final String TABLE_READERS_PREFIX = "NCIndexedReaders_";
+  public static final int COLUMN_SIZE_UNID = 32;
+  public static final int COLUMN_SIZE_REPLICAID = 16;
+  public static final int COLUMN_SIZE_READER = 100;
+  public static final int COLUMN_SIZE_SERVER = 100;
+  public static final int COLUMN_SIZE_HOST = 100;
+  public static final int COLUMN_SIZE_PROTOCOL = 5;
 }
-
-
-
 

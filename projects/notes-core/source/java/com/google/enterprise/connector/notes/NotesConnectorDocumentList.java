@@ -27,6 +27,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.net.MalformedURLException;
+import java.sql.Connection;
 
 class NotesConnectorDocumentList implements DocumentList {
   private static final String CLASS_NAME =
@@ -39,7 +41,8 @@ class NotesConnectorDocumentList implements DocumentList {
 
   /** The connector database */
   private NotesDatabase db = null;
-
+  private Connection databaseConnection = null;
+  
   /** The backend document being crawled */
   private NotesDocument crawldoc = null;
 
@@ -98,13 +101,21 @@ class NotesConnectorDocumentList implements DocumentList {
       NotesView docidvw) throws RepositoryException {
     final String METHOD = "checkpointDelete";
     LOGGER.entering(CLASS_NAME, METHOD);
-    String docid = deleteDoc.getItemValueString(NCCONST.ITM_DOCID);
-    docidvw.refresh();
-    NotesDocument prevDoc = docidvw.getDocumentByKey(docid, true);
-    if (null != prevDoc) {
-      prevDoc.remove(true);
+    String docid = null;
+    try {
+      docid = deleteDoc.getItemValueString(NCCONST.ITM_DOCID);
+      NotesDocId notesId = new NotesDocId(docid);
+      docidvw.refresh();
+      NotesDocument prevDoc = docidvw.getDocumentByKey(docid, true);
+      if (prevDoc != null) {
+        prevDoc.remove(true);
+      }
+      deleteDoc.remove(true);
+      this.ncs.getNotesDocumentManagerDatabase().deleteDocument(
+          notesId.getDocId(), notesId.getReplicaId(), databaseConnection);
+    } catch (MalformedURLException e) {
+      LOGGER.severe("Invalid google docid: " + docid);
     }
-    deleteDoc.remove(true);
     LOGGER.exiting(CLASS_NAME, METHOD);
   }
 
@@ -145,21 +156,35 @@ class NotesConnectorDocumentList implements DocumentList {
       prevDoc.remove(true);
     }
 
-    indexedDoc.replaceItemValue(NCCONST.NCITM_STATE, NCCONST.STATEINDEXED);
-    indexedDoc.save(true);
+    boolean isRetained = true;
     if (!ncs.getRetainMetaData()) {
       if (!NCCONST.AUTH_CONNECTOR.equals(
-              indexedDoc.getItemValueString(NCCONST.NCITM_AUTHTYPE))) {
+          indexedDoc.getItemValueString(NCCONST.NCITM_AUTHTYPE))) {
         LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD,
-            "Deleting metadata for indexed doc not using connector authz: "
-            + docid);
-        indexedDoc.remove(true);
+              "Deleting metadata for indexed doc not using connector authz: "
+              + docid);
+        isRetained = false;
       } else if (indexedDoc.getItemValue(NCCONST.NCITM_DOCAUTHORREADERS)
           .size() == 0) {
         LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD,
-            "Deleting metadata for indexed doc with no readers: " + docid);
-        indexedDoc.remove(true);
+              "Deleting metadata for indexed doc with no readers: " + docid);
+        isRetained = false;
       }
+    }
+    if (isRetained) {
+      if (this.ncs.getNotesDocumentManagerDatabase().addIndexedDocument(
+          indexedDoc, databaseConnection) == true) {
+        indexedDoc.remove(true);
+        LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD, 
+          "Retain indexed document in database");
+      } else {
+        LOGGER.logp(Level.WARNING, CLASS_NAME, METHOD, 
+            "Failed to add document to database (DocID: " + docid + ")");
+      }
+    } else {
+      indexedDoc.remove(true);
+      LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD,
+        "Delete indexed document from Notes");
     }
     LOGGER.exiting(CLASS_NAME, METHOD);
   }
@@ -174,43 +199,55 @@ class NotesConnectorDocumentList implements DocumentList {
 
       // If we don't have a new checkpoint we return null
       if (ncdoc != null) {
-        //Otherwise our checkpoint should be the UNID of the
-        //current document in the doclist
-        checkPointUnid = ncdoc.getUNID();
-        NotesView docidvw = db.getView(NCCONST.VIEWINDEXED);
+        try {
+          //Obtain database connection
+          databaseConnection = ncs.getNotesDocumentManagerDatabase()
+            .getDatabaseConnection();
+          if (databaseConnection == null) {
+            throw new RepositoryException(
+                "Database connection is not initialized");
+          }
+            
+          //Otherwise our checkpoint should be the UNID of the
+          //current document in the doclist
+          checkPointUnid = ncdoc.getUNID();
+          NotesView docidvw = db.getView(NCCONST.VIEWINDEXED);
 
-        // We need to iterate through the doclist and clean up
-        // the pre-fetched documents and file system objects
-        String indexedDocUnid = "";
-        for (Iterator<String> ci = unidList.iterator(); ci.hasNext();) {
-          indexedDocUnid =  ci.next();
-          LOGGER.logp(Level.FINER, CLASS_NAME, METHOD,
-              "Checkpointing document: " + indexedDocUnid);
-          NotesDocument indexedDoc =
-              db.getDocumentByUNID(indexedDocUnid);
-          if (indexedDoc.getItemValueString(NCCONST.ITM_ACTION)
+          // We need to iterate through the doclist and clean up
+          // the pre-fetched documents and file system objects
+          String indexedDocUnid = "";
+          for(Iterator<String> ci = unidList.iterator(); ci.hasNext();) {
+            indexedDocUnid =  ci.next();
+            LOGGER.logp(Level.FINER, CLASS_NAME, METHOD,
+                "Checkpointing document: " + indexedDocUnid);
+            NotesDocument indexedDoc = db.getDocumentByUNID(indexedDocUnid);
+            if (indexedDoc.getItemValueString(NCCONST.ITM_ACTION)
               .equalsIgnoreCase(SpiConstants.ActionType.ADD.toString())) {
-            if (indexedDoc.hasItem(NCCONST.NCITM_DBACL)) {
-              checkpointDelete(indexedDoc, docidvw);
-            } else {
               checkpointAdd(indexedDoc, docidvw);
-            }
-          } else if (indexedDoc.getItemValueString(NCCONST.ITM_ACTION)
+            } else if (indexedDoc.getItemValueString(NCCONST.ITM_ACTION)
               .equalsIgnoreCase(SpiConstants.ActionType.DELETE.toString())) {
-            checkpointDelete(indexedDoc, docidvw);
+              checkpointDelete(indexedDoc, docidvw);
+            }
+            indexedDoc.recycle();
+            // Remove from the document list
+            ci.remove();
+            // Exit when we get to the checkpoint document
+            if (indexedDocUnid.equals(checkPointUnid)) {
+              break;
+            }
           }
-          indexedDoc.recycle();
-          // Remove from the document list
-          ci.remove();
-          // Exit when we get to the checkpoint document
-          if (indexedDocUnid.equals(checkPointUnid)) {
-            break;
-          }
+        } catch (RepositoryException re) {
+          LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD,
+              "Failed to update search index in database", re);
+        } finally {
+          //Release database connection
+          ncs.getNotesDocumentManagerDatabase()
+            .releaseDatabaseConnection(databaseConnection);
         }
-      }
-      else
+      } else {
         LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
             "Checkpoint for empty document list.");
+      }
       // Without lifecycle methods, use the checkpoint to clean up our session
       if (this.crawldoc != null) {
         this.crawldoc.recycle();

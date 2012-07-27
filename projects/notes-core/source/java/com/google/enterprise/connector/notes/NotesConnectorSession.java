@@ -59,6 +59,7 @@ public class NotesConnectorSession implements Session {
   private String userSelectionFormula = null;
   private String gsaGroupPrefix;
   private boolean retainMetaData = true;
+  private final NotesDocumentManager notesDocManagerDatabase;
 
   public NotesConnectorSession(NotesConnector Connector,
       NotesPollerNotifier connectorNpn, String Password,
@@ -109,6 +110,7 @@ public class NotesConnectorSession implements Session {
       configValidated = loadConfig(ns,db);
 
       db.recycle();
+      notesDocManagerDatabase = new NotesDocumentManager(this);
     } catch (Exception e) {
       LOGGER.log(Level.SEVERE, CLASS_NAME, e);
       throw new RepositoryException("NotesConnectorSession error", e);
@@ -211,19 +213,19 @@ public class NotesConnectorSession implements Session {
 
       // Get the directory and see if we can open it
       directory = systemDoc.getItemValueString(
-    		  NCCONST.SITM_DIRECTORY);
+          NCCONST.SITM_DIRECTORY);
       LOGGER.logp(Level.CONFIG, CLASS_NAME, METHOD,
-              "Path to Domino directory: " + directory);
+          "Path to Domino directory: " + directory);
 
       NotesDatabase dirDb = ns.getDatabase(this.getServer(), directory);
       dirDb.recycle();
 
       userNameFormula = systemDoc.getItemValueString(
-    		  NCCONST.SITM_USERNAMEFORMULA);
+          NCCONST.SITM_USERNAMEFORMULA);
       if (0 == userNameFormula.length()) {
-    	  LOGGER.logp(Level.CONFIG, CLASS_NAME, METHOD,
-    	      "User Name formula is empty - using default");
-    	  userNameFormula = NCCONST.DEFAULT_USERNAMEFORMULA;
+        LOGGER.logp(Level.CONFIG, CLASS_NAME, METHOD,
+            "User Name formula is empty - using default");
+        userNameFormula = NCCONST.DEFAULT_USERNAMEFORMULA;
       }
       LOGGER.logp(Level.CONFIG, CLASS_NAME, METHOD,
             "User Name formula: " + userNameFormula);
@@ -233,7 +235,7 @@ public class NotesConnectorSession implements Session {
       if (0 == userSelectionFormula.length()) {
         LOGGER.logp(Level.CONFIG, CLASS_NAME, METHOD,
             "User Selection formula is empty - using default");
-    	  userSelectionFormula = NCCONST.DEFAULT_USERSELECTIONFORMULA;
+        userSelectionFormula = NCCONST.DEFAULT_USERSELECTIONFORMULA;
       }
       LOGGER.logp(Level.CONFIG, CLASS_NAME, METHOD,
           "User Selection formula: " + userSelectionFormula);
@@ -439,6 +441,10 @@ public class NotesConnectorSession implements Session {
 
   public NotesConnector getConnector() {
     return connector;
+  }
+  
+  public NotesDocumentManager getNotesDocumentManagerDatabase() {
+    return notesDocManagerDatabase;
   }
 
   /* @Override */

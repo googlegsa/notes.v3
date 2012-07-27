@@ -50,6 +50,8 @@ public interface NotesItem extends NotesBase {
   static final int VIEWMAPDATA = 18;
   static final int VIEWMAPLAYOUT = 19;
 
+  NotesDateTime getDateTimeValue() throws RepositoryException;
+  
   /**
    * Returns the item's name.
    *

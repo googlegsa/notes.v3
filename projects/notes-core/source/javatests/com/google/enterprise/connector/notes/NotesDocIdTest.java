@@ -48,4 +48,24 @@ public class NotesDocIdTest extends TestCase {
     id.setReplicaId("852578CE004AF5F8");
     assertEquals((Object) "http://NewYork/852578CE004AF5F8", id.toString());
   }
+  
+  public void testNotesDocIdConstructor() throws MalformedURLException{
+    String url = "http://dominoServer1.gsa-connectors.com/85257608004F5587/0/03493D9F9F29AE9D85257607005F56F8";
+    NotesDocId notesId = new NotesDocId(url);
+    assertEquals("http", notesId.getProtocol());
+    assertEquals("dominoServer1", notesId.getServer());
+    assertEquals("dominoServer1.gsa-connectors.com", notesId.getHost());
+    assertEquals("85257608004F5587", notesId.getReplicaId());
+    assertEquals("03493D9F9F29AE9D85257607005F56F8", notesId.getDocId());
+  }
+  
+  public void testDefaultConstructor() {
+	String url = "http://dominoServer1.gsa-connectors.com/85257608004F5587/0/03493D9F9F29AE9D85257607005F56F8";
+    NotesDocId notesId = new NotesDocId();
+    notesId.setDocId("03493D9F9F29AE9D85257607005F56F8");
+    notesId.setReplicaId("85257608004F5587");
+    notesId.setProtocol("http");
+    notesId.setHost("dominoServer1.gsa-connectors.com");
+    assertEquals(url, notesId.toString());
+  }
 }

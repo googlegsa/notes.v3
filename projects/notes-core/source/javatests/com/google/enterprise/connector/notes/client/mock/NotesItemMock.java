@@ -14,6 +14,7 @@
 
 package com.google.enterprise.connector.notes.client.mock;
 
+import com.google.enterprise.connector.notes.client.NotesDateTime;
 import com.google.enterprise.connector.notes.client.NotesItem;
 import com.google.enterprise.connector.spi.RepositoryException;
 
@@ -67,6 +68,20 @@ public class NotesItemMock extends NotesBaseMock implements NotesItem {
     }
   }
 
+  /** {@inheritDoc} */
+  /* @Override */
+  @SuppressWarnings("unchecked")
+  public NotesDateTime getDateTimeValue() throws RepositoryException {
+    LOGGER.entering(CLASS_NAME, "getDateTimeValue");
+    Vector<Object> values = (Vector<Object>)properties.get("values");
+    for (Object o : values) {
+      if (o instanceof NotesDateTime) {
+        return (NotesDateTime)o;
+      }
+    }
+    return null;
+  }
+  
   /** {@inheritDoc} */
   /* @Override */
   public String getName() throws RepositoryException {

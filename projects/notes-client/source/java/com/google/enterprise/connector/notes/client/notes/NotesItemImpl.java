@@ -14,6 +14,7 @@
 
 package com.google.enterprise.connector.notes.client.notes;
 
+import com.google.enterprise.connector.notes.client.NotesDateTime;
 import com.google.enterprise.connector.notes.client.NotesItem;
 
 import lotus.domino.Item;
@@ -59,6 +60,16 @@ class NotesItemImpl extends NotesBaseImpl<Item> implements NotesItem {
     super(item);
   }
 
+  /** {@inheritDoc} */
+  /* @Override */
+  public NotesDateTime getDateTimeValue() throws NotesConnectorExceptionImpl {
+    try {
+      return new NotesDateTimeImpl(getNotesObject().getDateTimeValue());
+    } catch (NotesException e) {
+      throw new NotesConnectorExceptionImpl(e);
+    }
+  }
+  
   /** {@inheritDoc} */
   /* @Override */
   public String getName() throws NotesConnectorExceptionImpl {

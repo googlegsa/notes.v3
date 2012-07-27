@@ -20,7 +20,6 @@ import com.google.enterprise.connector.spi.Connector;
 import com.google.enterprise.connector.spi.ConnectorPersistentStore;
 import com.google.enterprise.connector.spi.ConnectorPersistentStoreAware;
 import com.google.enterprise.connector.spi.ConnectorShutdownAware;
-import com.google.enterprise.connector.spi.LocalDatabase;
 import com.google.enterprise.connector.spi.RepositoryException;
 import com.google.enterprise.connector.util.database.JdbcDatabase;
 
@@ -297,6 +296,7 @@ public class NotesConnector implements Connector,
     final String METHOD = "delete";
     LOGGER.logp(Level.INFO, CLASS_NAME, METHOD,
         "Connector is being DELETED!!!");
+    releaseResources();
     deleted = true;
   }
 
@@ -333,5 +333,17 @@ public class NotesConnector implements Connector,
   // TODO: consider renaming to isShutdown.
   public boolean getShutdown() {
     return shutdown;
+  }
+  
+  private void releaseResources(){
+    final String METHOD = "releaseResources";
+    LOGGER.entering(CLASS_NAME, METHOD);
+    try {
+      this.ncs.getNotesDocumentManagerDatabase().clearTables();
+      this.ncs.getNotesDocumentManagerDatabase().dropTables();
+    } catch (RepositoryException e) {
+      LOGGER.logp(Level.FINE, CLASS_NAME, METHOD, "Failed to release resources");
+    }
+    LOGGER.exiting(CLASS_NAME, METHOD);
   }
 }

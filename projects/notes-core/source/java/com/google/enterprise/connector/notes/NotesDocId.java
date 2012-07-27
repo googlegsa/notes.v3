@@ -14,6 +14,8 @@
 
 package com.google.enterprise.connector.notes;
 
+import com.google.common.base.Strings;
+
 import java.net.MalformedURLException;
 import java.net.URL;
 
@@ -24,6 +26,7 @@ import java.net.URL;
 class NotesDocId {
   private String protocol = "http";
   private String host;
+  private String server;
   private int port = -1;
   private String replicaId;
   private String docId;
@@ -37,6 +40,14 @@ class NotesDocId {
     URL url = new URL(docId);
     this.protocol = url.getProtocol();
     this.host = url.getHost();
+    if (!Strings.isNullOrEmpty(host)) {
+      if (host.indexOf('.') > 0) {
+        this.server = host.substring(0, host.indexOf('.'));
+      } else {
+        this.server = host;
+      }
+    }
+      
     this.port = url.getPort();
     String path = url.getPath();
     if (path.length() == 0) {
@@ -68,6 +79,14 @@ class NotesDocId {
 
   public String getHost() {
     return host;
+  }
+  
+  public void setServer(String server) {
+    this.server = server;
+  }
+  
+  public String getServer() {
+    return this.server;
   }
 
   public void setPort(int port) {
