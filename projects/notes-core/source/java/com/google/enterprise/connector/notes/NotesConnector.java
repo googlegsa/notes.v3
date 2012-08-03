@@ -334,16 +334,33 @@ public class NotesConnector implements Connector,
   public boolean getShutdown() {
     return shutdown;
   }
-  
+
   private void releaseResources(){
     final String METHOD = "releaseResources";
     LOGGER.entering(CLASS_NAME, METHOD);
-    try {
-      this.ncs.getNotesDocumentManagerDatabase().clearTables();
-      this.ncs.getNotesDocumentManagerDatabase().dropTables();
-    } catch (RepositoryException e) {
-      LOGGER.logp(Level.FINE, CLASS_NAME, METHOD, "Failed to release resources");
+    if (this.ncs != null) {
+      NotesDocumentManager docman = ncs.getNotesDocumentManagerDatabase();
+      if (docman != null) {
+        try {
+          docman.dropTables();
+        } catch (Exception e) {
+          LOGGER.logp(Level.WARNING, CLASS_NAME, METHOD,
+              "Failed to drop document tables", e);
+        }
+      }
+
+      try {
+        NotesUserGroupManager userGroupMan = ncs.getUserGroupManager();
+        if (userGroupMan != null) {
+          userGroupMan.dropTables();
+        }
+      } catch (Exception e) {
+        LOGGER.logp(Level.WARNING, CLASS_NAME, METHOD,
+            "Failed to drop user/group/role tables", e);
+      }
     }
+
     LOGGER.exiting(CLASS_NAME, METHOD);
   }
 }
+

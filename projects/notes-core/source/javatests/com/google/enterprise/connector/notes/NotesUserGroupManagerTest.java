@@ -308,6 +308,40 @@ public class NotesUserGroupManagerTest extends TestCase {
     userGroupManager.releaseResources();
   }
 
+  public void testDropTables() {
+    JdbcDatabase jdbcDatabase =
+        connectorSession.getConnector().getJdbcDatabase();
+    assertTrue(jdbcDatabase.verifyTableExists(
+            userGroupManager.userTableName, null));
+    assertTrue(jdbcDatabase.verifyTableExists(
+            userGroupManager.groupTableName, null));
+    assertTrue(jdbcDatabase.verifyTableExists(
+            userGroupManager.roleTableName, null));
+    assertTrue(jdbcDatabase.verifyTableExists(
+            userGroupManager.userGroupsTableName, null));
+    assertTrue(jdbcDatabase.verifyTableExists(
+            userGroupManager.userRolesTableName, null));
+    assertTrue(jdbcDatabase.verifyTableExists(
+            userGroupManager.groupRolesTableName, null));
+    assertTrue(jdbcDatabase.verifyTableExists(
+            userGroupManager.groupChildrenTableName, null));
+    userGroupManager.dropTables();
+    assertFalse(jdbcDatabase.verifyTableExists(
+            userGroupManager.userTableName, null));
+    assertFalse(jdbcDatabase.verifyTableExists(
+            userGroupManager.groupTableName, null));
+    assertFalse(jdbcDatabase.verifyTableExists(
+            userGroupManager.roleTableName, null));
+    assertFalse(jdbcDatabase.verifyTableExists(
+            userGroupManager.userGroupsTableName, null));
+    assertFalse(jdbcDatabase.verifyTableExists(
+            userGroupManager.userRolesTableName, null));
+    assertFalse(jdbcDatabase.verifyTableExists(
+            userGroupManager.groupRolesTableName, null));
+    assertFalse(jdbcDatabase.verifyTableExists(
+            userGroupManager.groupChildrenTableName, null));
+  }
+
   public void testInitializeUserCache() throws Exception {
     JdbcDatabase jdbcDatabase =
         connectorSession.getConnector().getJdbcDatabase();

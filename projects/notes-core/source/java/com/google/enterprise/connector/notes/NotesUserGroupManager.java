@@ -1962,6 +1962,48 @@ public class NotesUserGroupManager {
     }
   }
 
+  void dropTables() {
+    final String METHOD = "dropTables";
+    DatabaseConnectionPool connectionPool = null;
+    Connection conn = null;
+    Statement stmt = null;
+    boolean isReadOnly = false;
+    try {
+      connectionPool = connectorSession.getConnector().getJdbcDatabase()
+          .getConnectionPool();
+      conn = connectionPool.getConnection();
+      isReadOnly = conn.isReadOnly();
+      conn.setReadOnly(false);
+
+      String[] tables = { userGroupsTableName, userRolesTableName,
+         groupRolesTableName, groupChildrenTableName,
+         userTableName, groupTableName, roleTableName
+      };
+      stmt = conn.createStatement();
+      for (String table : tables) {
+        try {
+          stmt.executeUpdate("drop table " + table);
+        } catch (Exception e) {
+          LOGGER.logp(Level.WARNING, CLASS_NAME, METHOD,
+              "Failed to drop table: " + table, e);
+        }
+      }
+    } catch (Exception e) {
+      LOGGER.logp(Level.WARNING, CLASS_NAME, METHOD,
+          "Failed to drop tables", e);
+    } finally {
+      try {
+        Util.close(stmt);
+        conn.setReadOnly(isReadOnly);
+        connectionPool.releaseConnection(conn);
+      } catch (SQLException e) {
+        LOGGER.logp(Level.WARNING, CLASS_NAME, METHOD,
+            "Failure releasing connection", e);
+      }
+      LOGGER.exiting(CLASS_NAME, METHOD);
+    }
+  }
+
   public static class User {
     private final long userId;
     private final String notesName;
