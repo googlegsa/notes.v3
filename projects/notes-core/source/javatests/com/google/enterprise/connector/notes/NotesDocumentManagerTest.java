@@ -35,12 +35,12 @@ import com.google.enterprise.connector.notes.client.mock.NotesItemMock;
 import com.google.enterprise.connector.notes.client.mock.SessionFactoryMock;
 import com.google.enterprise.connector.spi.RepositoryException;
 
-public class NotesDocumentManagerDatabaseTest extends TestCase{
+public class NotesDocumentManagerTest extends TestCase{
   private NotesConnector connector;
   private SessionFactoryMock factory;
   private NotesConnectorSession connectorSession;
   private NotesSession session;
-  private NotesDocumentManager notesDocManagerDatabase;
+  private NotesDocumentManager notesDocManager;
   
   private List<NotesDocument> docs;
   private static int NUM_OF_DOCS = 1000;
@@ -52,7 +52,7 @@ public class NotesDocumentManagerDatabaseTest extends TestCase{
     NotesConnectorSessionTest.configureFactoryForSession(factory);
     connectorSession = (NotesConnectorSession) connector.login();
     session = connectorSession.createNotesSession();
-    notesDocManagerDatabase = new NotesDocumentManager(connectorSession);
+    notesDocManager = new NotesDocumentManager(connectorSession);
     generateDocuments();
     updateSearchIndex();
   }
@@ -62,22 +62,22 @@ public class NotesDocumentManagerDatabaseTest extends TestCase{
   }
 
   public void testTableNames() {
-    assertNotNull(notesDocManagerDatabase.indexedTableName);
-    assertNotNull(notesDocManagerDatabase.readersTableName);
+    assertNotNull(notesDocManager.indexedTableName);
+    assertNotNull(notesDocManager.readersTableName);
   }
 
   public void testDatabaseConnection() throws SQLException {
-    Connection conn = notesDocManagerDatabase.getDatabaseConnection();
+    Connection conn = notesDocManager.getDatabaseConnection();
     assertNotNull(conn);
-    notesDocManagerDatabase.releaseDatabaseConnection(conn);
+    notesDocManager.releaseDatabaseConnection(conn);
   }
  
   public void testCountIndexedDocuments() {
     Connection conn = null;
     try {
-      conn = notesDocManagerDatabase.getDatabaseConnection();
+      conn = notesDocManager.getDatabaseConnection();
       String sql = "select count(*) from " 
-          + notesDocManagerDatabase.indexedTableName;
+          + notesDocManager.indexedTableName;
       PreparedStatement pstmt = conn.prepareStatement(sql);
       ResultSet rs = pstmt.executeQuery();
       if (rs.next()) {
@@ -88,7 +88,7 @@ public class NotesDocumentManagerDatabaseTest extends TestCase{
     } catch (SQLException e) {
       e.printStackTrace();
     } finally {
-      notesDocManagerDatabase.releaseDatabaseConnection(conn);
+      notesDocManager.releaseDatabaseConnection(conn);
     }
   }
   
@@ -96,8 +96,8 @@ public class NotesDocumentManagerDatabaseTest extends TestCase{
     NotesDocument doc = docs.get(NUM_OF_DOCS - 1);
     Connection conn = null;
     try {
-      conn = notesDocManagerDatabase.getDatabaseConnection();
-      assertTrue(notesDocManagerDatabase.hasIndexedDocument(
+      conn = notesDocManager.getDatabaseConnection();
+      assertTrue(notesDocManager.hasIndexedDocument(
           doc.getItemValueString(NCCONST.NCITM_UNID),
           doc.getItemValueString(NCCONST.NCITM_REPLICAID),
           conn));
@@ -105,13 +105,13 @@ public class NotesDocumentManagerDatabaseTest extends TestCase{
       e.printStackTrace();
     } finally {
       if(conn != null)
-        this.notesDocManagerDatabase.releaseDatabaseConnection(conn);
+        this.notesDocManager.releaseDatabaseConnection(conn);
     }
   }
   
   public void testStartUnid() throws Exception {
     Map<String,NotesDocId> docIds = 
-        notesDocManagerDatabase.getIndexedDocuments(
+        notesDocManager.getIndexedDocuments(
             TESTCONST.TEST_UNID1, TESTCONST.DBSRC_REPLICAID, 50);
     String firstUnid = docIds.keySet().iterator().next();
     assertEquals(TESTCONST.TEST_UNID1, firstUnid);
@@ -119,14 +119,14 @@ public class NotesDocumentManagerDatabaseTest extends TestCase{
   
   public void testGetIndexedDocuments() throws RepositoryException {
     Map<String,NotesDocId> docIds = 
-        notesDocManagerDatabase.getIndexedDocuments(null, null, NUM_OF_DOCS);
+        notesDocManager.getIndexedDocuments(null, null, NUM_OF_DOCS);
     assertEquals(NUM_OF_DOCS,docIds.size());
     
     //Get a collection equal to batch size which has the first expected unid
     NotesDocument doc = docs.get(NUM_OF_DOCS / 2);
     String unid = doc.getItemValueString(NCCONST.NCITM_UNID);
     String replicaid = doc.getItemValueString(NCCONST.NCITM_REPLICAID);
-    docIds = notesDocManagerDatabase.getIndexedDocuments(unid, 
+    docIds = notesDocManager.getIndexedDocuments(unid, 
         replicaid, NUM_OF_DOCS/4);
     assertEquals(NUM_OF_DOCS/4, docIds.size());
     
@@ -136,13 +136,13 @@ public class NotesDocumentManagerDatabaseTest extends TestCase{
   
   public void testGetDocumentReaders() throws RepositoryException {
     NotesDocument doc = docs.get(0);
-    Set<String> reader1 = notesDocManagerDatabase.getDocumentReaders(
+    Set<String> reader1 = notesDocManager.getDocumentReaders(
         doc.getItemValueString(NCCONST.NCITM_UNID),
         doc.getItemValueString(NCCONST.NCITM_REPLICAID));
     assertEquals(4, reader1.size());
     
     doc = docs.get(1);
-    Set<String> reader2 = notesDocManagerDatabase.getDocumentReaders(
+    Set<String> reader2 = notesDocManager.getDocumentReaders(
         doc.getItemValueString(NCCONST.NCITM_UNID),
         doc.getItemValueString(NCCONST.NCITM_REPLICAID));
     assertEquals(0, reader2.size());
@@ -154,34 +154,34 @@ public class NotesDocumentManagerDatabaseTest extends TestCase{
     String repid = null;
     Connection conn = null;
     try {
-      conn = notesDocManagerDatabase.getDatabaseConnection();
+      conn = notesDocManager.getDatabaseConnection();
       for (int i = 0; i < NUM_OF_DOCS/10; i++) {
         doc = docs.get(i);
         unid = doc.getItemValueString(NCCONST.NCITM_UNID);
         repid = doc.getItemValueString(NCCONST.NCITM_REPLICAID);
-        assertTrue(notesDocManagerDatabase.deleteDocument(unid, repid, conn));
+        assertTrue(notesDocManager.deleteDocument(unid, repid, conn));
       }
     } catch (SQLException e) {
       e.printStackTrace();
     } finally {
       if (conn != null) {
-        notesDocManagerDatabase.releaseDatabaseConnection(conn);
+        notesDocManager.releaseDatabaseConnection(conn);
       }
     }
   }
 
   public void testClearTables() throws RepositoryException {
-    assertTrue(notesDocManagerDatabase.clearTables());
+    assertTrue(notesDocManager.clearTables());
   }
   
   public void testDropTables() throws RepositoryException {
-    assertTrue(notesDocManagerDatabase.dropTables());
+    assertTrue(notesDocManager.dropTables());
   }
 
   Map<String,NotesDocId> getIndexedDocument(
       String startUnid, String replicaId, int batchSize) 
           throws RepositoryException {
-    return notesDocManagerDatabase.getIndexedDocuments(
+    return notesDocManager.getIndexedDocuments(
         startUnid, replicaId, batchSize);
   }
   
@@ -223,14 +223,14 @@ public class NotesDocumentManagerDatabaseTest extends TestCase{
   private void updateSearchIndex() throws RepositoryException {
     Connection conn = null;
     try {
-      conn = notesDocManagerDatabase.getDatabaseConnection();
+      conn = notesDocManager.getDatabaseConnection();
       for(NotesDocument doc : docs){
-        notesDocManagerDatabase.addIndexedDocument(doc, conn);
+        notesDocManager.addIndexedDocument(doc, conn);
       }
     } catch (Exception e) {
       throw new RepositoryException(e);
     } finally {
-      notesDocManagerDatabase.releaseDatabaseConnection(conn);
+      notesDocManager.releaseDatabaseConnection(conn);
     }
   }
   

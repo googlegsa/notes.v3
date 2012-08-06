@@ -25,7 +25,7 @@ public class NotesMaintenanceThreadTest extends TestCase {
   private SessionFactoryMock factory;
   private NotesConnectorSession connectorSession;
   private NotesMaintenanceThread maintenanceThread;
-  private NotesDocumentManagerDatabaseTest notesDocMgrDbTest;
+  private NotesDocumentManagerTest notesDocMgrDbTest;
   
   private static int BATCH_SIZE = 500;
   
@@ -37,7 +37,7 @@ public class NotesMaintenanceThreadTest extends TestCase {
     connectorSession = (NotesConnectorSession) connector.login();
     maintenanceThread = 
         new NotesMaintenanceThread(connector, connectorSession);
-    notesDocMgrDbTest = new NotesDocumentManagerDatabaseTest();
+    notesDocMgrDbTest = new NotesDocumentManagerTest();
     notesDocMgrDbTest.setUp();
   }
 

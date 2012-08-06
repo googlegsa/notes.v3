@@ -143,13 +143,13 @@ public class NotesMaintenanceThread extends Thread {
           DatabaseView.getEntryCount());
       
       if (Strings.isNullOrEmpty(startdocid)) {
-        indexedDocuments = ncs.getNotesDocumentManagerDatabase()
+        indexedDocuments = ncs.getNotesDocumentManager()
             .getIndexedDocuments(null, null, batchsize);
         LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
             "MaintenanceThread: Restarting deletion check.");
       } else {
         NotesDocId startNotesId = new NotesDocId(startdocid);
-        indexedDocuments = ncs.getNotesDocumentManagerDatabase()
+        indexedDocuments = ncs.getNotesDocumentManager()
             .getIndexedDocuments(startNotesId.getDocId(), 
                 startNotesId.getReplicaId(), batchsize);
 

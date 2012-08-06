@@ -339,7 +339,7 @@ public class NotesConnector implements Connector,
     final String METHOD = "releaseResources";
     LOGGER.entering(CLASS_NAME, METHOD);
     if (this.ncs != null) {
-      NotesDocumentManager docman = ncs.getNotesDocumentManagerDatabase();
+      NotesDocumentManager docman = ncs.getNotesDocumentManager();
       if (docman != null) {
         try {
           docman.dropTables();

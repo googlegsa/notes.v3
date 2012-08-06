@@ -79,8 +79,12 @@ public class NotesConnectorTest extends TestCase {
   }
 
   public void testDelete() throws Exception {
-    connector = new NotesConnector(
-        "com.google.enterprise.connector.notes.client.mock.SessionFactoryMock");
+    connector = NotesConnectorTest.getConnector();
+    SessionFactoryMock factory = 
+        (SessionFactoryMock) connector.getSessionFactory();
+    NotesConnectorSessionTest.configureFactoryForSession(factory);
+    NotesConnectorSession session = (NotesConnectorSession) connector.login();
+    
     assertFalse(connector.getDelete());
     connector.delete();
     assertTrue(connector.getDelete());

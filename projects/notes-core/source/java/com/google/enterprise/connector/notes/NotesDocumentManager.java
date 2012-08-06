@@ -82,7 +82,7 @@ public class NotesDocumentManager {
   private void initializeDatabase() throws RepositoryException {
     final String METHOD = "initializeDatabase";
 
-    //Verify or create indexed table
+    //Build DDL statement to create indexed table
     StringBuilder indexedDDL = new StringBuilder();
     indexedDDL.append("create table ").append(indexedTableName).append("(");
     indexedDDL.append("docid long auto_increment primary key, ");
@@ -97,12 +97,18 @@ public class NotesDocumentManager {
     indexedDDL.append("host varchar(")
         .append(NCCONST.COLUMN_SIZE_HOST).append(")");
     indexedDDL.append(")");
+    
+    //Build create index statement for indexed table
+    StringBuilder createIndexSQL = new StringBuilder();
+    createIndexSQL.append("create index idx_" + indexedTableName);
+    createIndexSQL.append(" on ").append(indexedTableName);
+    createIndexSQL.append("(unid, replicaid)");
+    
+    //Create table and index
     jdbcDatabase.verifyTableExists(indexedTableName,
-        new String[]{indexedDDL.toString()});
-    LOGGER.logp(Level.FINE, CLASS_NAME, METHOD, "Create/verify " +
-        this.indexedTableName);
-    //Create index for table
-    createIndexForIndexedTable();
+        new String[]{indexedDDL.toString(), createIndexSQL.toString()});
+    LOGGER.logp(Level.FINE, CLASS_NAME, METHOD, "Create/verify " + 
+        indexedTableName);
 
     //Verify or create readers table
     StringBuilder readersDDL = new StringBuilder();
@@ -117,21 +123,6 @@ public class NotesDocumentManager {
         new String[]{readersDDL.toString()});
     LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
         "Create/verify " + this.readersTableName);
-  }
-
-  private void createIndexForIndexedTable() {
-    final String METHOD = "createIndexForIndexedTable";
-    try {
-      executeUpdates(true, new String[] {
-          "create index idx_unid_replicaid on " + this.indexedTableName +
-          "(unid, replicaid)"});
-      LOGGER.logp(Level.FINE, CLASS_NAME, METHOD, "Create index for " +
-          this.indexedTableName + " table");
-    } catch (SQLException e) {
-      LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
-          "Unable to create index for " + this.indexedTableName +
-          ": " + e.getMessage());
-    }
   }
 
   /**
@@ -633,7 +624,7 @@ public class NotesDocumentManager {
     boolean isDropped = false;
     try {
       String[] statements = {
-          "drop index if exists idx_unid_replicaid",
+          "drop index if exists idx_" + indexedTableName,
           "drop table " + readersTableName,
           "drop table " + indexedTableName
       };

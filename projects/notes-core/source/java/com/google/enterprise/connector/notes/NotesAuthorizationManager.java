@@ -138,7 +138,7 @@ class NotesAuthorizationManager implements AuthorizationManager {
               boolean docallow = true;
               if (dballow) {
                 Collection<String> readers = 
-                    ncs.getNotesDocumentManagerDatabase()
+                    ncs.getNotesDocumentManager()
                         .getDocumentReaders(unid, repId);
                 if (readers.size() > 0) {
                   docallow = checkDocumentReaders(user, readers, repId);

@@ -167,8 +167,7 @@ public class NotesConnectorSessionTest extends TestCase {
    * Tests creating a session.
    */
   public void testCreateSession() throws Exception {
-    connector = new NotesConnector(
-        "com.google.enterprise.connector.notes.client.mock.SessionFactoryMock");
+    connector = NotesConnectorTest.getConnector();
     SessionFactoryMock factory = (SessionFactoryMock)
         connector.getSessionFactory();
 

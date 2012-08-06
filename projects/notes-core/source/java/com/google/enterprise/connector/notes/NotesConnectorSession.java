@@ -59,7 +59,7 @@ public class NotesConnectorSession implements Session {
   private String userSelectionFormula = null;
   private String gsaGroupPrefix;
   private boolean retainMetaData = true;
-  private final NotesDocumentManager notesDocManagerDatabase;
+  private final NotesDocumentManager notesDocManager;
 
   public NotesConnectorSession(NotesConnector Connector,
       NotesPollerNotifier connectorNpn, String Password,
@@ -110,7 +110,7 @@ public class NotesConnectorSession implements Session {
       configValidated = loadConfig(ns,db);
 
       db.recycle();
-      notesDocManagerDatabase = new NotesDocumentManager(this);
+      notesDocManager = new NotesDocumentManager(this);
     } catch (Exception e) {
       LOGGER.log(Level.SEVERE, CLASS_NAME, e);
       throw new RepositoryException("NotesConnectorSession error", e);
@@ -443,8 +443,8 @@ public class NotesConnectorSession implements Session {
     return connector;
   }
   
-  public NotesDocumentManager getNotesDocumentManagerDatabase() {
-    return notesDocManagerDatabase;
+  public NotesDocumentManager getNotesDocumentManager() {
+    return notesDocManager;
   }
 
   /* @Override */

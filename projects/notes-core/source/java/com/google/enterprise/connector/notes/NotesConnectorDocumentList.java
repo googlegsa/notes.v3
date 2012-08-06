@@ -112,7 +112,7 @@ class NotesConnectorDocumentList implements DocumentList {
         prevDoc.remove(true);
       }
       deleteDoc.remove(true);
-      this.ncs.getNotesDocumentManagerDatabase().deleteDocument(
+      this.ncs.getNotesDocumentManager().deleteDocument(
           notesId.getDocId(), notesId.getReplicaId(), databaseConnection);
     } catch (MalformedURLException e) {
       LOGGER.severe("Invalid google docid: " + docid);
@@ -185,7 +185,7 @@ class NotesConnectorDocumentList implements DocumentList {
       }
     }
     if (isRetained) {
-      if (this.ncs.getNotesDocumentManagerDatabase().addIndexedDocument(
+      if (this.ncs.getNotesDocumentManager().addIndexedDocument(
           indexedDoc, databaseConnection) == true) {
         indexedDoc.remove(true);
         LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD,
@@ -214,7 +214,7 @@ class NotesConnectorDocumentList implements DocumentList {
       if (ncdoc != null) {
         try {
           //Obtain database connection
-          databaseConnection = ncs.getNotesDocumentManagerDatabase()
+          databaseConnection = ncs.getNotesDocumentManager()
             .getDatabaseConnection();
           if (databaseConnection == null) {
             throw new RepositoryException(
@@ -264,7 +264,7 @@ class NotesConnectorDocumentList implements DocumentList {
               "Failed to update search index in database", re);
         } finally {
           //Release database connection
-          ncs.getNotesDocumentManagerDatabase()
+          ncs.getNotesDocumentManager()
             .releaseDatabaseConnection(databaseConnection);
         }
       } else {
