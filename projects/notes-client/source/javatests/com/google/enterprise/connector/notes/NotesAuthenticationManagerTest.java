@@ -71,13 +71,14 @@ public class NotesAuthenticationManagerTest extends ConnectorFixture {
    *
    * @throws RepositoryException
    */
+  @SuppressWarnings("unchecked")
   public void testValidUser() throws RepositoryException {
     Session session = connector.login();
     AuthenticationManager manager = session.getAuthenticationManager();
     AuthenticationResponse response = manager.authenticate(
         new SimpleAuthenticationIdentity(username, password));
     assertTrue("Failed to authenticate: " + username, response.isValid());
-    Collection<String> groups = response.getGroups();
+    Collection<String> groups = (Collection) response.getGroups();
     if (groups != null) {
       String groupPrefix = ((NotesConnectorSession) session)
           .getGsaGroupPrefix();
@@ -93,13 +94,14 @@ public class NotesAuthenticationManagerTest extends ConnectorFixture {
    *
    * @throws RepositoryException
    */
+  @SuppressWarnings("unchecked")
   public void testValidUserGroupResolutionOnly() throws RepositoryException {
     Session session = connector.login();
     AuthenticationManager manager = session.getAuthenticationManager();
     AuthenticationResponse response = manager.authenticate(
         new SimpleAuthenticationIdentity(username, null));
     assertTrue("Authenticated: " + username, response.isValid());
-    Collection<String> groups = response.getGroups();
+    Collection<String> groups = (Collection) response.getGroups();
     if (groups != null) {
       String groupPrefix = ((NotesConnectorSession) session)
           .getGsaGroupPrefix();

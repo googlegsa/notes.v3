@@ -24,7 +24,7 @@ import java.util.List;
 import java.util.Vector;
 import java.util.logging.Logger;
 
-class NotesViewMock extends NotesBaseMock implements NotesView {
+public class NotesViewMock extends NotesBaseMock implements NotesView {
   private static final String CLASS_NAME = NotesViewMock.class.getName();
 
   /** The logger for this class. */
@@ -101,6 +101,9 @@ class NotesViewMock extends NotesBaseMock implements NotesView {
   public NotesDocument getDocumentByKey(Object key, boolean exact)
       throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "getDocumentByKey " + key);
+    if (key == null)
+      return null;
+    
     if (fields == null || fields.length == 0) {
       LOGGER.finest("view fields are null");
       return null;

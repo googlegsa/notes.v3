@@ -14,6 +14,7 @@
 
 package com.google.enterprise.connector.notes;
 
+import com.google.common.base.Strings;
 import com.google.enterprise.connector.notes.client.NotesDateTime;
 import com.google.enterprise.connector.notes.client.NotesDatabase;
 import com.google.enterprise.connector.notes.client.NotesDocument;
@@ -79,7 +80,7 @@ public class NotesMaintenanceThread extends Thread {
        	nugm.updatePeopleGroups(ncs);
         LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
             "Maintenance thread checking for deletions.");
-        checkForDeletions(lastdocid, batchsize);
+        lastdocid = checkForDeletions(lastdocid, batchsize);
         LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
             "Maintenance thread sleeping after checking for deletions.");
         npn.waitForWork();
@@ -138,8 +139,10 @@ public class NotesMaintenanceThread extends Thread {
       LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
           "MaintenanceThread: Entries in indexed view: " +
           IndexedView.getEntryCount());
-
-      IndexedDoc = IndexedView.getDocumentByKey(startdocid);
+      
+      if (!Strings.isNullOrEmpty(startdocid)) {
+        IndexedDoc = IndexedView.getDocumentByKey(startdocid);
+      }
       if (null == IndexedDoc) {
         LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
             "MaintenanceThread: Restarting deletion check.");

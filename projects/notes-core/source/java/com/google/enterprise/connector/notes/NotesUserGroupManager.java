@@ -4,7 +4,7 @@
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
+//     http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -17,10 +17,6 @@ package com.google.enterprise.connector.notes;
 import com.google.enterprise.connector.notes.client.NotesDatabase;
 import com.google.enterprise.connector.notes.client.NotesDateTime;
 import com.google.enterprise.connector.notes.client.NotesDocument;
-import com.google.enterprise.connector.notes.client.NotesDocumentCollection;
-import com.google.enterprise.connector.notes.client.NotesEmbeddedObject;
-import com.google.enterprise.connector.notes.client.NotesItem;
-import com.google.enterprise.connector.notes.client.NotesRichTextItem;
 import com.google.enterprise.connector.notes.client.NotesSession;
 import com.google.enterprise.connector.notes.client.NotesView;
 import com.google.enterprise.connector.notes.client.NotesViewEntry;
@@ -28,6 +24,7 @@ import com.google.enterprise.connector.notes.client.NotesViewNavigator;
 import com.google.enterprise.connector.spi.RepositoryException;
 
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.Vector;
 import java.util.logging.Level;
@@ -53,7 +50,7 @@ public class NotesUserGroupManager {
   private NotesDatabase dirdb = null;
   private Vector<String> processedGroups = null;
   private Vector<String> existingMembers = null;
-  private Vector<String> userNestedGroups = null;
+  private HashSet<String> userNestedGroups = null;
   private NotesView vwPG = null;
   private NotesView vwGroupCache = null;
   private NotesView vwPeopleCache = null;
@@ -278,7 +275,10 @@ public class NotesUserGroupManager {
           // Do an additional check for Persons to make sure they
           // still meet the selection criteria
           if (isPerson) {
-            selected = checkPersonSelectionFormula(userSelectionFormula, doc);
+            // Apply formula to Notes directory person document instead of 
+            // connector's cached document in configuration database
+            selected = 
+                checkPersonSelectionFormula(userSelectionFormula, searchDoc);
           }
           searchDoc.recycle();
         }
@@ -288,13 +288,12 @@ public class NotesUserGroupManager {
               + key);
           remove = true;
         }
-
+        doc = checkView.getNextDocument(prevDoc);
         if (remove) {
           synchronized(ncs.getConnector().getPeopleCacheLock()) {
-            doc.remove(true);
+            prevDoc.remove(true);
           }
         }
-        doc = checkView.getNextDocument(prevDoc);
         prevDoc.recycle();
       } catch (RepositoryException e) {
         LOGGER.log(Level.SEVERE, CLASS_NAME, e);
@@ -473,8 +472,19 @@ public class NotesUserGroupManager {
           continue;
         }
 
-        String fullName = doc.getItemValue(NCCONST.PITM_FULLNAME)
-            .firstElement().toString().toLowerCase();
+        // Need to check for FullName field in case there is a bad
+        // or corrupted person document in the directory.  Skip the document if
+        // the field is not existed or is empty.
+        String fullName = null;
+        Vector<String> fullNameValues = doc.getItemValue(NCCONST.PITM_FULLNAME);
+        if (fullNameValues.size() > 0) {
+          fullName = fullNameValues.firstElement().toString().toLowerCase();
+        }
+        if (fullName == null) {
+          doc = vwPG.getNextDocument(prevDoc);
+          prevDoc.recycle();
+          continue;
+        }
         LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD, "Processing user: "
             + fullName);
 
@@ -538,7 +548,7 @@ public class NotesUserGroupManager {
               .toLowerCase());
 
           vwServerAccess.refresh();
-          userNestedGroups = new Vector<String>(100);
+          userNestedGroups = new HashSet<String>();
           // Get groups for full name
           getParentGroups(fullName, vwServerAccess, vwGroupCache);
 
@@ -550,21 +560,23 @@ public class NotesUserGroupManager {
           getGroupsFromDN(fullName);
 
           // Sort and eliminate duplicates
-          LinkedHashSet<String> uniqueGroups = new LinkedHashSet<String>(
-              userNestedGroups);
-          userNestedGroups.clear();
-          userNestedGroups.addAll(uniqueGroups);
+          Vector<String> userGroups = 
+              new Vector<String> (userNestedGroups.size());
+          userGroups.addAll(userNestedGroups);
+          Collections.sort(userGroups);
 
           LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD, "Group list for user "
-              + fullName + " are " + userNestedGroups);
-          personDoc.replaceItemValue(NCCONST.PCITM_GROUPS, userNestedGroups);
+              + fullName + " are " + userGroups);
+          personDoc.replaceItemValue(NCCONST.PCITM_GROUPS, userGroups);
           personDoc.save(true);
+          userNestedGroups.clear();
+          userGroups.clear();
         }
         personDoc.recycle();
         personDoc = null;
         doc = vwPG.getNextDocument(prevDoc);
         prevDoc.recycle();
-      } catch (RepositoryException e) {
+      } catch (Exception e) {
         LOGGER.log(Level.SEVERE, CLASS_NAME, e);
         if (null != personDoc) {
           personDoc.recycle();
@@ -589,6 +601,9 @@ public class NotesUserGroupManager {
       LOGGER.logp(Level.FINER, CLASS_NAME, METHOD,
           "Group list adding OU " + ou);
       userNestedGroups.add(ou);
+      // Prepend a wildcard to each OU to support wildcard configuration
+      // in group membership and in database ACLs.
+      userNestedGroups.add("*/" + ou);
       dn = ou;
     }
   }
@@ -641,4 +656,5 @@ public class NotesUserGroupManager {
     }
     return false;
   }
+  
 }

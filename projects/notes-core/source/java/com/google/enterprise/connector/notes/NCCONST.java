@@ -92,6 +92,7 @@ public class NCCONST {
   public static final String DIRVIEW_SERVERACCESS = "($ServerAccess)";
   public static final String DIRVIEW_VIMUSERS = "($VimPeople)";
   public static final String DIRVIEW_VIMGROUPS = "($VimGroups)";
+  public static final String DIRVIEW_USERS = "($Users)";
 
   public static final String DIRFORM_PERSON = "Person";
   public static final String DIRFORM_GROUP = "Group";
