@@ -139,7 +139,7 @@ public class NotesMaintenanceThread extends Thread {
       LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
           "MaintenanceThread: Entries in indexed view: " +
           IndexedView.getEntryCount());
-      
+
       if (!Strings.isNullOrEmpty(startdocid)) {
         IndexedDoc = IndexedView.getDocumentByKey(startdocid);
       }
@@ -276,7 +276,7 @@ public class NotesMaintenanceThread extends Thread {
         }
 
         // Document has passed all checks and should remain in the index
-        lastdocid = IndexedDoc.getItemValueString(NCCONST.NCITM_UNID);
+        lastdocid = IndexedDoc.getItemValueString(NCCONST.ITM_DOCID);
         PrevDoc = IndexedDoc;
         IndexedDoc = IndexedView.getNextDocument(PrevDoc);
         PrevDoc.recycle();
