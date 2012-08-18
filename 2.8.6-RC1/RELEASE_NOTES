@@ -9,6 +9,32 @@ documentation.
 
 Web Site: http://code.google.com/p/google-enterprise-connector-notes/
 
+
+Release 2.8.6, August 2012
+==========================
+
+Introduction
+------------
+This is a maintenance release that improves quality without
+adding any new functionality. Users of version 2.8.4 are
+encouraged to upgrade.
+
+Summary of Changes
+------------------
+  * Fix issue 6781356: Lotus Notes doesn't support group
+    membership defined as patterns.
+  * Fix issue 6410562: Creating a person with no full name causes
+    the connector to stop processing people.
+  * Fix issue 6922704: Notes is not removing users from the
+    directory. User records are now removed from the connector's
+    cache when the user is found to have been deleted from the
+    Notes directory.
+  * Fix issue 6622121: Documents not being deleted from Notes
+    Connector. The connector's ability to delete cached document
+    records when the source document has been deleted is
+    improved.
+
+
 Release 2.8.4, March 2012
 =======================
 
