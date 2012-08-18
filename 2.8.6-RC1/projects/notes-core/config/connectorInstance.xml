@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE beans PUBLIC "-//SPRING//DTD BEAN//EN" "http://www.springframework.org/dtd/spring-beans-2.0.dtd">
+<beans>
+  <!-- EDIT THIS BEAN DEFINTION WITH CUSTOM PROPERTY VALUES -->
+  <bean id="notes-connector-instance"
+    class="com.google.enterprise.connector.notes.NotesConnector"
+    parent="notes-connector-defaults"
+    dependency-check="all" scope="prototype">
+
+      <!-- SET CUSTOM PROPERTY VALUES HERE -->
+
+  </bean>
+</beans>
