@@ -29,6 +29,8 @@
         <property name="properties">
             <props>
                 <prop key="gsaNamesAreGlobal">true</prop>
+                <prop key="googleGlobalNamespace"></prop>
+                <prop key="googleLocalNamespace"></prop>
             </props>
         </property>
     </bean>
