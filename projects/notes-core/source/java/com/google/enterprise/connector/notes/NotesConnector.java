@@ -207,6 +207,12 @@ public class NotesConnector implements Connector,
   public void setDatabaseAccess(
       ConnectorPersistentStore connectorPersistentStore) {
     final String METHOD = "setDatabaseAccess";
+    if (connectorPersistentStore == null) {
+      // null is passed in by Spring; the real value is set later
+      // by the connector manager.
+      return;
+    }
+
     LOGGER.logp(Level.CONFIG, CLASS_NAME, METHOD,
         "Connector config databaseAccess = " + connectorPersistentStore);
     this.connectorPersistentStore = connectorPersistentStore;
