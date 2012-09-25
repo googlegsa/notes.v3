@@ -14,16 +14,15 @@
 
 package com.google.enterprise.connector.notes.client.mock;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Vector;
-import java.util.logging.Logger;
-
 import com.google.enterprise.connector.notes.client.NotesDocument;
 import com.google.enterprise.connector.notes.client.NotesView;
 import com.google.enterprise.connector.notes.client.NotesViewEntryCollection;
 import com.google.enterprise.connector.notes.client.NotesViewNavigator;
 import com.google.enterprise.connector.spi.RepositoryException;
+
+import java.util.List;
+import java.util.Vector;
+import java.util.logging.Logger;
 
 public class NotesViewMock extends NotesBaseMock implements NotesView {
   private static final String CLASS_NAME = NotesViewMock.class.getName();
@@ -32,26 +31,20 @@ public class NotesViewMock extends NotesBaseMock implements NotesView {
   private static final Logger LOGGER =
       Logger.getLogger(CLASS_NAME);
 
-  private String viewName;
   private List<NotesDocumentMock> documents;
-  private String[] fields;
-  ViewNavFromCategoryCreator viewNavFromCategoryCreator;
 
-  NotesViewMock(String viewName, List<NotesDocumentMock> documents) {
-    this.viewName = viewName;
+  private String[] fields;
+
+  NotesViewMock(List<NotesDocumentMock> documents) {
     this.documents = documents;
   }
 
-  public void setFields(String[] fields) {
+  void setFields(String[] fields) {
     this.fields = fields;
   }
 
   String[] getFields() {
     return fields;
-  }
-
-  void setViewNavFromCategoryCreator(ViewNavFromCategoryCreator creator) {
-    this.viewNavFromCategoryCreator = creator;
   }
 
   /** {@inheritDoc} */
@@ -66,9 +59,6 @@ public class NotesViewMock extends NotesBaseMock implements NotesView {
   public NotesDocument getFirstDocument()
       throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "getFirstDocument");
-    if (null == documents || documents.size() == 0) {
-      return null;
-    }
     return documents.get(0);
   }
 
@@ -111,6 +101,9 @@ public class NotesViewMock extends NotesBaseMock implements NotesView {
   public NotesDocument getDocumentByKey(Object key, boolean exact)
       throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "getDocumentByKey " + key);
+    if (key == null)
+      return null;
+    
     if (fields == null || fields.length == 0) {
       LOGGER.finest("view fields are null");
       return null;
@@ -144,18 +137,7 @@ public class NotesViewMock extends NotesBaseMock implements NotesView {
   /* @Override */
   public NotesViewNavigator createViewNavFromCategory(String category)
       throws RepositoryException {
-    if (null != viewNavFromCategoryCreator) {
-      ArrayList<NotesDocumentMock> docsInCategory =
-          new ArrayList<NotesDocumentMock>();
-      for (NotesDocumentMock doc : documents) {
-        if (viewNavFromCategoryCreator.documentIsInCategory(category, doc)) {
-          docsInCategory.add(doc);
-          LOGGER.finest("Adding doc " + doc + " to category " + category);
-        }
-      }
-      return new NotesViewNavigatorMock(
-          new NotesViewMock(viewName, docsInCategory));
-    }
+    LOGGER.entering(CLASS_NAME, "createViewNavFromCategory");
     return null;
   }
 
@@ -171,8 +153,6 @@ public class NotesViewMock extends NotesBaseMock implements NotesView {
   /* @Override */
   public void refresh() throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "refresh");
-
-    LOGGER.finest("View " + viewName + " has documents: " + documents);
   }
 
   /** {@inheritDoc} */

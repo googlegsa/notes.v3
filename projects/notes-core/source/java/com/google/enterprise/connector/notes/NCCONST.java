@@ -31,6 +31,13 @@ public class NCCONST {
   public static final String VIEWSYSTEMSETUP = "NCSystemSetup";
   public static final String VIEWSERVERS = "NCServers";
   public static final String VIEWSECURITY = "NCSecurity";
+  public static final String VIEWGROUPCACHE = "NCGroupCache";
+  public static final String VIEWPEOPLECACHE = "NCPeopleCache";
+
+  public static final String VIEWNOTESNAMELOOKUP = "NCNotesNameLookup";
+  public static final String VIEWPEOPLENAMELOOKUP = "NCPeopleNameLookup";
+
+  public static final String VIEWPARENTGROUPS = "NCParentGroups";
 
   // Form Names
   public static final String ITMFORM = "Form";
@@ -74,6 +81,11 @@ public class NCCONST {
   public static final String FITM_SEARCHRESULTSFORMULA = "SearchResultsFormula";
   public static final String FITM_DESCRIPTIONFORMULA = "DescriptionFormula";
 
+
+  // Access Control Database Views
+  public static final String ACITM_GROUPS = "Groups";
+  public static final String ACITM_NOTESNAME = "NotesName";
+
   // Directory View
   /** These are default views in the Domino directory and must exist */
   public static final String DIRVIEW_PEOPLEGROUPFLAT = "($PeopleGroupsFlat)";
@@ -94,9 +106,19 @@ public class NCCONST {
   // Person Items from Domino Directory
   public static final String PITM_FULLNAME = "FullName";
 
+  // Item names used in the group cache documents
+  public static final String GCITM_GROUPNAME = "GroupName";
+  public static final String GCITM_CHILDGROUPS = "ChildGroups";
+
+  // Item names used in the person cache documents
+  public static final String PCITM_USERNAME = "UserName";
+  public static final String PCITM_NOTESNAME = "NotesName";
+  public static final String PCITM_GROUPS = "Groups";
+
+
   //Item names used by the connector for crawling documents
 
-  /** The source database for this document */
+  /** The source database for this  */
   public static final String NCITM_DB = "NC.Database";
 
   /** The UNID of the source document */
@@ -105,26 +127,20 @@ public class NCCONST {
   /** The state of the document */
   public static final String NCITM_STATE = "NC.State";
 
-  /** The replica id of the database for this document */
+  /** The source database for this */
   public static final String NCITM_REPLICAID = "NC.ReplicaID";
 
-  /** The source server for this document */
+  /** The source database for this */
   public static final String NCITM_SERVER = "NC.Server";
 
-  /** The connector template for this document */
+  /** The source database for this */
   public static final String NCITM_TEMPLATE = "NC.Template";
 
   /** The domain for this document */
   public static final String NCITM_DOMAIN = "NC.Domain";
 
-  /** The type of authorization for the document (derived from the database) */
+  /** The type of authorization for the document */
   public static final String NCITM_AUTHTYPE = "NC.AuthType";
-
-  /** Field set to "true" for database acl crawl documents. */
-  public static final String NCITM_DBACL = "NC.DbAcl";
-
-  /** Field set to the inherit type for database acl crawl documents. */
-  public static final String NCITM_DBACLINHERITTYPE = "NC.DbAclInheritType";
 
   /** Whether to lock the document or not */
   public static final String NCITM_LOCK = "NC.Lock";
@@ -136,7 +152,7 @@ public class NCCONST {
   /** The readers of this document */
   public static final String NCITM_DOCAUTHORS = "NC.DocAuthors";
 
-  /** Users explicitly listed with no-access to the database */
+  /** Users explicitly listed with no-access */
   public static final String NCITM_DBNOACCESSUSERS = "NC.NoAccessUsers";
 
   /** The readers of this document */
@@ -144,28 +160,36 @@ public class NCCONST {
 
   public static final String NCITM_CONFLICT = "$Conflict";
 
-  /** Users with database access */
+  /** Users with access */
   public static final String NCITM_DBPERMITUSERS = "NC.DBPermitUsers";
 
-  /** Groups with database access */
+  /** Users with access */
   public static final String NCITM_DBPERMITGROUPS = "NC.DBPermitGroups";
-
-  /** Groups with no database access */
-  public static final String NCITM_DBNOACCESSGROUPS = "NC.DBNoAccessGroups";
 
   /** Prefix for roles */
   public static final String NCITM_ROLEPREFIX = "NC.DBROLES";
 
-  /** Possible States for documents */
+  /** New document to be crawled */
   public static final String STATENEW = "New";
+
   // NOT USED Previously submitted document needs to be updated
   //public static final String STATEUPDATED = "Update";
+
   public static final String STATEDELETED =  "DeletePending";
+
+  /** Possible States for documents */
   public static final String STATEINCRAWL = "InCrawl";
+
+  /** Possible States for documents */
   public static final String STATEFETCHED = "Fetched";
-  // NOT USED
+
+  // NOT USED Possible States for documents
   //public static final String STATEINSUBMIT = "InSubmit";
+
+  /** Possible States for documents */
   public static final String STATEINDEXED = "Indexed";
+
+  /** Possible States for documents */
   public static final String STATEERROR = "Error";
 
 
@@ -304,19 +328,8 @@ public class NCCONST {
   public static final String PROPNAME_NCAUTHORS = "dom_authors";
   public static final String PROPNAME_NCFORM = "dom_docform";
   public static final String PROPNAME_CREATEDATE = "dom_createdate";
-
-  public static final String DB_ACL_INHERIT_TYPE_ANDBOTH = "AndBoth";
-  public static final String DB_ACL_INHERIT_TYPE_PARENTOVERRIDES
-      = "ParentOverrides";
-  
-  //Constants for Indexed and Readers tables
-  public static final String TABLE_INDEXED_PREFIX = "NCIndexed_";
-  public static final String TABLE_READERS_PREFIX = "NCIndexedReaders_";
-  public static final int COLUMN_SIZE_UNID = 32;
-  public static final int COLUMN_SIZE_REPLICAID = 16;
-  public static final int COLUMN_SIZE_READER = 100;
-  public static final int COLUMN_SIZE_SERVER = 100;
-  public static final int COLUMN_SIZE_HOST = 100;
-  public static final int COLUMN_SIZE_PROTOCOL = 5;
 }
+
+
+
 

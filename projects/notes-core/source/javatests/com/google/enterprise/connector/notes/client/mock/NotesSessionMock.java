@@ -14,23 +14,19 @@
 
 package com.google.enterprise.connector.notes.client.mock;
 
+import com.google.enterprise.connector.notes.client.NotesSession;
 import com.google.enterprise.connector.notes.client.NotesDatabase;
 import com.google.enterprise.connector.notes.client.NotesDateTime;
 import com.google.enterprise.connector.notes.client.NotesDocument;
-import com.google.enterprise.connector.notes.client.NotesName;
-import com.google.enterprise.connector.notes.client.NotesSession;
 import com.google.enterprise.connector.notes.client.NotesView;
 import com.google.enterprise.connector.spi.RepositoryException;
 
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Vector;
 import java.util.logging.Logger;
 
-public class NotesSessionMock extends NotesBaseMock
+class NotesSessionMock extends NotesBaseMock
     implements NotesSession {
   private static final String CLASS_NAME = NotesSessionMock.class.getName();
 
@@ -45,10 +41,6 @@ public class NotesSessionMock extends NotesBaseMock
       Map<String, String> environment) {
     this.databases = databases;
     this.environment = environment;
-  }
-
-  public void addDatabase(NotesDatabaseMock database) {
-    databases.add(database);
   }
 
   /** {@inheritDoc} */
@@ -85,24 +77,8 @@ public class NotesSessionMock extends NotesBaseMock
       throws RepositoryException {
    LOGGER.entering(CLASS_NAME, "getDatabase");
 
-   if (null == server && null == database) {
-     NotesDatabaseMock db = new NotesDatabaseMock(null, null);
-     db.setSession(this);
-     return db;
-   }
    for (NotesDatabaseMock db : databases) {
      if (server.equals(db.getServer()) && database.equals(db.getName())) {
-       return db;
-     }
-   }
-   return null;
-  }
-
-  NotesDatabase getDatabaseByReplicaId(String server, String replicaId)
-      throws RepositoryException {
-   for (NotesDatabaseMock db : databases) {
-     if (server.equals(db.getServer())
-         && replicaId.equals(db.getReplicaID())) {
        return db;
      }
    }
@@ -113,24 +89,7 @@ public class NotesSessionMock extends NotesBaseMock
   /* @Override */
   public Vector evaluate(String formula) throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "evaluate");
-    // Handle the special formula in NotesUserGroupManager
-    if (formula.startsWith("@Name([ABBREVIATE]")) {
-      int start = formula.indexOf("\"");
-      int end = formula.lastIndexOf("\"");
-      if (start > -1 && end > -1) {
-        String result = formula.substring(start + 1, end);
-        Vector<String> returnResult = new Vector<String>();
-        returnResult.add(result);
-        return returnResult;
-      } else {
-        throw new RepositoryException(formula);
-      }
-    }
-
-    // Return a result meaning "true";
-    Vector<Integer> result = new Vector<Integer>();
-    result.add(new Integer(1));
-    return result;
+    return null;
  }
 
   /** {@inheritDoc} */
@@ -138,10 +97,7 @@ public class NotesSessionMock extends NotesBaseMock
   public Vector evaluate(String formula, NotesDocument document)
       throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "evaluate");
-
-    Vector result = document.getItemValue("evaluate_" + formula);
-    LOGGER.fine("evaluate " + formula + " returning " + result);
-    return result;
+    return null;
  }
 
   /** {@inheritDoc} */
@@ -151,20 +107,7 @@ public class NotesSessionMock extends NotesBaseMock
    // TODO: this is often used to get an object, followed
    // immediately by date.setNow, so for now try returning an
    // unset date to avoid NullPointerExceptions.
-
-   try {
-     SimpleDateFormat format = new SimpleDateFormat("M/d/yyyy");
-     Date d = format.parse(date);
-     return new NotesDateTimeMock(d);
-   } catch (ParseException e) {
-     throw new RepositoryException(e);
-   }
-  }
-
-  /** {@inheritDoc} */
-  /* @Override */
-  public NotesName createName(String name) throws RepositoryException {
-    return new NotesNameMock(name);
+   return new NotesDateTimeMock();
   }
 
   /* TODO: implement getUserName.

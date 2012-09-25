@@ -96,14 +96,5 @@ public interface NotesSession extends NotesBase {
    * @return a NotesDateTime object
    * @throws RepositoryException
    */
-  NotesDateTime createDateTime(String date) throws RepositoryException;
-
-  /**
-   * Creates a NotesName object.
-   *
-   * @param name the name
-   * @return the NotesName object
-   * @throws RepositoryException
-   */
-  NotesName createName(String name) throws RepositoryException;
+  NotesDateTime createDateTime(String date) throws RepositoryException; 
 }

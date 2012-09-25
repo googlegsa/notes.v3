@@ -32,7 +32,6 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.Vector;
 
 public class NotesConnectorTest extends TestCase {
 
@@ -141,8 +140,6 @@ public class NotesConnectorTest extends TestCase {
       connector.setDatabase(database);
       connector.setIdPassword(idpassword);
       connector.setServer(server);
-      connector.maintThread = new NotesMaintenanceThread(null, null);
-      connector.vecCrawlerThreads = new Vector<NotesCrawlerThread>();
       NotesConnectorSession session = (NotesConnectorSession) connector.login();
       assertSame("Didn't get same session back on second call to login",
           session, connector.login());
@@ -152,7 +149,7 @@ public class NotesConnectorTest extends TestCase {
   }
 
   /**
-   * Tests calling NotesConnector.shutdown.
+   * Tests calling NotesConnector.login a second time.
    *
    * @throws RepositoryLoginException
    * @throws RepositoryException
@@ -164,8 +161,6 @@ public class NotesConnectorTest extends TestCase {
     connector.setDatabase(database);
     connector.setIdPassword(idpassword);
     connector.setServer(server);
-    connector.maintThread = new NotesMaintenanceThread(null, null);
-    connector.vecCrawlerThreads = new Vector<NotesCrawlerThread>();
     try {
       NotesConnectorSession session = (NotesConnectorSession) connector.login();
       connector.shutdown();

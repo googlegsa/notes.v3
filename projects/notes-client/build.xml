@@ -72,8 +72,6 @@
   <property name="coverage.html.dir" value="${reports.dir}/cobertura-html" />
 
   <!-- =========================== TASKS =============================== -->
-  <include file="${connector-manager-projects.dir}/svnbuild.xml" as="svn"/>
-
   <target name="build" depends="init,compile,compile_tests,jar">
   </target>
 
@@ -187,8 +185,14 @@
     </junit>
   </target>
 
-  <target name="jar" description="notes-connector"
-          depends="compile,svn.svn-branch-version">
+  <target name="jar" description="notes-connector" depends="compile">
+    <exec executable="svnversion" spawn="false"
+      failifexecutionfails="false"
+      dir="${basedir}"
+      outputproperty="svnversion">
+      <arg line="." />
+    </exec>
+
     <copy todir="${config.build}">
       <fileset dir="${core.dir}/config" />
       <filterset>
@@ -209,7 +213,7 @@
         <attribute name="Implementation-Title"
                    value="Google Search Appliance Connector for Lotus Notes" />
         <attribute name="Implementation-Version"
-                   value="${version} (build ${svn.branch.version} ${TODAY})"/>
+                   value="${version} (build ${svnversion}  ${TODAY})"/>
         <attribute name="Implementation-Vendor" value="Google Inc."/>
         <attribute name="Specification-Title" value="Connector Manager SPI"/>
         <attribute name="Specification-Version" value="${version.spi}"/>
@@ -296,8 +300,8 @@
     <!-- Generate a series of HTML files containing the coverage
          data in a user-readable form using nested source filesets.
     -->
-    <cobertura-report destdir="${coverage.html.dir}" >
-      <fileset dir="${core.dir}/source/java">
+    <cobertura-report destdir="${coverage.html.dir}">
+      <fileset dir="${src}">
         <include name="**/*.java"/>
       </fileset>
     </cobertura-report>

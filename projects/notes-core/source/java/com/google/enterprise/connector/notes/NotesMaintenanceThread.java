@@ -15,8 +15,8 @@
 package com.google.enterprise.connector.notes;
 
 import com.google.common.base.Strings;
-import com.google.enterprise.connector.notes.client.NotesDatabase;
 import com.google.enterprise.connector.notes.client.NotesDateTime;
+import com.google.enterprise.connector.notes.client.NotesDatabase;
 import com.google.enterprise.connector.notes.client.NotesDocument;
 import com.google.enterprise.connector.notes.client.NotesError;
 import com.google.enterprise.connector.notes.client.NotesSession;
@@ -24,28 +24,22 @@ import com.google.enterprise.connector.notes.client.NotesView;
 import com.google.enterprise.connector.spi.RepositoryException;
 import com.google.enterprise.connector.spi.SpiConstants.ActionType;
 
-import java.util.Map;
 import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-/**
- * This class checks for deletions of indexed documents and
- * updates the user and group cache.
- *
- * Documents should be deleted if they meet either of the
- * following criteria.
- * 1.  They no longer exist in the source database.
- * 2.  They belong to a database which is marked for deletion.
- */
+
+// The purpose of this class is check for deletions of indexed documents
+// Documents should be deleted if the meet either of the following criteria
+// 1.  They no longer exist in the source database
+// 2.  They belong to database which is marked for deletion
 public class NotesMaintenanceThread extends Thread {
   private static final String CLASS_NAME =
       NotesMaintenanceThread.class.getName();
   private static final Logger LOGGER = Logger.getLogger(CLASS_NAME);
 
   NotesConnector nc = null;
-  NotesConnectorSession ncs;
-  NotesUserGroupManager nugm;
+  NotesConnectorSession ncs = null;
   NotesDatabase cdb = null;
   NotesPollerNotifier npn = null;
   String OpenDbRepId = "";
@@ -59,20 +53,14 @@ public class NotesMaintenanceThread extends Thread {
   NotesDocument SourceDocument = null;
   NotesDocument IndexedDoc = null;
 
-  NotesMaintenanceThread() {
-  }
-
-  NotesMaintenanceThread(NotesConnector connector,
-      NotesConnectorSession session) throws RepositoryException {
+  NotesMaintenanceThread(NotesConnector Connector,
+      NotesConnectorSession Session) {
     final String METHOD = "NotesMaintenanceThread";
     LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD,
         "NotesMaintenanceThread being created.");
 
-    nc = connector;
-    ncs = session;
-    if (session != null) {
-      nugm = session.getUserGroupManager();
-    }
+    nc = Connector;
+    ncs = Session;
   }
 
   @Override
@@ -84,11 +72,12 @@ public class NotesMaintenanceThread extends Thread {
     int batchsize = ncs.getDeletionBatchSize();
     String lastdocid = "";
     NotesPollerNotifier npn = ncs.getNotifier();
+    NotesUserGroupManager nugm = new NotesUserGroupManager();
     while (nc.getShutdown() == false) {
       try {
-        LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
+       LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
             "Maintenance thread is updating User Group Cache.");
-        nugm.updateUsersGroups();
+       	nugm.updatePeopleGroups(ncs);
         LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
             "Maintenance thread checking for deletions.");
         lastdocid = checkForDeletions(lastdocid, batchsize);
@@ -128,8 +117,10 @@ public class NotesMaintenanceThread extends Thread {
     final String METHOD = "checkForDeletions";
     LOGGER.entering(CLASS_NAME, METHOD);
 
-    String lastdocid = startdocid;
-    Map<String,NotesDocId> indexedDocuments = null;
+    int NumChecked = 0;
+    String lastdocid = "";
+    NotesDocument PrevDoc = null;
+
     try {
       LOGGER.logp(Level.INFO, CLASS_NAME, METHOD, "Checking for deletions ");
       ns = ncs.createNotesSession();
@@ -137,90 +128,128 @@ public class NotesMaintenanceThread extends Thread {
       CheckTime.setNow();
       cdb = ns.getDatabase(ncs.getServer(), ncs.getDatabase());
       NotesView DatabaseView = cdb.getView(NCCONST.VIEWDATABASES);
+
       DatabaseView.refresh();
       LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
           "MaintenanceThread: Entries in database view: " +
           DatabaseView.getEntryCount());
-      
-      if (Strings.isNullOrEmpty(startdocid)) {
-        indexedDocuments = ncs.getNotesDocumentManager()
-            .getIndexedDocuments(null, null, batchsize);
+
+      NotesView IndexedView = cdb.getView(NCCONST.VIEWINDEXED);
+      IndexedView.refresh();
+      LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
+          "MaintenanceThread: Entries in indexed view: " +
+          IndexedView.getEntryCount());
+
+      if (!Strings.isNullOrEmpty(startdocid)) {
+        IndexedDoc = IndexedView.getDocumentByKey(startdocid);
+      }
+      if (null == IndexedDoc) {
         LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
             "MaintenanceThread: Restarting deletion check.");
-      } else {
-        NotesDocId startNotesId = new NotesDocId(startdocid);
-        indexedDocuments = ncs.getNotesDocumentManager()
-            .getIndexedDocuments(startNotesId.getDocId(), 
-                startNotesId.getReplicaId(), batchsize);
-
-        if (!indexedDocuments.containsKey(startNotesId.getDocId())) {
-          LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
-              "MaintenanceThread: Restarting deletion check.");
-        }
+        IndexedDoc = IndexedView.getFirstDocument();
       }
-      NotesDocId notesId = null;
-      for (String unid : indexedDocuments.keySet()) {
-        if (nc.getShutdown()) {
-          break;
-        }
+      while ((null != IndexedDoc) &&
+          (NumChecked < batchsize) &&
+          (!nc.getShutdown())) {
+        NumChecked++;
+        IndexedView.refresh();
+        String DocId = IndexedDoc.getItemValueString(NCCONST.ITM_DOCID);
         LOGGER.logp(Level.FINER, CLASS_NAME, METHOD,
-            "MaintenanceThread: Checking deletion for document: " + unid);
-        
-        notesId = indexedDocuments.get(unid);
-        lastdocid = notesId.toString();
-        //Validate database config using replica ID
-        loadDbConfigDoc(notesId.getReplicaId(), DatabaseView);
-        if (DbConfigDoc == null) {
+            "MaintenanceThread: Checking deletion for document:  " + DocId);
+
+        String State = IndexedDoc.getItemValueString(NCCONST.NCITM_STATE);
+        if (!State.equalsIgnoreCase(NCCONST.STATEINDEXED)) {
           LOGGER.logp(Level.SEVERE, CLASS_NAME, METHOD,
-              "MaintenanceThread: Skipping document because no " +
-              "database config found for " + unid);
+              "MaintenanceThread: Skipping deletion check since state " +
+              "is not indexed." + DocId);
+          PrevDoc = IndexedDoc;
+          IndexedDoc = IndexedView.getNextDocument(PrevDoc);
+          PrevDoc.recycle();
           continue;
         }
-        //When a database is in stopped mode we purge all documents
+
+        loadDbConfigDoc(IndexedDoc.getItemValueString(NCCONST.NCITM_REPLICAID),
+            DatabaseView);
+        if (null == DbConfigDoc) {
+          LOGGER.logp(Level.SEVERE, CLASS_NAME, METHOD,
+              "MaintenanceThread: Skipping document because no " +
+              "database config found for " + DocId);
+          PrevDoc = IndexedDoc;
+          IndexedDoc = IndexedView.getNextDocument(PrevDoc);
+          PrevDoc.recycle();
+          continue;
+        }
+
+        // When a database is in stopped mode we purge all documents
         if (getStopped()) {
           LOGGER.logp(Level.FINER, CLASS_NAME, METHOD,
               "MaintenanceThread: Deleting document because database " +
-              "is being purged. " + unid);
-          createDeleteRequest(notesId.toString());
+              "is being purged. " + DocId);
+          createDeleteRequest(IndexedDoc,
+              IndexedDoc.getItemValueString(NCCONST.ITM_DOCID));
+          PrevDoc = IndexedDoc;
+          IndexedDoc = IndexedView.getNextDocument(PrevDoc);
+          PrevDoc.recycle();
           continue;
         }
-        //Is this database configured to check for deletions?
+
+        // Is this database configured to check for deletions?
         String checkDeletions = DbConfigDoc.getItemValueString(
             NCCONST.DITM_CHECKDELETIONS);
         if (checkDeletions.toLowerCase().contentEquals("no")) {
           LOGGER.logp(Level.FINER, CLASS_NAME, METHOD,
               "MaintenanceThread: Skipping document because " +
-              "deletion checking is not enabled. " + unid);
+              "deletion checking is not enabled. " + DocId);
+          PrevDoc = IndexedDoc;
+          IndexedDoc = IndexedView.getNextDocument(PrevDoc);
+          PrevDoc.recycle();
           continue;
         }
-        //Is crawling enabled for this database?  If not then
-        //skip to the next document
+
+        // Is crawling enabled for this database?  If not then
+        // skip to the next document
         int isEnabled = DbConfigDoc.getItemValueInteger(
             NCCONST.DITM_CRAWLENABLED);
         if (isEnabled != 1) {
           LOGGER.logp(Level.FINER, CLASS_NAME, METHOD,
               "MaintenanceThread: Skipping document because " +
-              "database crawling is disabled. " + unid);
-          continue;
-        }
-        //Try and open the source database
-        boolean isSrcDbOpened = openSourceDatabase(notesId);
-        if (!isSrcDbOpened) {
-          LOGGER.logp(Level.SEVERE, CLASS_NAME, METHOD,
-              "MaintenanceThread: Skipping document because source " +
-              "database could not be opened : " + unid);
+              "database crawling is disabled. " + DocId);
+          PrevDoc = IndexedDoc;
+          IndexedDoc = IndexedView.getNextDocument(PrevDoc);
+          PrevDoc.recycle();
           continue;
         }
 
-        boolean isDocDeleted = loadSourceDocument(unid);
-        if (isDocDeleted) {
-          createDeleteRequest(notesId.toString());
+        // Try and open the source database
+        boolean SrcDbOpened = openSourceDatabase(IndexedDoc);
+        if (!SrcDbOpened) {
+          LOGGER.logp(Level.SEVERE, CLASS_NAME, METHOD,
+              "MaintenanceThread: Skipping document because source " +
+              "database could not be opened : " + DocId);
+          PrevDoc = IndexedDoc;
+          IndexedDoc = IndexedView.getNextDocument(PrevDoc);
+          PrevDoc.recycle();
+          continue;
+        }
+
+        boolean DocDeleted = loadSourceDocument(
+            IndexedDoc.getItemValueString(NCCONST.NCITM_UNID));
+        if (DocDeleted) {
+          createDeleteRequest(IndexedDoc,
+              IndexedDoc.getItemValueString(NCCONST.ITM_DOCID));
+          PrevDoc = IndexedDoc;
+          IndexedDoc = IndexedView.getNextDocument(PrevDoc);
+          PrevDoc.recycle();
           continue;
         }
 
         boolean isConflict = SourceDocument.hasItem(NCCONST.NCITM_CONFLICT);
         if (isConflict) {
-          createDeleteRequest(notesId.toString());
+          createDeleteRequest(IndexedDoc,
+              IndexedDoc.getItemValueString(NCCONST.ITM_DOCID));
+          PrevDoc = IndexedDoc;
+          IndexedDoc = IndexedView.getNextDocument(PrevDoc);
+          PrevDoc.recycle();
           continue;
         }
 
@@ -228,7 +257,10 @@ public class NotesMaintenanceThread extends Thread {
         if (null == TemplateDoc) {
           LOGGER.logp(Level.SEVERE, CLASS_NAME, METHOD,
               "MaintenanceThread: Skipping selection criteria " +
-              "check because template could not be opened : " + unid);
+              "check because template could not be opened : " + DocId);
+          PrevDoc = IndexedDoc;
+          IndexedDoc = IndexedView.getNextDocument(PrevDoc);
+          PrevDoc.recycle();
           continue;
         }
 
@@ -236,16 +268,23 @@ public class NotesMaintenanceThread extends Thread {
         if (!meetsCriteria) {
           LOGGER.logp(Level.FINER, CLASS_NAME, METHOD,
               "MaintenanceThread: Deleting document because " +
-              "selection formula returned false : " + unid);
+              "selection formula returned false : " + DocId);
+          PrevDoc = IndexedDoc;
+          IndexedDoc = IndexedView.getNextDocument(PrevDoc);
+          PrevDoc.recycle();
           continue;
         }
+
+        // Document has passed all checks and should remain in the index
+        lastdocid = IndexedDoc.getItemValueString(NCCONST.ITM_DOCID);
+        PrevDoc = IndexedDoc;
+        IndexedDoc = IndexedView.getNextDocument(PrevDoc);
+        PrevDoc.recycle();
       }
+      IndexedView.recycle();
     } catch (Exception e) {
       LOGGER.log(Level.SEVERE, CLASS_NAME, e);
     } finally {
-      if (indexedDocuments != null) {
-        indexedDocuments.clear();
-      }
       cleanUpNotesObjects();
       ncs.closeNotesSession(ns);
       LOGGER.exiting(CLASS_NAME, METHOD);
@@ -324,14 +363,16 @@ public class NotesMaintenanceThread extends Thread {
     return false;
   }
 
-  private boolean openSourceDatabase(NotesDocId notesId)
+  protected boolean openSourceDatabase(NotesDocument IndexedDoc)
       throws RepositoryException {
     final String METHOD = "openSourceDatabase";
     LOGGER.entering(CLASS_NAME, METHOD);
-    if (OpenDbRepId.contentEquals(notesId.getReplicaId())) {
+
+    String ReplicaId = IndexedDoc.getItemValueString(NCCONST.NCITM_REPLICAID);
+    if (OpenDbRepId.contentEquals(ReplicaId)) {
       return true;
     }
-    //Different replicaId - Recycle and close the old database
+    // Different ReplicaId - Recycle and close the old database
     if (SrcDb != null) {
       SrcDb.recycle();
       SrcDb= null;
@@ -339,16 +380,16 @@ public class NotesMaintenanceThread extends Thread {
     }
     // Open the new database
     SrcDb = ns.getDatabase(null, null);
-    boolean isSrcDbOpen = SrcDb.openByReplicaID(notesId.getServer(), 
-        notesId.getReplicaId());
-    if (isSrcDbOpen) {
-      OpenDbRepId = notesId.getReplicaId();
+    boolean srcdbisopen = SrcDb.openByReplicaID(
+        IndexedDoc.getItemValueString(NCCONST.NCITM_SERVER), ReplicaId);
+    if (srcdbisopen) {
+      OpenDbRepId = ReplicaId;
     } else {
       LOGGER.logp(Level.SEVERE, CLASS_NAME, METHOD,
-          "Maintenance thread can't open database: " + notesId.getReplicaId());
+          "Maintenance thread can't open database: " + ReplicaId);
     }
     LOGGER.exiting(CLASS_NAME, METHOD);
-    return isSrcDbOpen;
+    return srcdbisopen;
   }
 
   protected void loadTemplateDoc(String TemplateName)
@@ -460,16 +501,18 @@ public class NotesMaintenanceThread extends Thread {
   /*
    * Create a request to delete this document
    */
-  private void createDeleteRequest(String googleDocId) throws RepositoryException {
+  protected void createDeleteRequest(NotesDocument IndexedDoc,
+      String DocId) throws RepositoryException {
     final String METHOD = "createDeleteRequest";
     LOGGER.entering(CLASS_NAME, METHOD);
     NotesDocument DeleteReq = cdb.createDocument();
     DeleteReq.appendItemValue(NCCONST.ITMFORM, NCCONST.FORMCRAWLREQUEST);
     DeleteReq.replaceItemValue(NCCONST.ITM_ACTION, ActionType.DELETE.toString());
-    DeleteReq.replaceItemValue(NCCONST.ITM_DOCID, googleDocId);
+    DeleteReq.replaceItemValue(NCCONST.ITM_DOCID, DocId);
     DeleteReq.replaceItemValue(NCCONST.NCITM_STATE, NCCONST.STATEFETCHED);
     DeleteReq.save(true);
-    DeleteReq.recycle();
+    IndexedDoc.replaceItemValue(NCCONST.NCITM_STATE, NCCONST.STATEDELETED);
+    IndexedDoc.save(true);
     LOGGER.exiting(CLASS_NAME, METHOD);
   }
 }

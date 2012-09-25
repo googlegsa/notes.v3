@@ -14,7 +14,6 @@
 
 package com.google.enterprise.connector.notes;
 
-import com.google.common.base.Strings;
 import com.google.enterprise.connector.notes.client.NotesDatabase;
 import com.google.enterprise.connector.notes.client.NotesDocument;
 import com.google.enterprise.connector.notes.client.NotesSession;
@@ -37,9 +36,6 @@ import java.util.logging.Logger;
 public class NotesConnectorSession implements Session {
   private static final String CLASS_NAME = NotesConnectorSession.class.getName();
   private static final Logger LOGGER = Logger.getLogger(CLASS_NAME);
-
-  private TraversalManager traversalManager;
-  private NotesUserGroupManager userGroupManager;
   private String server = null;
   private String database = null;
   private String password = "";
@@ -59,7 +55,6 @@ public class NotesConnectorSession implements Session {
   private String userSelectionFormula = null;
   private String gsaGroupPrefix;
   private boolean retainMetaData = true;
-  private final NotesDocumentManager notesDocManager;
 
   public NotesConnectorSession(NotesConnector Connector,
       NotesPollerNotifier connectorNpn, String Password,
@@ -110,7 +105,6 @@ public class NotesConnectorSession implements Session {
       configValidated = loadConfig(ns,db);
 
       db.recycle();
-      notesDocManager = new NotesDocumentManager(this);
     } catch (Exception e) {
       LOGGER.log(Level.SEVERE, CLASS_NAME, e);
       throw new RepositoryException("NotesConnectorSession error", e);
@@ -213,19 +207,19 @@ public class NotesConnectorSession implements Session {
 
       // Get the directory and see if we can open it
       directory = systemDoc.getItemValueString(
-          NCCONST.SITM_DIRECTORY);
+    		  NCCONST.SITM_DIRECTORY);
       LOGGER.logp(Level.CONFIG, CLASS_NAME, METHOD,
-          "Path to Domino directory: " + directory);
+              "Path to Domino directory: " + directory);
 
       NotesDatabase dirDb = ns.getDatabase(this.getServer(), directory);
       dirDb.recycle();
 
       userNameFormula = systemDoc.getItemValueString(
-          NCCONST.SITM_USERNAMEFORMULA);
+    		  NCCONST.SITM_USERNAMEFORMULA);
       if (0 == userNameFormula.length()) {
-        LOGGER.logp(Level.CONFIG, CLASS_NAME, METHOD,
-            "User Name formula is empty - using default");
-        userNameFormula = NCCONST.DEFAULT_USERNAMEFORMULA;
+    	  LOGGER.logp(Level.CONFIG, CLASS_NAME, METHOD,
+    	      "User Name formula is empty - using default");
+    	  userNameFormula = NCCONST.DEFAULT_USERNAMEFORMULA;
       }
       LOGGER.logp(Level.CONFIG, CLASS_NAME, METHOD,
             "User Name formula: " + userNameFormula);
@@ -235,7 +229,7 @@ public class NotesConnectorSession implements Session {
       if (0 == userSelectionFormula.length()) {
         LOGGER.logp(Level.CONFIG, CLASS_NAME, METHOD,
             "User Selection formula is empty - using default");
-        userSelectionFormula = NCCONST.DEFAULT_USERSELECTIONFORMULA;
+    	  userSelectionFormula = NCCONST.DEFAULT_USERSELECTIONFORMULA;
       }
       LOGGER.logp(Level.CONFIG, CLASS_NAME, METHOD,
           "User Selection formula: " + userSelectionFormula);
@@ -279,11 +273,6 @@ public class NotesConnectorSession implements Session {
       while (null != sve) {
         Vector<?> columnVals = sve.getColumnValues();
         String domain = columnVals.elementAt(2).toString().toLowerCase();
-        if (!Strings.isNullOrEmpty(domain)) {
-          if (!domain.trim().startsWith(".")) {
-            domain = "." + domain.trim();
-          }
-        }
 
         // This is a problem with the Notes Java API. When the
         // server field for a given region has 1 element we get a
@@ -442,10 +431,6 @@ public class NotesConnectorSession implements Session {
   public NotesConnector getConnector() {
     return connector;
   }
-  
-  public NotesDocumentManager getNotesDocumentManager() {
-    return notesDocManager;
-  }
 
   /* @Override */
   public AuthenticationManager getAuthenticationManager() {
@@ -460,19 +445,9 @@ public class NotesConnectorSession implements Session {
   }
 
   /* @Override */
-  public synchronized TraversalManager getTraversalManager() {
-    if (traversalManager == null) {
-      traversalManager = new NotesTraversalManager(this);
-    }
-    return traversalManager;
-  }
-
-  public synchronized NotesUserGroupManager getUserGroupManager()
-      throws RepositoryException {
-    if (userGroupManager == null) {
-      userGroupManager = new NotesUserGroupManager(this);
-    }
-    return userGroupManager;
+  public TraversalManager getTraversalManager() {
+    //TODO: Should we always return the same TraversalManager?
+    return new NotesTraversalManager(this);
   }
 
   public boolean isExcludedExtension(String extension) {

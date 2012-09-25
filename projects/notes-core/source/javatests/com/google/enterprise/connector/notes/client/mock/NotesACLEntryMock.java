@@ -4,7 +4,7 @@
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//     http://www.apache.org/licenses/LICENSE-2.0
+//      http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -15,14 +15,11 @@
 package com.google.enterprise.connector.notes.client.mock;
 
 import com.google.enterprise.connector.notes.client.NotesACLEntry;
-import com.google.enterprise.connector.notes.client.NotesName;
 import com.google.enterprise.connector.spi.RepositoryException;
 
-import java.util.Arrays;
-import java.util.Vector;
 import java.util.logging.Logger;
 
-public class NotesACLEntryMock extends NotesBaseMock
+class NotesACLEntryMock extends NotesBaseMock
     implements NotesACLEntry {
   private static final String CLASS_NAME = NotesACLEntryMock.class.getName();
 
@@ -30,38 +27,21 @@ public class NotesACLEntryMock extends NotesBaseMock
   private static final Logger LOGGER =
       Logger.getLogger(CLASS_NAME);
 
-  private final String name;
-  private final int userType;
-  private final int level;
-  private final Vector<String> roles;
-
-  public NotesACLEntryMock(String name, int userType, int level,
-      String... roles) {
-    LOGGER.fine("creating acl entry for " + name +
-        " with roles " + Arrays.asList(roles));
-
-    this.name = name;
-    this.userType = userType;
-    this.level = level;
-    if (roles != null) {
-      this.roles = new Vector<String>(Arrays.asList(roles));
-    } else {
-      this.roles = new Vector<String>();
-    }
+  NotesACLEntryMock() {
   }
 
   /** {@inheritDoc} */
   /* @Override */
   public int getUserType() throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "getUserType");
-    return userType;
+    return -1;
   }
 
   /** {@inheritDoc} */
   /* @Override */
   public int getLevel() throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "getLevel");
-    return level;
+    return -1;
   }
 
   /** {@inheritDoc} */
@@ -75,20 +55,7 @@ public class NotesACLEntryMock extends NotesBaseMock
   /* @Override */
   public String getName() throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "getName");
-    return name;
-  }
-
-  /** {@inheritDoc} */
-  /* @Override */
-  public NotesName getNameObject() throws RepositoryException {
-    return new NotesNameMock(name);
-  }
-
-  /** {@inheritDoc} */
-  /* @Override */
-  public Vector getRoles() throws RepositoryException {
-    LOGGER.entering(CLASS_NAME, "getRoles");
-    return roles;
+    return "ACL Entry Name";
   }
 
   public String toString() {

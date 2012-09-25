@@ -16,8 +16,6 @@ package com.google.enterprise.connector.notes.client;
 
 import com.google.enterprise.connector.spi.RepositoryException;
 
-import java.util.Vector;
-
 public interface NotesName extends NotesBase {
 
   /**

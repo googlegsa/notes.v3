@@ -183,49 +183,6 @@ public class NotesConnectorType implements ConnectorType {
     buf.append("/></td></tr>\r\n");
   }
 
-  private void appendYesNoRow(StringBuilder buf,
-      Map<String, String> configMap, ResourceBundle labels,
-      String name, boolean isRequired, boolean defaultValue) {
-
-    buf.append("<tr valign='top'>")
-        .append("<td style='white-space:nowrap'>")
-        .append("<div style='float:left;'>");
-    String configValue = configMap.get(name);
-    boolean value;
-    if (configValue == null) {
-      value = defaultValue;
-    } else {
-      value = Boolean.parseBoolean(configValue);
-    }
-    buf.append(getResource(labels, name));
-    buf.append("</div>");
-    if (isRequired) {
-      buf.append("<div style='text-align: right; ").
-          append("color: red; font-weight: bold; ").
-          append("margin-right: 0.3em;\'>*</div>");
-    }
-    buf.append("</td><td>");
-    buf.append("<input");
-    appendAttribute(buf, TYPE, "radio");
-    appendAttribute(buf, VALUE, Boolean.TRUE.toString());
-    appendAttribute(buf, NAME, name);
-    if (value) {
-      appendAttribute(buf, "checked", "checked");
-    }
-    buf.append("/>");
-    buf.append(getResource(labels, "yes"));
-    buf.append("&nbsp;&nbsp;<input");
-    appendAttribute(buf, TYPE, "radio");
-    appendAttribute(buf, VALUE, Boolean.FALSE.toString());
-    appendAttribute(buf, NAME, name);
-    if (!value) {
-      appendAttribute(buf, "checked", "checked");
-    }
-    buf.append("/>");
-    buf.append(getResource(labels, "no"));
-    buf.append("</td></tr>\r\n");
-  }
-
   /**
    * Adds a row for a configuration section label.
    *
@@ -267,8 +224,6 @@ public class NotesConnectorType implements ConnectorType {
         "database", TEXT, true);
     appendTextInputRow(buf, configMap, labels, shouldValidate,
         "server", TEXT, true);
-
-    appendYesNoRow(buf, configMap, labels, "gsaNamesAreGlobal", true, true);
 
     appendSectionLabel(buf, getResource(labels, "gsaPropertiesSection"),
         getResource(labels, "gsaPropertiesSectionHelp"));

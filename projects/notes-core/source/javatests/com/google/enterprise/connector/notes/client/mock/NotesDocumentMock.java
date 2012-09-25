@@ -39,8 +39,6 @@ public class NotesDocumentMock extends NotesBaseMock
   private static final Logger LOGGER =
       Logger.getLogger(CLASS_NAME);
 
-  private NotesDatabaseMock database;
-
   private Map<String, NotesItemMock> items =
       new HashMap<String, NotesItemMock>();
 
@@ -53,10 +51,6 @@ public class NotesDocumentMock extends NotesBaseMock
    * objects explicitly.
    */
   public NotesDocumentMock() {
-  }
-
-  public void setDatabase(NotesDatabaseMock database) {
-    this.database = database;
   }
 
   public void addItem(NotesItemMock item) throws RepositoryException {
@@ -79,11 +73,11 @@ public class NotesDocumentMock extends NotesBaseMock
   public String getItemValueString(String name) throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "getItemValueString");
     NotesItemMock item = items.get(name.toLowerCase());
-    if (item == null) {
+    if (null == item) {
       return "";
     }
     Vector values = item.getValues();
-    if (values == null || values.size() == 0) {
+    if (null == values || values.size() == 0) {
       return "";
     }
     switch (item.getType()) {
@@ -104,11 +98,11 @@ public class NotesDocumentMock extends NotesBaseMock
   public int getItemValueInteger(String name) throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "getItemValueInteger");
     NotesItemMock item = items.get(name.toLowerCase());
-    if (item == null) {
+    if (null == item) {
       return 0;
     }
     Vector values = item.getValues();
-    if (values == null) {
+    if (null == values) {
       return 0;
     }
     switch (item.getType()) {
@@ -124,11 +118,11 @@ public class NotesDocumentMock extends NotesBaseMock
   public Vector getItemValue(String name) throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "getItemValue");
     NotesItemMock item = items.get(name.toLowerCase());
-    if (item == null) {
+    if (null == item) {
       return new Vector();
     }
     Vector values = item.getValues();
-    if (values == null) {
+    if (null == values) {
       return new Vector();
     }
     return values;
@@ -154,11 +148,11 @@ public class NotesDocumentMock extends NotesBaseMock
       throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "getItemValueDateTimeArray");
     NotesItemMock item = items.get(name);
-    if (item == null) {
+    if (null == item) {
       return new Vector(); // TODO: check that this is right.
     }
     Vector values = item.getValues();
-    if (values == null) {
+    if (null == values) {
       return new Vector();
     }
     if (values.size() == 0) {
@@ -206,22 +200,7 @@ public class NotesDocumentMock extends NotesBaseMock
   public NotesItem appendItemValue(String name, Object value)
       throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "appendItemValue");
-    NotesItemMock item = null;
-    for (Map.Entry<String, NotesItemMock> entry: items.entrySet()) {
-      if (entry.getKey().equals(name)) {
-        item = entry.getValue();
-        break;
-      }
-    }
-    if (item == null) {
-      return replaceItemValue(name, value);
-    }
-    if (value instanceof Vector) {
-      item.appendToTextList((Vector) value);
-    } else {
-      item.appendToTextList(value.toString());
-    }
-    return item;
+    return null;
   }
 
   /** {@inheritDoc} */
@@ -242,8 +221,7 @@ public class NotesDocumentMock extends NotesBaseMock
   /* @Override */
   public boolean remove(boolean force) throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "remove");
-    database.removeDocument(this);
-    return true;
+    return false;
   }
 
   /** {@inheritDoc} */
@@ -272,7 +250,7 @@ public class NotesDocumentMock extends NotesBaseMock
   /* @Override */
   public String getUniversalID() throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "getUniversalID");
-    return getItemValueString("unid");
+    return null;
   }
 
   /** {@inheritDoc} */
@@ -312,17 +290,9 @@ public class NotesDocumentMock extends NotesBaseMock
   }
 
   public String toString() {
-    StringBuilder buf = new StringBuilder();
     try {
-      for (NotesItemMock item : items.values()) {
-        buf.append(item.toString()).append("\n");
-      }
-      return buf.toString();
-      // In the Notes API, this method returns getUniversalID,
-      // but for testing purposes it's more interesting to see
-      // the items comprising this document.
-      //return getUniversalID();
-    } catch (Exception e) {
+      return getUniversalID();
+    } catch (RepositoryException e) {
       return "";
     }
   }

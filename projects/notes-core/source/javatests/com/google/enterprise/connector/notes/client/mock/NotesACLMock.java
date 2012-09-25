@@ -18,48 +18,30 @@ import com.google.enterprise.connector.notes.client.NotesACL;
 import com.google.enterprise.connector.notes.client.NotesACLEntry;
 import com.google.enterprise.connector.spi.RepositoryException;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Vector;
 import java.util.logging.Logger;
 
-public class NotesACLMock extends NotesBaseMock implements NotesACL {
+class NotesACLMock extends NotesBaseMock implements NotesACL {
   private static final String CLASS_NAME = NotesACLMock.class.getName();
 
   /** The logger for this class. */
   private static final Logger LOGGER =
       Logger.getLogger(CLASS_NAME);
 
-  private List<NotesACLEntryMock> entries = new ArrayList<NotesACLEntryMock>();
-  private int index = 0;
-
-  public NotesACLMock() {
-  }
-
-  public void addAclEntry(NotesACLEntryMock entry) {
-    entries.add(entry);
+  NotesACLMock() {
   }
 
   /** {@inheritDoc} */
   /* @Override */
   public NotesACLEntry getFirstEntry() throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "getFirstEntry");
-    if (entries.size() == 0) {
-      return null;
-    }
-    index = 1;
-    return entries.get(0);
+    return null;
   }
 
   /** {@inheritDoc} */
   /* @Override */
   public NotesACLEntry getNextEntry() throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "getNextEntry");
-    if (index < entries.size()) {
-      NotesACLEntry entry = entries.get(index);
-      ++index;
-      return entry;
-    }
     return null;
   }
 
@@ -68,22 +50,13 @@ public class NotesACLMock extends NotesBaseMock implements NotesACL {
   public NotesACLEntry getNextEntry(NotesACLEntry previousEntry)
       throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "getNextEntry(prev)");
-
-    int previousEntryPosition = entries.indexOf(previousEntry);
-    if (previousEntryPosition == -1) {
-      return null;
-    }
-    if (previousEntryPosition == entries.size() - 1) {
-      return null;
-    }
-    index = previousEntryPosition + 1;
-    return entries.get(index);
+    return null;
   }
 
   /** {@inheritDoc} */
   /* @Override */
   public Vector getRoles() throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "getRoles)");
-    return new Vector();
+    return null;
   }
 }

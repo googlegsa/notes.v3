@@ -18,13 +18,9 @@ import com.google.enterprise.connector.notes.client.NotesItem;
 import com.google.enterprise.connector.notes.client.mock.NotesDatabaseMock;
 import com.google.enterprise.connector.notes.client.mock.NotesDocumentMock;
 import com.google.enterprise.connector.notes.client.mock.NotesItemMock;
-import com.google.enterprise.connector.notes.client.mock.NotesViewMock;
 import com.google.enterprise.connector.notes.client.mock.SessionFactoryMock;
-import com.google.enterprise.connector.notes.client.mock.ViewNavFromCategoryCreator;
 
 import junit.framework.TestCase;
-
-import java.util.Vector;
 
 public class NotesConnectorSessionTest extends TestCase {
 
@@ -40,75 +36,28 @@ public class NotesConnectorSessionTest extends TestCase {
     factory.addDatabase(configDatabase);
     configDatabase.setViewFields(NCCONST.VIEWSERVERS, "server",
         "region", "domain");
-    configDatabase.addViewNavFromCategoryCreator(
-        NCCONST.VIEWSECURITY,
-        new ViewNavFromCategoryCreator() {
-          public boolean documentIsInCategory(String category,
-              NotesDocumentMock document) {
-            try {
-              String repId =
-                  document.getItemValueString(NCCONST.DITM_REPLICAID);
-              return category.equals(repId);
-            } catch (Exception e) {
-              return false;
-            }
-          }
-        });
 
-    // Create source document
-    NotesDocumentMock docDbSrc = new NotesDocumentMock();
-    docDbSrc.addItem(new NotesItemMock("name","Form",
-        "type",NotesItem.TEXT,"values","DATABASE"));
-    docDbSrc.addItem(new NotesItemMock("name","Server",
-        "type",NotesItem.TEXT,"values",TESTCONST.SERVER_DOMINO));
-    docDbSrc.addItem(new NotesItemMock("name","DbRepId",
-        "type",NotesItem.TEXT,"values",TESTCONST.DBSRC_REPLICAID));
-    docDbSrc.addItem(new NotesItemMock("name","Enabled",
-        "type",NotesItem.NUMBERS,"values",1));
-    docDbSrc.addItem(new NotesItemMock("name","Stopped",
-        "type",NotesItem.NUMBERS,"values",0));    
-    docDbSrc.addItem(new NotesItemMock("name","CheckDeletions",
-        "type", NotesItem.TEXT,"values","Yes"));
-    docDbSrc.addItem(new NotesItemMock("name","DbAuthType",
-        "type",NotesItem.TEXT,"values","connector"));
-    docDbSrc.addItem(new NotesItemMock("name","Template",
-        "type",NotesItem.TEXT,"values","Discussion"));
-    configDatabase.addDocument(docDbSrc, NCCONST.VIEWDATABASES);
-    NotesViewMock viewSrc = 
-        (NotesViewMock) configDatabase.getView(NCCONST.VIEWDATABASES);
-    viewSrc.setFields(new String[]{"DbRepId"});
-
-    // Create Notes names database.
+    // Create stub names database.
     NotesDatabaseMock namesDatabase = new NotesDatabaseMock("testserver",
         "testnames.nsf");
     factory.addDatabase(namesDatabase);
-    namesDatabase.setViewFields(NCCONST.DIRVIEW_USERS, NCCONST.PITM_FULLNAME,
-        "HTTPPassword");
-    namesDatabase.setViewFields(NCCONST.DIRVIEW_PEOPLEGROUPFLAT,
-        NCCONST.GITM_LISTNAME);
-    namesDatabase.setViewFields(NCCONST.DIRVIEW_VIMUSERS,
-        NCCONST.PITM_FULLNAME);
-    namesDatabase.setViewFields(NCCONST.DIRVIEW_VIMGROUPS,
-        NCCONST.GITM_LISTNAME);
-    namesDatabase.addViewNavFromCategoryCreator(
-        NCCONST.DIRVIEW_SERVERACCESS,
-        new ViewNavFromCategoryCreator() {
-          public boolean documentIsInCategory(String category,
-              NotesDocumentMock document) {
-            try {
-              Vector members = document.getItemValue(NCCONST.GITM_MEMBERS);
-              for (Object member : members) {
-                if (member.toString().toLowerCase()
-                    .equals(category.toLowerCase())) {
-                  return true;
-                }
-              }
-              return false;
-            } catch (Exception e) {
-              return false;
-            }
-          }
-        });
+    NotesDocumentMock notesPerson = new NotesDocumentMock();
+    namesDatabase.addDocument(notesPerson, "($Users)");
+    namesDatabase.setViewFields("($Users)", "userid", "HTTPPassword");
+    notesPerson.addItem(new NotesItemMock("name", "userid",
+            "type", NotesItem.TEXT, "values", "cn=Test User/ou=Tests/o=Tests"));
+    notesPerson.addItem(new NotesItemMock("name", "HTTPPassword",
+            "type", NotesItem.TEXT, "values", "password"));
+    NotesDocumentMock connectorPerson = new NotesDocumentMock();
+    configDatabase.addDocument(connectorPerson, NCCONST.VIEWPEOPLECACHE);
+    configDatabase.setViewFields( NCCONST.VIEWPEOPLECACHE,
+        NCCONST.PCITM_USERNAME, NCCONST.PCITM_NOTESNAME, NCCONST.PCITM_GROUPS);
+    connectorPerson.addItem(new NotesItemMock("name", NCCONST.PCITM_USERNAME,
+            "type", NotesItem.TEXT, "values", "testuser"));
+    connectorPerson.addItem(new NotesItemMock("name", NCCONST.PCITM_NOTESNAME,
+            "type", NotesItem.TEXT, "values", "cn=Test User/ou=Tests/o=Tests"));
+    connectorPerson.addItem(new NotesItemMock("name", NCCONST.PCITM_GROUPS,
+            "type", NotesItem.TEXT, "values", "Group1", "Group2"));
 
     // Create config document.
     NotesDocumentMock systemConfig = new NotesDocumentMock();
@@ -167,7 +116,8 @@ public class NotesConnectorSessionTest extends TestCase {
    * Tests creating a session.
    */
   public void testCreateSession() throws Exception {
-    connector = NotesConnectorTest.getConnector();
+    connector = new NotesConnector(
+        "com.google.enterprise.connector.notes.client.mock.SessionFactoryMock");
     SessionFactoryMock factory = (SessionFactoryMock)
         connector.getSessionFactory();
 
@@ -180,7 +130,7 @@ public class NotesConnectorSessionTest extends TestCase {
     assertEquals(0, session.getNumCrawlerThreads());
     assertEquals(System.getProperty("javatest.inidirectory") + "/gsaSpool",
         session.getSpoolDir());
-    assertEquals(".testdomain", session.getDomain("testserver"));
+    assertEquals("testdomain", session.getDomain("testserver"));
     assertEquals("", session.getDomain("notatestserver"));
     assertEquals("", session.getMimeType("notanext"));
     assertEquals("text/plain", session.getMimeType("txt"));

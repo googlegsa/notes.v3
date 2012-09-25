@@ -22,7 +22,6 @@ import com.google.enterprise.connector.spi.AuthenticationResponse;
 import com.google.enterprise.connector.spi.Connector;
 import com.google.enterprise.connector.spi.Document;
 import com.google.enterprise.connector.spi.DocumentList;
-import com.google.enterprise.connector.spi.Principal;
 import com.google.enterprise.connector.spi.RepositoryException;
 import com.google.enterprise.connector.spi.RepositoryLoginException;
 import com.google.enterprise.connector.spi.Session;
@@ -49,12 +48,9 @@ public class NotesAuthenticationManagerTest extends ConnectorFixture {
         "javatest.authentication.password");
 
     // Temporary fix for the need to create user/group cache.
-    // TODO: Create a better fixture that handles the need to set
-    // up data before tests.
     Session session = connector.login();
-    NotesUserGroupManager userGroupManager =
-        new NotesUserGroupManager((NotesConnectorSession) session);
-    userGroupManager.updateUsersGroups(true);
+    NotesUserGroupManager ug = new NotesUserGroupManager();
+    ug.updatePeopleGroups((NotesConnectorSession) session, true);
   }
 
   /**
@@ -75,21 +71,20 @@ public class NotesAuthenticationManagerTest extends ConnectorFixture {
    *
    * @throws RepositoryException
    */
+  @SuppressWarnings("unchecked")
   public void testValidUser() throws RepositoryException {
     Session session = connector.login();
     AuthenticationManager manager = session.getAuthenticationManager();
     AuthenticationResponse response = manager.authenticate(
         new SimpleAuthenticationIdentity(username, password));
     assertTrue("Failed to authenticate: " + username, response.isValid());
-    @SuppressWarnings({ "unchecked", "cast" })
-        Collection<Principal> groups = (Collection<Principal>) response.getGroups();
+    Collection<String> groups = (Collection) response.getGroups();
     if (groups != null) {
       String groupPrefix = ((NotesConnectorSession) session)
           .getGsaGroupPrefix();
-      for (Principal group : groups) {
-        String name = group.getName();
-        assertTrue(name, name.startsWith(groupPrefix));
-        assertTrue(name, name.indexOf(" ") < 0);
+      for (String group : groups) {
+          assertTrue(group, group.startsWith(groupPrefix));
+          assertTrue(group, group.indexOf(" ") < 0);
       }
     }
   }
@@ -99,21 +94,20 @@ public class NotesAuthenticationManagerTest extends ConnectorFixture {
    *
    * @throws RepositoryException
    */
+  @SuppressWarnings("unchecked")
   public void testValidUserGroupResolutionOnly() throws RepositoryException {
     Session session = connector.login();
     AuthenticationManager manager = session.getAuthenticationManager();
     AuthenticationResponse response = manager.authenticate(
         new SimpleAuthenticationIdentity(username, null));
     assertTrue("Authenticated: " + username, response.isValid());
-    @SuppressWarnings({ "unchecked", "cast" })
-        Collection<Principal> groups = (Collection<Principal>) response.getGroups();
+    Collection<String> groups = (Collection) response.getGroups();
     if (groups != null) {
       String groupPrefix = ((NotesConnectorSession) session)
           .getGsaGroupPrefix();
-      for (Principal group : groups) {
-        String name = group.getName();
-        assertTrue(name, name.startsWith(groupPrefix));
-        assertTrue(name, name.indexOf(" ") < 0);
+      for (String group : groups) {
+          assertTrue(group, group.startsWith(groupPrefix));
+          assertTrue(group, group.indexOf(" ") < 0);
       }
     }
   }

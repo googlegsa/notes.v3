@@ -17,32 +17,25 @@ package com.google.enterprise.connector.notes;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.enterprise.connector.notes.client.SessionFactory;
 import com.google.enterprise.connector.spi.Connector;
-import com.google.enterprise.connector.spi.ConnectorPersistentStore;
-import com.google.enterprise.connector.spi.ConnectorPersistentStoreAware;
 import com.google.enterprise.connector.spi.ConnectorShutdownAware;
 import com.google.enterprise.connector.spi.RepositoryException;
-import com.google.enterprise.connector.util.database.JdbcDatabase;
 
 import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public class NotesConnector implements Connector,
-    ConnectorPersistentStoreAware, ConnectorShutdownAware  {
+public class NotesConnector implements Connector, ConnectorShutdownAware  {
   private static final String CLASS_NAME = NotesConnector.class.getName();
   private static final Logger LOGGER = Logger.getLogger(CLASS_NAME);
   private String password = "";
   private String server = null;
   private String database = null;
-  private boolean gsaNamesAreGlobal = true;
   private String workingDir = null;
   private String connectorName;
   private String policyAclPattern;
   private String googleFeedHost;
   private String gsaUsername;
   private String gsaPassword;
-  private String globalNamespace;
-  private String localNamespace;
   private boolean shutdown = false;
   private boolean deleted = false;
   NotesConnectorSession ncs = null;
@@ -52,8 +45,6 @@ public class NotesConnector implements Connector,
   Vector<NotesCrawlerThread> vecCrawlerThreads = null;
   SessionFactory sessionFactory;
   private final Object peopleCacheLock = new Object();
-  private ConnectorPersistentStore connectorPersistentStore;
-  private JdbcDatabase jdbcDatabase;
 
   NotesConnector() {
     this(
@@ -140,13 +131,6 @@ public class NotesConnector implements Connector,
     this.database = database;
   }
 
-  public void setGsaNamesAreGlobal(boolean gsaNamesAreGlobal) {
-    final String METHOD = "setGsaNamesAreGlobal";
-    LOGGER.logp(Level.CONFIG, CLASS_NAME, METHOD,
-        "GSA names are global = " + gsaNamesAreGlobal);
-    this.gsaNamesAreGlobal = gsaNamesAreGlobal;
-  }
-
   public void setGoogleConnectorWorkDir(String googleConnectorWorkDir) {
     final String METHOD = "setGoogleConnectorWorkDir";
     LOGGER.logp(Level.CONFIG, CLASS_NAME, METHOD,
@@ -189,45 +173,6 @@ public class NotesConnector implements Connector,
     this.gsaPassword = gsaPassword;
   }
 
-  public void setGoogleLocalNamespace(String namespace) {
-    final String METHOD = "setGoogleLocalNamespace";
-    LOGGER.logp(Level.CONFIG, CLASS_NAME, METHOD,
-        "Connector config googleLocalNamespace = " + namespace);
-    this.localNamespace = namespace;
-  }
-
-  public void setGoogleGlobalNamespace(String namespace) {
-    final String METHOD = "setGoogleGlobalNamespace";
-    LOGGER.logp(Level.CONFIG, CLASS_NAME, METHOD,
-        "Connector config googleGlobalNamespace = " + namespace);
-    this.globalNamespace = namespace;
-  }
-
-  @Override
-  public void setDatabaseAccess(
-      ConnectorPersistentStore connectorPersistentStore) {
-    final String METHOD = "setDatabaseAccess";
-    if (connectorPersistentStore == null) {
-      // null is passed in by Spring; the real value is set later
-      // by the connector manager.
-      return;
-    }
-
-    LOGGER.logp(Level.CONFIG, CLASS_NAME, METHOD,
-        "Connector config databaseAccess = " + connectorPersistentStore);
-    this.connectorPersistentStore = connectorPersistentStore;
-    this.jdbcDatabase = new JdbcDatabase(
-        connectorPersistentStore.getLocalDatabase().getDataSource());
-  }
-
-  public ConnectorPersistentStore getDatabaseAccess() {
-    return connectorPersistentStore;
-  }
-
-  public JdbcDatabase getJdbcDatabase() {
-    return jdbcDatabase;
-  }
-
   public String getIdPassword() {
     return password;
   }
@@ -238,10 +183,6 @@ public class NotesConnector implements Connector,
 
   public String getDatabase() {
     return database;
-  }
-
-  public boolean getGsaNamesAreGlobal() {
-    return gsaNamesAreGlobal;
   }
 
   public String getGoogleConnectorWorkDir(String googleConnectorWorkDir) {
@@ -276,14 +217,6 @@ public class NotesConnector implements Connector,
     return gsaPassword;
   }
 
-  public String getGlobalNamespace() {
-    return globalNamespace;
-  }
-
-  public String getLocalNamespace() {
-    return localNamespace;
-  }
-
   /**
    * Gets the <code>SessionFactory</code> for this Connector.
    *
@@ -302,7 +235,6 @@ public class NotesConnector implements Connector,
     final String METHOD = "delete";
     LOGGER.logp(Level.INFO, CLASS_NAME, METHOD,
         "Connector is being DELETED!!!");
-    releaseResources();
     deleted = true;
   }
 
@@ -340,33 +272,4 @@ public class NotesConnector implements Connector,
   public boolean getShutdown() {
     return shutdown;
   }
-
-  private void releaseResources(){
-    final String METHOD = "releaseResources";
-    LOGGER.entering(CLASS_NAME, METHOD);
-    if (this.ncs != null) {
-      NotesDocumentManager docman = ncs.getNotesDocumentManager();
-      if (docman != null) {
-        try {
-          docman.dropTables();
-        } catch (Exception e) {
-          LOGGER.logp(Level.WARNING, CLASS_NAME, METHOD,
-              "Failed to drop document tables", e);
-        }
-      }
-
-      try {
-        NotesUserGroupManager userGroupMan = ncs.getUserGroupManager();
-        if (userGroupMan != null) {
-          userGroupMan.dropTables();
-        }
-      } catch (Exception e) {
-        LOGGER.logp(Level.WARNING, CLASS_NAME, METHOD,
-            "Failed to drop user/group/role tables", e);
-      }
-    }
-
-    LOGGER.exiting(CLASS_NAME, METHOD);
-  }
 }
-

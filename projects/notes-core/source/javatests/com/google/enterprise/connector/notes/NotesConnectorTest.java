@@ -16,39 +16,20 @@ package com.google.enterprise.connector.notes;
 
 import com.google.enterprise.connector.notes.NotesConnector;
 import com.google.enterprise.connector.notes.client.mock.SessionFactoryMock;
-import com.google.enterprise.connector.spi.ConnectorPersistentStore;
-import com.google.enterprise.connector.spi.LocalDatabase;
-import com.google.enterprise.connector.spi.LocalDocumentStore;
 import com.google.enterprise.connector.spi.Session;
-import com.google.enterprise.connector.util.database.testing.TestJdbcDatabase;
-import com.google.enterprise.connector.util.database.testing.TestLocalDatabase;
 
 import junit.framework.TestCase;
 
 public class NotesConnectorTest extends TestCase {
 
-  static NotesConnector getConnector() throws Exception {
+  static NotesConnector getConnector() {
     NotesConnector connector = new NotesConnector(
         "com.google.enterprise.connector.notes.client.mock.SessionFactoryMock");
     connector.setIdPassword("testpassword");
     connector.setServer("testserver");
     connector.setDatabase("testconfig.nsf");
-    connector.setGsaNamesAreGlobal(true);
-    connector.setGoogleLocalNamespace("LocalNamespace");
-    connector.setGoogleGlobalNamespace("GlobalNamespace");
-
     // Initialize this to prevent NotesConnector from creating one.
-    connector.maintThread = new NotesMaintenanceThread();
-    connector.setGoogleConnectorName("notestest");
-    connector.setDatabaseAccess(new ConnectorPersistentStore() {
-        public LocalDocumentStore getLocalDocumentStore() {
-          return null;
-        }
-        public LocalDatabase getLocalDatabase() {
-          // TODO: update resource directory when resources are implemented
-          return new TestLocalDatabase("Lotus_Notes", null);
-        }
-      });
+    connector.maintThread = new NotesMaintenanceThread(null, null);
     return connector;
   }
 
@@ -79,12 +60,8 @@ public class NotesConnectorTest extends TestCase {
   }
 
   public void testDelete() throws Exception {
-    connector = NotesConnectorTest.getConnector();
-    SessionFactoryMock factory = 
-        (SessionFactoryMock) connector.getSessionFactory();
-    NotesConnectorSessionTest.configureFactoryForSession(factory);
-    NotesConnectorSession session = (NotesConnectorSession) connector.login();
-    
+    connector = new NotesConnector(
+        "com.google.enterprise.connector.notes.client.mock.SessionFactoryMock");
     assertFalse(connector.getDelete());
     connector.delete();
     assertTrue(connector.getDelete());

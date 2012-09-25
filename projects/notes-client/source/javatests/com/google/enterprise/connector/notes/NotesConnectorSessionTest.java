@@ -53,13 +53,12 @@ public class NotesConnectorSessionTest extends ConnectorFixture {
     assertEquals("numCrawlerThreads", 1, session.getNumCrawlerThreads());
     assertNotNull("notifier", session.getNotifier());
     assertTrue("spoolDir", session.getSpoolDir().endsWith("gsaSpool"));
-    assertEquals("domain", "", session.getDomain(ConnectorFixture.server));
+    assertEquals("domain", "", session.getDomain(server));
     assertEquals("mimetype", "application/msword", session.getMimeType("doc"));
-    assertEquals("idpassword", ConnectorFixture.idpassword,
-        session.getPassword());
-    assertEquals("server", ConnectorFixture.server, session.getServer());
+    assertEquals("idpassword", idpassword, session.getPassword());
+    assertEquals("server", server, session.getServer());
     assertEquals("maxFileSize", 30 * 1024 * 1024, session.getMaxFileSize());
-    assertEquals("database", ConnectorFixture.database, session.getDatabase());
+    assertEquals("database", database, session.getDatabase());
     assertSame("connector", connector, session.getConnector());
 
     assertFalse(".doc is excluded", session.isExcludedExtension("doc"));
