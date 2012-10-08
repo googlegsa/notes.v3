@@ -29,7 +29,6 @@ import com.google.enterprise.connector.notes.client.NotesSession;
 import com.google.enterprise.connector.notes.client.NotesView;
 import com.google.enterprise.connector.notes.client.NotesViewEntry;
 import com.google.enterprise.connector.notes.client.NotesViewNavigator;
-import com.google.enterprise.connector.spi.LocalDatabase;
 import com.google.enterprise.connector.spi.RepositoryException;
 import com.google.enterprise.connector.util.database.DatabaseConnectionPool;
 import com.google.enterprise.connector.util.database.JdbcDatabase;
@@ -40,9 +39,11 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -122,7 +123,7 @@ import java.util.logging.Logger;
  * TODO: decide on where to handle locking; can we depend on the
  * database, or do we need synchronization here?
  */
-public class NotesUserGroupManager {
+class NotesUserGroupManager {
   private static final String CLASS_NAME =
       NotesUserGroupManager.class.getName();
   private static final Logger LOGGER = Logger.getLogger(CLASS_NAME);
@@ -135,6 +136,7 @@ public class NotesUserGroupManager {
   private DatabaseConnectionPool connectionPool;
   private boolean originalAutoCommit;
   private int originalTransactionIsolation;
+  private final NotesDomainNames notesDomainNames;
   private Connection conn;
   @VisibleForTesting final String userTableName;
   @VisibleForTesting final String groupTableName;
@@ -147,6 +149,7 @@ public class NotesUserGroupManager {
   NotesUserGroupManager(NotesConnectorSession connectorSession)
       throws RepositoryException {
     this.connectorSession = connectorSession;
+    this.notesDomainNames = new NotesDomainNames();
     JdbcDatabase jdbcDatabase =
         connectorSession.getConnector().getJdbcDatabase();
     String connectorName =
@@ -305,10 +308,36 @@ public class NotesUserGroupManager {
       }
       User user = new User(userId, notesName, gsaName);
 
-      // Find their groups.
-      pstmt = lookupConn.prepareStatement("select groupname from "
-          + groupTableName + " where groupid in (select groupid from "
-          + userGroupsTableName + " where userid = ?)",
+      // Find user groups and nested groups
+      pstmt = lookupConn.prepareStatement(
+          Util.buildString(
+              "select groupname from ", groupTableName,
+              " where groupid in ",
+              "(select groupid from ",userGroupsTableName,
+              " where userid = ?)"),
+          ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
+      try {
+        pstmt.setLong(1, userId);
+        rs = pstmt.executeQuery();
+        while (rs.next()) {
+          user.addGroup(rs.getString(1));
+        }
+      } finally {
+        Util.close(rs);
+        Util.close(pstmt);
+      }
+
+      // Find user's parent and great grand-parent groups
+      // This query queries for user's groups.  From user's groups, it looks up
+      // all parent ids.  From parent ids, it looks up for group names.
+      pstmt = lookupConn.prepareStatement(
+          Util.buildString(
+              "select groupname from ", groupTableName,
+              " where groupid in ",
+              "(select parentgroupid from ", groupChildrenTableName,
+              " where childgroupid in ",
+              "(select groupid from ", userGroupsTableName,
+              " where userid = ?)", ")"),
           ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
       try {
         pstmt.setLong(1, userId);
@@ -489,6 +518,9 @@ public class NotesUserGroupManager {
         return;
       }
 
+      // Pass 0 - Reset domain cache
+      updateNotesDomainNames();
+
       // Pass 1 - Update groups
       updateGroups();
 
@@ -576,7 +608,7 @@ public class NotesUserGroupManager {
   NotesSession getNotesSession() {
     return notesSession;
   }
-
+  
   // Update groups
 
   /**
@@ -708,6 +740,14 @@ public class NotesUserGroupManager {
     }
     Vector<String> groupMembers = groupDoc.getItemValue(NCCONST.GITM_MEMBERS);
     for (String member : groupMembers) {
+      // Check for wildcard configuration in group membership
+      if (member.startsWith("*/")) {
+        nestedGroups.add(member.toLowerCase());
+        LinkedHashMap<String, Long> subdomains = 
+            notesDomainNames.getSubDomainNames(member.toLowerCase().substring(1));
+        nestedGroups.addAll(subdomains.keySet());
+        continue;
+      }
       NotesDocument memberDoc = peopleGroupsView.getDocumentByKey(member);
       if (memberDoc == null) {
         continue;
@@ -725,6 +765,117 @@ public class NotesUserGroupManager {
     LOGGER.exiting(CLASS_NAME, METHOD);
   }
 
+  /**
+   * Store all wildcard domains in H2 and build a domain cache.
+   */
+  private void updateNotesDomainNames() {
+    final String METHOD = "updateNotesDomainNames";
+    LOGGER.entering(CLASS_NAME, METHOD);
+    
+    NotesSession ns = null;
+    NotesView peopleView = null;
+    try {
+      ns = connectorSession.createNotesSession();
+      LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
+          Util.buildString("Open Notes directory: ",
+              connectorSession.getServer(), "!!",
+              connectorSession.getDirectory()));
+      NotesDatabase nab = ns.getDatabase(connectorSession.getServer(),
+          connectorSession.getDirectory());
+      peopleView = nab.getView(NCCONST.DIRVIEW_VIMUSERS);
+      peopleView.refresh();
+      NotesDocument docNext = null;
+      NotesDocument doc = peopleView.getFirstDocument();
+      while (doc != null) {
+        Vector fullNames = doc.getItemValue(NCCONST.PITM_FULLNAME);
+        if (fullNames.size() == 0) {
+          docNext = peopleView.getNextDocument(doc);
+          doc.recycle();
+          doc = docNext;
+          continue;
+        }
+        // Create domains/OUs as groups in H2 if not existed and 
+        // update domain cache
+        List<String> canonicalOUs = notesDomainNames
+            .computeExpandedWildcardDomainNames((String) fullNames.get(0));
+        verifyMultiDomainsExist(canonicalOUs, true);
+        docNext = peopleView.getNextDocument(doc);
+        doc.recycle();
+        doc = docNext;
+      }
+      if (LOGGER.isLoggable(Level.FINEST)) {
+        LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD, "Domain cache: " + 
+            notesDomainNames.toString());
+      }
+    } catch (RepositoryException e) {
+      LOGGER.logp(Level.WARNING, CLASS_NAME, METHOD, 
+          "Failed to update Notes domain names", e);
+    } finally {
+      Util.recycle(peopleView);
+      Util.recycle(ns);
+    }
+    LOGGER.exiting(CLASS_NAME, METHOD);
+  }
+
+  public Set<String> getSubDomains(String domainName) {
+    return notesDomainNames.getSubDomainNames(domainName).keySet();
+  }
+  
+  private long verifyDomainExists(String ou, boolean createIfNotExists) {
+    final String METHOD = "verifyDomainExists";
+    LOGGER.entering(CLASS_NAME, METHOD);
+    Long groupId = this.notesDomainNames.get(ou);
+    if (groupId instanceof Long) {
+      LOGGER.logp(Level.FINE, CLASS_NAME, METHOD, "Found " + ou + 
+          " domain in cache [ID# " + groupId + "]");
+      return groupId.longValue();
+    }
+    long id = verifyGroupExists(ou, createIfNotExists);
+    if (id != -1L) {
+      LOGGER.logp(Level.FINE, CLASS_NAME, METHOD, "Verify " + ou + 
+          " domain in database [ID# " + id + "]");
+      this.notesDomainNames.add(ou, new Long(id));
+    }
+    LOGGER.exiting(CLASS_NAME, METHOD);
+    return id;
+  }
+  
+  private void verifyMultiDomainsExist(List<String> personOUs, 
+      boolean createIfNotExists) throws RepositoryException {
+    final String METHOD = "verifyDomainsExists";
+    LOGGER.entering(CLASS_NAME, METHOD);
+    
+    boolean origAutoCommit = true;
+    // Verify database connection which is used within verifyGroupExists
+    try {
+      if (conn == null) {
+        connectionPool = connectorSession.getConnector().getJdbcDatabase()
+            .getConnectionPool();
+        conn = connectionPool.getConnection();
+      }
+      origAutoCommit = conn.getAutoCommit();
+      conn.setAutoCommit(true);
+    } catch (SQLException e) {
+      LOGGER.logp(Level.SEVERE, CLASS_NAME, METHOD, 
+          "Failed to connect to H2 database");
+      throw new RepositoryException(e);
+    }
+    // Loop thru each person's OU and add to notesDomainNames cache
+    for (String ou : personOUs) {
+      verifyDomainExists(ou, createIfNotExists);
+    }
+    // Release connection
+    try {
+      conn.setAutoCommit(origAutoCommit);
+    } catch (SQLException e) {
+      LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
+          "Failed to reset original auto commit");
+    } finally {
+      connectionPool.releaseConnection(conn);
+    }
+    LOGGER.exiting(CLASS_NAME, METHOD);
+  }
+  
   private long verifyGroupExists(String groupName,
       boolean createIfNotExists) {
     final String METHOD = "verifyGroupExists";
@@ -757,6 +908,8 @@ public class NotesUserGroupManager {
       }
       generatedKeys = pstmt.getGeneratedKeys();
       if (generatedKeys.next()) {
+        LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
+            Util.buildString("New ", groupName, " group is added to cache"));
         return generatedKeys.getLong(1);
       } else {
         throw new RepositoryException(
@@ -845,6 +998,19 @@ public class NotesUserGroupManager {
             continue;
           }
           updateUser(personDoc, notesName, pvi, serverAccessView);
+          // Log user info
+          if (LOGGER.isLoggable(Level.FINE)) {
+            String delim = "";
+            User user = getUser("gsaname", pvi);
+            Collection<String> userGroups = user.getGroups();
+            StringBuilder buf = new StringBuilder();
+            buf.append("All groups for ").append(user).append(": ");
+            for (String grpName : userGroups) {
+              buf.append(delim).append(grpName);
+              delim = ", ";
+            }
+            LOGGER.logp(Level.FINE, CLASS_NAME, METHOD, buf.toString());
+          }
         } catch (Exception e) {
           LOGGER.logp(Level.WARNING, CLASS_NAME, METHOD,
               "Failed to update user cache" +
@@ -878,7 +1044,7 @@ public class NotesUserGroupManager {
       // getGroupsFromDN will add the DN-based groups to the
       // group cache if they don't exist, so we want it in the
       // transaction.
-      getGroupsFromDN(notesName, parentGroups);
+      getGroupsFromDN(notesName, parentGroups, serverAccessView);
       // Delete previous user/group records for this user.
       pstmt = conn.prepareStatement(
           "delete from " + userGroupsTableName
@@ -981,8 +1147,9 @@ public class NotesUserGroupManager {
       ResultSet rs = pstmt.executeQuery();
       while (rs.next()) {
         long id = rs.getLong(1);
-        parentGroups.add(id);
-        getParentGroupsForGroup(id, parentGroups);
+        if (parentGroups.add(id)) {
+          getParentGroupsForGroup(id, parentGroups);
+        }
       }
     } catch (SQLException e) {
       LOGGER.logp(Level.WARNING, CLASS_NAME, METHOD,
@@ -994,7 +1161,8 @@ public class NotesUserGroupManager {
     }
   }
 
-  private void getGroupsFromDN(String dn, Set<Long> groups) {
+  private void getGroupsFromDN(String dn, Set<Long> groups, 
+      NotesView serverAccessView) {
     final String METHOD = "getGroupsFromDN";
     LOGGER.entering(CLASS_NAME, METHOD);
 
@@ -1004,16 +1172,62 @@ public class NotesUserGroupManager {
         String ou = dn.substring(index + 1);
         LOGGER.logp(Level.FINER, CLASS_NAME, METHOD,
             "Group list adding OU " + ou);
-        long groupId = verifyGroupExists(ou, true);
+        long groupId = verifyDomainExists(ou, true);
         if (groupId != -1L) {
           markAsPseudoGroup(groupId, ou);
           groups.add(groupId);
+        }
+        // Prepend wildcard to each OU
+        String wildcardName = "*/" + ou;
+        long wildcardGroupId = verifyDomainExists(wildcardName, true);
+        if (wildcardGroupId != -1L) {
+          markAsPseudoGroup(wildcardGroupId, ou);
+          groups.add(wildcardGroupId);
+          getGroupsWithWildcardMembers(wildcardName.toLowerCase(), groups, 
+              serverAccessView);
         }
         dn = ou;
       } catch (Exception e) {
         LOGGER.logp(Level.WARNING, CLASS_NAME, METHOD,
             "Error creating group from dn: " + dn, e);
       }
+    }
+    LOGGER.exiting(CLASS_NAME, METHOD);
+  }
+  
+  private void getGroupsWithWildcardMembers(String wildcardName, 
+      Set<Long> groups, NotesView serverAccessView) {
+    final String METHOD = "getGroupsWithWildcardMembers";
+    LOGGER.entering(CLASS_NAME, METHOD);
+    
+    if (Strings.isNullOrEmpty(wildcardName)) {
+      return;
+    }
+    NotesViewNavigator viewNav = null;
+    NotesViewEntry entry = null;
+    try {
+      viewNav = serverAccessView.createViewNavFromCategory(wildcardName);
+      NotesViewEntry nextEntry;
+      entry = viewNav.getFirst();
+      while (entry != null) {
+        String groupName = 
+            entry.getDocument().getItemValueString(NCCONST.GITM_LISTNAME);
+        // Verify group in H2 and add group
+        long groupId = verifyGroupExists(groupName, true);
+        if (groupId != -1L) {
+          groups.add(new Long(groupId));
+        }
+        nextEntry = viewNav.getNext(entry);
+        entry.recycle();
+        entry = nextEntry;
+      }
+    } catch (RepositoryException e) {
+      LOGGER.logp(Level.WARNING, CLASS_NAME, METHOD,
+          Util.buildString("Failed to lookup groups for ", wildcardName, " in ",
+              NCCONST.DIRVIEW_SERVERACCESS, " view"), e);
+    } finally {
+      Util.recycle(entry);
+      Util.recycle(viewNav);
     }
     LOGGER.exiting(CLASS_NAME, METHOD);
   }
@@ -1081,6 +1295,8 @@ public class NotesUserGroupManager {
             rs.updateString("gsaname", pvi.toLowerCase());
             rs.updateRow();
           }
+          LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD,
+              Util.buildString("Found user ", key, " from cache"));
           return rs.getLong("userid");
         }
         if (!createIfNotExists) {
@@ -1101,6 +1317,9 @@ public class NotesUserGroupManager {
         }
         generatedKeys = pstmt.getGeneratedKeys();
         if (generatedKeys.next()) {
+          LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
+              Util.buildString("New user ", notesName.toLowerCase(),
+                  " [", pvi.toLowerCase(), "] is added to cache"));
           return generatedKeys.getLong(1);
         } else {
           throw new RepositoryException(
@@ -1709,6 +1928,50 @@ public class NotesUserGroupManager {
 
   // Manage update interval.
 
+  public boolean resetLastCacheUpdate() {
+    final String METHOD = "resetLastCacheUpdate";
+    LOGGER.entering(CLASS_NAME, METHOD);
+
+    boolean isReset = false;
+    NotesSession nSession = null;
+    NotesDatabase dbConfig = null;
+    NotesView vwConfig = null;
+    NotesDocument docConfig = null;
+    NotesDateTime dtTarget = null;
+    try {
+      nSession = connectorSession.createNotesSession();
+      dbConfig = nSession.getDatabase(
+              connectorSession.getServer(), connectorSession.getDatabase());
+      if (!dbConfig.isOpen()) {
+        throw new RepositoryException(
+            "GSA Configuration database is not opened");
+      }
+      dtTarget = nSession.createDateTime("1/1/1970");
+      dtTarget.setAnyTime();
+      vwConfig = dbConfig.getView(NCCONST.VIEWSYSTEMSETUP);
+      docConfig = vwConfig.getFirstDocument();
+      if (docConfig == null) {
+        LOGGER.logp(Level.SEVERE, CLASS_NAME, METHOD,
+            "System configuration document not found.");
+        return false;
+      }
+      docConfig.replaceItemValue(NCCONST.SITM_LASTCACHEUPDATE, dtTarget);
+      docConfig.save(true);
+      isReset = true;
+    } catch (RepositoryException e) {
+      LOGGER.log(Level.SEVERE, CLASS_NAME, e);
+    } finally {
+      Util.recycle(dtTarget);
+      Util.recycle(docConfig);
+      Util.recycle(vwConfig);
+      Util.recycle(dbConfig);
+      Util.recycle(nSession);
+    }
+    LOGGER.exiting(CLASS_NAME, METHOD);
+    
+    return isReset;
+  }
+  
   private void setLastCacheUpdate() {
     final String METHOD = "setLastCacheUpdate";
     LOGGER.entering(CLASS_NAME, METHOD);
@@ -1834,19 +2097,15 @@ public class NotesUserGroupManager {
   private boolean isAccessControlGroup(NotesDocument groupDoc)
       throws RepositoryException {
     if (!groupDoc.getItemValueString(NCCONST.ITMFORM).contentEquals(
-            NCCONST.DIRFORM_GROUP)) {
+        NCCONST.DIRFORM_GROUP)) {
       return false;
     }
     // Only process access control type groups
     String groupType = groupDoc.getItemValueString(NCCONST.GITM_GROUPTYPE);
-    if (!NCCONST.DIR_ACCESSCONTROLGROUPTYPES.contains(groupType)) {
-      return false;
-    }
-    return true;
+    return NCCONST.DIR_ACCESSCONTROLGROUPTYPES.contains(groupType);
   }
 
   // Helpers
-
   private NotesDocument getNextDocument(NotesView view, NotesDocument doc)
       throws RepositoryException {
     NotesDocument nextDoc = view.getNextDocument(doc);
@@ -2078,6 +2337,12 @@ public class NotesUserGroupManager {
       LinkedHashSet<String> both = new LinkedHashSet<String>(groups);
       both.addAll(roles);
       return both;
+    }
+    
+    public String toString() {
+      StringBuilder buf = new StringBuilder();
+      buf.append(notesName).append(" [").append(gsaName).append("]");
+      return buf.toString();
     }
   }
 }

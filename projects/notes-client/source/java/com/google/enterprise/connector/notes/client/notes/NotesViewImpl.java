@@ -18,6 +18,7 @@ import com.google.enterprise.connector.notes.client.NotesDocument;
 import com.google.enterprise.connector.notes.client.NotesView;
 import com.google.enterprise.connector.notes.client.NotesViewEntryCollection;
 import com.google.enterprise.connector.notes.client.NotesViewNavigator;
+import com.google.enterprise.connector.spi.RepositoryException;
 
 import lotus.domino.Document;
 import lotus.domino.NotesException;
@@ -162,6 +163,18 @@ class NotesViewImpl extends NotesBaseImpl<View> implements NotesView {
   public void refresh() throws NotesConnectorExceptionImpl {
     try {
       getNotesObject().refresh();
+    } catch (NotesException e) {
+      throw new NotesConnectorExceptionImpl(e);
+    }
+  }
+
+  /** {@inheritDoc} */
+  /* @Override */
+  public NotesViewEntryCollection getAllEntries() 
+      throws NotesConnectorExceptionImpl {
+    try {
+      ViewEntryCollection results = getNotesObject().getAllEntries();
+      return new NotesViewEntryCollectionImpl(results);
     } catch (NotesException e) {
       throw new NotesConnectorExceptionImpl(e);
     }

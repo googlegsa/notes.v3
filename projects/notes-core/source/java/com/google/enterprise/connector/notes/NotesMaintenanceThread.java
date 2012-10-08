@@ -90,7 +90,8 @@ public class NotesMaintenanceThread extends Thread {
             "Maintenance thread is updating User Group Cache.");
         nugm.updateUsersGroups();
         LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
-            "Maintenance thread checking for deletions.");
+            "Maintenance thread checking for deletions [Batch Size: " + 
+            batchsize + "]");
         lastdocid = checkForDeletions(lastdocid, batchsize);
         LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
             "Maintenance thread sleeping after checking for deletions.");

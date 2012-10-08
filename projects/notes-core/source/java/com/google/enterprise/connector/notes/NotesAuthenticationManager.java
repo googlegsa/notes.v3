@@ -68,11 +68,11 @@ class NotesAuthenticationManager implements AuthenticationManager {
           connectorSession.getUserGroupManager().getUserByGsaName(gsaName);
       if (user == null) {
         LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
-            "Person not found in connector user database: " + gsaName);
+            gsaName + " user is not authenticated");
         return new AuthenticationResponse(false, null);
       }
       LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
-          "Authentication user using Notes name: " + user.getNotesName());
+          user.getNotesName() + " user is authenticated");
 
       // Find the user in Notes.
       NotesSession notesSession = connectorSession.createNotesSession();

@@ -17,6 +17,7 @@ package com.google.enterprise.connector.notes.client.mock;
 import com.google.enterprise.connector.notes.client.NotesName;
 import com.google.enterprise.connector.spi.RepositoryException;
 
+import java.util.Vector;
 import java.util.logging.Logger;
 
 public class NotesNameMock extends NotesBaseMock implements NotesName {
@@ -25,18 +26,116 @@ public class NotesNameMock extends NotesBaseMock implements NotesName {
   /** The logger for this class. */
   private static final Logger LOGGER = Logger.getLogger(CLASS_NAME);
 
-  private String name;
+  private String canonicalName;
+  private String shortName;
+  private String abbreviatedName;
+  private String commonName;
+  private String flatName;
+  private Vector<String> ous;
+  private String organization;
 
-  public NotesNameMock(String name) {
-    this.name = name;
+  public NotesNameMock(String canonicalName) throws RepositoryException {
+    this.canonicalName = canonicalName;
+    initNames();
+  }
+  
+  public NotesNameMock(String canonicalName, String shortName) 
+          throws RepositoryException {
+    this.canonicalName = canonicalName;
+    this.shortName = shortName;
+    initNames();
   }
 
   /** {@inheritDoc} */
-  public String getCanonical() throws RepositoryException {
-    return name;
+  public String getCanonical() {
+    return this.canonicalName;
+  }
+  
+  public String getShortName() {
+    return this.shortName;
+  }
+  
+  public String getAbbreviated() {
+    return this.abbreviatedName;
+  }
+  
+  public String getCommonName() {
+    return this.commonName;
+  }
+  
+  public String getFlatName() {
+    return this.flatName;
   }
 
+  private void initNames() throws RepositoryException {
+    if (!canonicalName.contains("/") && !canonicalName.contains("=")) {
+      return;
+    }
+    
+    ous = new Vector<String>(10);
+    String[] ary = canonicalName.split("/");
+    for (int i = 0; i < ary.length; i++) {
+      String[] pair = ary[i].split("=");
+      if (pair.length != 2) {
+        throw new RepositoryException("Invalid Notes name: " + canonicalName);
+      }
+      if ("CN".equalsIgnoreCase(pair[0])) {
+        commonName = pair[1].trim();
+      } else if ("OU".equalsIgnoreCase(pair[0])) {
+        ous.add(pair[1]);
+      } else if ("O".equalsIgnoreCase(pair[0])) {
+        organization = pair[1];
+      }
+    }
+    if (commonName == null) {
+      throw new RepositoryException(
+              "Failed to compute common name: " + canonicalName);
+    }
+    initAbbreviateName();
+    
+    if (shortName == null) {
+      initShortName();
+    }
+    initFlatName();
+  }
+  
+  private void initAbbreviateName() {
+    StringBuilder buf = new StringBuilder();
+    buf.append(commonName);
+    for (String ou : ous) {
+      buf.append("/").append(ou);
+    }
+    buf.append("/").append(organization);
+    this.abbreviatedName = buf.toString();
+  }
+  
+  private void initShortName() {
+    int pos1 = commonName.indexOf(" ");
+    if (pos1 != -1) {
+      int pos2 = commonName.lastIndexOf(" ");
+      shortName = (commonName.substring(0, pos1) + 
+              commonName.substring(pos2 + 1)).toLowerCase();
+    } else {
+      shortName = commonName.toLowerCase();
+    }
+  }
+  
+  /*
+   * Flat name is Last + " , " + First + " " + Middle
+   */
+  private void initFlatName() {
+    int pos = commonName.lastIndexOf(" ");
+    if (pos == -1) {
+      this.flatName = commonName;
+    } else {
+      StringBuilder buf = new StringBuilder();
+      buf.append(commonName.substring(pos).trim());
+      buf.append(" , ").append(commonName.substring(0, pos).trim());
+      this.flatName = buf.toString();
+    }
+  }
+  
   public String toString() {
-    return name;
+    return this.canonicalName;
   }
 }

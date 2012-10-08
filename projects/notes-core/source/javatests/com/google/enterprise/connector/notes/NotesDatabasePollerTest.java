@@ -121,8 +121,8 @@ public class NotesDatabasePollerTest extends TestCase {
     ArrayList<String> noAccessUsers = new ArrayList<String>();
     ArrayList<String> noAccessGroups = new ArrayList<String>();
 
-    poller.getPermitDeny(NotesDatabasePollerTest.acl,
-        permitUsers, permitGroups, noAccessUsers, noAccessGroups);
+    poller.getPermitDeny(NotesDatabasePollerTest.acl, permitUsers, permitGroups,
+        noAccessUsers, noAccessGroups, connectorSession.createNotesSession());
     assertEquals(2, permitUsers.size());
     assertEquals("allowed user1", permitUsers.get(0));
     assertEquals("allowed user2", permitUsers.get(1));

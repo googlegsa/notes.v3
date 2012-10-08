@@ -160,7 +160,7 @@ public class NotesAuthenticationManagerTest extends TestCase {
         Collection<Principal> groups =
         (Collection<Principal>) response.getGroups();
     assertNotNull("Missing groups", groups);
-    assertEquals(groups.toString(), 7, groups.size());
+    assertEquals(groups.toString(), 9, groups.size());
     Collection<String> groupNames = new ArrayList<String>();
     for (Principal principal : groups) {
       groupNames.add(principal.getName());
@@ -176,6 +176,10 @@ public class NotesAuthenticationManagerTest extends TestCase {
         groupNames.contains(groupPrefix + "%2Fo%3Dtests"));
     assertTrue(groupNames + "/ou=tests/o=tests",
         groupNames.contains(groupPrefix + "%2Fou%3Dtests%2Fo%3Dtests"));
+    assertTrue("*/ou=tests/o=tests",
+        groupNames.contains(groupPrefix + "%2F*%2Fou%3Dtests%2Fo%3Dtests"));
+    assertTrue("*/o=tests",
+        groupNames.contains(groupPrefix + "%2F*%2Fo%3Dtests"));
     // Check for roles: one assigned to the user, one assigned to
     // one of the user's groups.
     assertTrue(groupNames + "/[tacticsexpert]",

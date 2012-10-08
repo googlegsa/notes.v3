@@ -76,6 +76,14 @@ class Util {
     }
   }
 
+  static String buildString(String...args) {
+    StringBuilder buf = new StringBuilder();
+    for (String arg : args) {
+      buf.append(arg);
+    }
+    return buf.toString();
+  }
+
   /**
    * Private constructor to prevent instantiation.
    */

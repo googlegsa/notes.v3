@@ -177,6 +177,13 @@ public class NotesViewMock extends NotesBaseMock implements NotesView {
 
   /** {@inheritDoc} */
   /* @Override */
+  public NotesViewEntryCollection getAllEntries() throws RepositoryException {
+    LOGGER.entering(CLASS_NAME, "getAllEntries");
+    return null;
+  }
+  
+  /** {@inheritDoc} */
+  /* @Override */
   public NotesViewEntryCollection getAllEntriesByKey(Vector keys)
       throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "getAllEntriesByKey");

@@ -55,6 +55,13 @@ public class NotesDateTimeMock extends NotesBaseMock
 
   /** {@inheritDoc} */
   /* @Override */
+  public void setAnyTime() throws RepositoryException {
+   LOGGER.entering(CLASS_NAME, "setAnyTime");
+   // empty
+  }
+
+  /** {@inheritDoc} */
+  /* @Override */
   public int timeDifference(NotesDateTime otherDateTime)
       throws RepositoryException, IllegalArgumentException {
    LOGGER.entering(CLASS_NAME, "timeDifference");

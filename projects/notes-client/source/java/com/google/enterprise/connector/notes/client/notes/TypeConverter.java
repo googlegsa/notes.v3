@@ -91,6 +91,9 @@ class TypeConverter {
     if (connectorObject instanceof NotesItemImpl) {
       return ((NotesItemImpl) connectorObject).getNotesObject();
     }
+    if (connectorObject instanceof NotesViewEntryImpl) {
+      return ((NotesViewEntryImpl) connectorObject).getNotesObject();
+    }
     if (connectorObject instanceof Vector) {
       Vector connectorObjects = (Vector) connectorObject;
       Vector notesObjects = new Vector(connectorObjects.size());

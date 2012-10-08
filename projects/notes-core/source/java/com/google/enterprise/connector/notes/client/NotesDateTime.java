@@ -37,6 +37,12 @@ public interface NotesDateTime extends NotesBase {
   void setNow() throws RepositoryException;
 
   /**
+   * Set the time portion to any time.
+   * @throws RepositoryException
+   */
+  void setAnyTime() throws RepositoryException;
+  
+  /**
    * Returns the difference between this NotesDateTime and
    * another, in seconds.
    *

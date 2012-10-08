@@ -15,10 +15,8 @@
 package com.google.enterprise.connector.notes;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.base.Strings;
 import com.google.enterprise.apis.client.GsaClient;
 import com.google.enterprise.apis.client.GsaEntry;
-import com.google.enterprise.apis.client.GsaFeed;
 import com.google.enterprise.apis.client.Terms;
 import com.google.enterprise.connector.notes.client.NotesACL;
 import com.google.enterprise.connector.notes.client.NotesACLEntry;
@@ -26,7 +24,6 @@ import com.google.enterprise.connector.notes.client.NotesDatabase;
 import com.google.enterprise.connector.notes.client.NotesDateTime;
 import com.google.enterprise.connector.notes.client.NotesDocument;
 import com.google.enterprise.connector.notes.client.NotesDocumentCollection;
-import com.google.enterprise.connector.notes.client.NotesEmbeddedObject;
 import com.google.enterprise.connector.notes.client.NotesItem;
 import com.google.enterprise.connector.notes.client.NotesSession;
 import com.google.enterprise.connector.notes.client.NotesView;
@@ -36,12 +33,11 @@ import com.google.gdata.util.AuthenticationException;
 import com.google.gdata.util.ServiceException;
 
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
-import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Set;
 import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -120,6 +116,12 @@ public class NotesDatabasePoller {
         prevDoc.recycle();
       }
       srcdbView.recycle();
+
+      // Reset last cache update date time for directory update
+      if (ncs.getUserGroupManager().resetLastCacheUpdate()) {
+        LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
+            "Last cache update date time is reset");
+      }
     } catch (Exception e) {
       LOGGER.logp(Level.SEVERE, CLASS_NAME, METHOD,
           "Error resetting connector.", e);
@@ -212,7 +214,7 @@ public class NotesDatabasePoller {
       ArrayList<String> noAccessUsers = new ArrayList<String>();
       ArrayList<String> noAccessGroups = new ArrayList<String>();
       getPermitDeny(acl, permitUsers, permitGroups, noAccessUsers,
-        noAccessGroups);
+        noAccessGroups, notesSession);
 
       // If the database is configured to use ACLs for
       // authorization, check to see if we should send
@@ -385,7 +387,7 @@ public class NotesDatabasePoller {
   @VisibleForTesting
   void getPermitDeny(NotesACL acl, List<String> permitUsers,
       List<String> permitGroups, List<String> noAccessUsers,
-      List<String> noAccessGroups) throws RepositoryException {
+      List<String> noAccessGroups, NotesSession ns) throws RepositoryException {
     final String METHOD = "getPermitDeny";
     NotesACLEntry ae = acl.getFirstEntry();
     while (ae != null) {

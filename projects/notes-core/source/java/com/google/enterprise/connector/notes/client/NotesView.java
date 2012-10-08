@@ -116,6 +116,14 @@ public interface NotesView extends NotesBase {
   void refresh() throws RepositoryException;
 
   /**
+   * Get all entries in the view.
+   * 
+   * @return all entries in the view or an empty vector
+   * @throws RepositoryException
+   */
+  NotesViewEntryCollection getAllEntries() throws RepositoryException;
+  
+  /**
    * Finds document entries in this view by key value.
    *
    * @param keys the column keys; each object may be a string,

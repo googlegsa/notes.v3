@@ -48,6 +48,16 @@ class NotesDateTimeImpl extends NotesBaseImpl<DateTime>
       throw new NotesConnectorExceptionImpl(e);
     }
   }
+  
+  /** {@inheritDoc} */
+  /* @Override */
+  public void setAnyTime() throws NotesConnectorExceptionImpl {
+    try {
+      getNotesObject().setAnyTime();
+    } catch (NotesException e) {
+      throw new NotesConnectorExceptionImpl(e);
+    }
+  }
 
   /** {@inheritDoc} */
   /* @Override */
