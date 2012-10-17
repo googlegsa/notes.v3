@@ -10,33 +10,67 @@ documentation.
 Web Site: http://code.google.com/p/google-enterprise-connector-notes/
 
 
+
+Release 3.0.0, October 2012
+===========================
+ 
+This is an upgrade release with performance enhancements and bug fixes.
+Users of versions 2.8.4 and 2.8.6 are encouraged to upgrade.
+ 
+ 
+Summary of Changes
+------------------
+  * People, groups and indexed documents are cached in a local H2 database 
+    instead of the Lotus Notes GSA Configuration database.  This enhancement
+    improves performances significantly during crawling and serving times.
+  * With GSA 7.0, document security with reader fields is supported along
+    with database ACLs using per-URL ACLs.  Document ACLs include the
+    readers and inherit from a separately indexed database ACL.  With GSA
+    6.14 or earlier, the ACL feature is unchanged and only supports 
+    database ACLs using policy ACLs.  
+  * Fix Issue 7033516: Support wildcard configuration in Lotus Notes
+    database ACLs and in group members.  This fix was reimplemented in
+    version 3.0.0 due to changes to internal local H2 database cache.
+  * Fix Issue 7045713: Circularly linked groups cause connector to abort
+    users and groups cache population.
+  * Fix Issues 7296180: Deletion checking does not resume after an
+    exception.
+ 
+ 
+Version Compatibility
+---------------------
+For existing customers, a migration of the existing Lotus Notes GSA
+Configuration database to a new database instance using the GSA
+Configuration template version 3.0.0 is required.  Please refer to the
+"Guide to the Google Search Appliance Connector for Lotus Notes 3.0"
+document for more details.
+ 
+ 
+ 
 Release 2.8.6, August 2012
 ==========================
 
-Introduction
-------------
-This is a maintenance release that improves quality without
-adding any new functionality. Users of version 2.8.4 are
-encouraged to upgrade.
+This is an upgrade release with some enhancements.  Users of version 
+2.8.4 are encouraged to upgrade.
+
 
 Summary of Changes
 ------------------
-  * Fix issue 6781356: Lotus Notes doesn't support group
-    membership defined as patterns.
-  * Fix issue 6410562: Creating a person with no full name causes
-    the connector to stop processing people.
-  * Fix issue 6922704: Notes is not removing users from the
-    directory. User records are now removed from the connector's
-    cache when the user is found to have been deleted from the
-    Notes directory.
-  * Fix issue 6622121: Documents not being deleted from Notes
-    Connector. The connector's ability to delete cached document
-    records when the source document has been deleted is
-    improved.
+  * Fix Issue 6410562: The connector skips bad or corrupted person
+    documents in Lotus Notes directory which are created without user's
+    full names.
+  * Fixed Issue 6622121: The connector is not removing indexed documents
+    cached in the GSA Configuration database.
+  * Fixed Issue 6922704: The connector is not removing users from the GSA
+    Configuration database when users are removed from the Lotus Notes
+    directory.
+  * Fix Issue 7033516: The connector supports wildcard configuration in
+    database ACL for secured content authorized via connector mechanism.
+
 
 
 Release 2.8.4, March 2012
-=======================
+=========================
 
 This version of the connector is a major update to the Google
 Search Appliance Connector for Lotus Notes.
