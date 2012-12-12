@@ -92,7 +92,7 @@
            debuglevel="${COMPILE_DEBUG_LEVEL}"
            target="${COMPILE_TARGET}" source="${COMPILE_TARGET}"
            includeAntRuntime="false">
-      <compilerarg line="-Xlint -Xlint:-serial" />
+      <compilerarg line="-Xlint -Xlint:-rawtypes -Xlint:-serial" />
       <bootclasspath path="${COMPILE_BOOTCLASSPATH}" />
       <classpath>
         <pathelement location="${spi.jarfile}" />
@@ -129,7 +129,7 @@
            debuglevel="${COMPILE_DEBUG_LEVEL}"
            target="${COMPILE_TARGET}" source="${COMPILE_TARGET}"
            includeAntRuntime="false">
-      <compilerarg line="-Xlint -Xlint:-serial -Xlint:-path" />
+      <compilerarg line="-Xlint -Xlint:-rawtypes -Xlint:-serial -Xlint:-path" />
       <bootclasspath path="${COMPILE_BOOTCLASSPATH}" />
       <classpath refid="compile_tests_path" />
     </javac>
