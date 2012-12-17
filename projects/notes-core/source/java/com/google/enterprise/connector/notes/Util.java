@@ -17,6 +17,7 @@ package com.google.enterprise.connector.notes;
 import com.google.enterprise.connector.notes.client.NotesBase;
 import com.google.enterprise.connector.spi.RepositoryException;
 
+import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -72,6 +73,48 @@ class Util {
       } catch (SQLException e) {
         LOGGER.logp(Level.WARNING, CLASS_NAME, "close",
             "Error closing result set", e);
+      }
+    }
+  }
+  
+  static void executeStatements(Connection connection, boolean autoCommit,
+      String... statements) throws SQLException {
+    final String METHOD = "executeStatements";
+    if (connection == null) {
+      throw new SQLException("Database connection is null");
+    }
+    Statement stmt = null;
+    try {
+      stmt = connection.createStatement();
+      connection.setAutoCommit(autoCommit);
+      connection.setTransactionIsolation(Connection.TRANSACTION_SERIALIZABLE);
+      for (String statement : statements) {
+        stmt.executeUpdate(statement);
+        LOGGER.logp(Level.FINE, CLASS_NAME, METHOD, "Executed " + statement);
+      }
+      if (autoCommit == false) {
+        try {
+          connection.commit();
+          LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
+              "Committed all transactions successfully");
+        } catch (SQLException sqle) {
+          connection.rollback();
+          LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
+              "Rolled back all transactions");
+          throw sqle;
+        }
+      }
+    } catch (SQLException e) {
+      LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
+          "Failed to execute statements", e);
+      throw e;
+    } finally {
+      if (stmt != null) {
+        try {
+          stmt.close();
+        } catch (SQLException e) {
+          LOGGER.logp(Level.WARNING, CLASS_NAME, METHOD, e.getMessage());
+        }
       }
     }
   }

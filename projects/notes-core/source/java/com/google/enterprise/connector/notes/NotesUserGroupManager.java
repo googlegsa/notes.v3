@@ -2132,10 +2132,12 @@ class NotesUserGroupManager {
   @VisibleForTesting
   void initializeUserCache() throws RepositoryException {
     final String METHOD = "initializeUserCache";
+    
     Connection conn = null;
+    JdbcDatabase jdbcDatabase =
+        connectorSession.getConnector().getJdbcDatabase();
     try {
-      JdbcDatabase jdbcDatabase =
-          connectorSession.getConnector().getJdbcDatabase();
+      conn = jdbcDatabase.getConnectionPool().getConnection();
       // Notes user names don't have a simple defined max
       // size. There are limits for each component (name, org
       // unit, org). For now, we're going with "as big as a
@@ -2146,6 +2148,14 @@ class NotesUserGroupManager {
           + " gsaname varchar(128), notesname varchar(254))"});
       LOGGER.logp(Level.INFO, CLASS_NAME, METHOD,
           "Created/verified table: " + userTableName);
+      Util.executeStatements(conn, true, new String[] {
+          "create index if not exists idx_gsaname_" + userTableName 
+          + " on " + userTableName + "(gsaname)",
+          "create index if not exists idx_notesname_" + userTableName 
+          + " on " + userTableName + "(notesname)"});
+      LOGGER.logp(Level.INFO, CLASS_NAME, METHOD,
+          "Created/verified index: idx_gsaname_" + userTableName + " and "
+          + " idx_notesname_" + userTableName);
 
       // Group names have a max size of 63, but we also create
       // groups based on DN components, so make the groupname
@@ -2154,52 +2164,59 @@ class NotesUserGroupManager {
           "create table " + groupTableName
           + " (groupid long auto_increment primary key,"
           + " groupname varchar(254), pseudogroup boolean)"});
-       LOGGER.logp(Level.INFO, CLASS_NAME, METHOD,
-           "Created/verified table: " + groupTableName);
+      LOGGER.logp(Level.INFO, CLASS_NAME, METHOD,
+          "Created/verified table: " + groupTableName);
 
       // Role names have a max size of 15.
       jdbcDatabase.verifyTableExists(roleTableName, new String[] {
           "create table " + roleTableName
           + " (roleid long auto_increment primary key,"
           + " rolename varchar(32), replicaid varchar(32))"});
-       LOGGER.logp(Level.INFO, CLASS_NAME, METHOD,
-           "Created/verified table: " + roleTableName);
+      LOGGER.logp(Level.INFO, CLASS_NAME, METHOD,
+          "Created/verified table: " + roleTableName);
 
       jdbcDatabase.verifyTableExists(userGroupsTableName, new String[] {
           "create table " + userGroupsTableName + " (userid long,"
           + " groupid long)"});
-       LOGGER.logp(Level.INFO, CLASS_NAME, METHOD,
-           "Created/verified table: " + userGroupsTableName);
+      LOGGER.logp(Level.INFO, CLASS_NAME, METHOD,
+          "Created/verified table: " + userGroupsTableName);
+      Util.executeStatements(conn, true, new String[] {
+          "create index if not exists idx_" + userGroupsTableName
+          + " on " + userGroupsTableName + "(userid, groupid)"});
+      LOGGER.logp(Level.INFO, CLASS_NAME, METHOD,
+          "Created/verified index: idx_" + userGroupsTableName);
 
       jdbcDatabase.verifyTableExists(userRolesTableName, new String[] {
           "create table " + userRolesTableName + " (userid long,"
           + " roleid long)"});
-       LOGGER.logp(Level.INFO, CLASS_NAME, METHOD,
-           "Created/verified table: " + userRolesTableName);
+      LOGGER.logp(Level.INFO, CLASS_NAME, METHOD,
+          "Created/verified table: " + userRolesTableName);
 
       jdbcDatabase.verifyTableExists(groupRolesTableName, new String[] {
           "create table " + groupRolesTableName + " (groupid long,"
           + " roleid long)"});
-       LOGGER.logp(Level.INFO, CLASS_NAME, METHOD,
-           "Created/verified table: " + groupRolesTableName);
+      LOGGER.logp(Level.INFO, CLASS_NAME, METHOD,
+          "Created/verified table: " + groupRolesTableName);
 
       jdbcDatabase.verifyTableExists(groupChildrenTableName, new String[] {
           "create table " + groupChildrenTableName + " (parentgroupid long,"
           + " childgroupid long)"});
-       LOGGER.logp(Level.INFO, CLASS_NAME, METHOD,
-           "Created/verified table: " + groupChildrenTableName);
+      LOGGER.logp(Level.INFO, CLASS_NAME, METHOD,
+          "Created/verified table: " + groupChildrenTableName);
+      Util.executeStatements(conn, true, new String[] {
+          "create index if not exists idx_" + groupChildrenTableName + " on " 
+          + groupChildrenTableName + "(parentgroupid)",
+          "create index if not exists idx_" + groupChildrenTableName + " on " 
+          + groupChildrenTableName + "(childgroupid)"});
+      LOGGER.logp(Level.INFO, CLASS_NAME, METHOD,
+          "Created/verified index: idx_" + groupChildrenTableName);
     } catch (Exception e) {
       LOGGER.logp(Level.SEVERE, CLASS_NAME, METHOD,
           "Failed to initialize user cache", e);
       throw new RepositoryException("Failed to initialize user cache", e);
     } finally {
       if (conn != null) {
-        try {
-          conn.close();
-        } catch (SQLException e) {
-          LOGGER.logp(Level.SEVERE, CLASS_NAME, METHOD,
-              "Failed to close database connection", e);
-        }
+        jdbcDatabase.getConnectionPool().releaseConnection(conn);
       }
     }
   }
