@@ -10,6 +10,20 @@ documentation.
 Web Site: http://code.google.com/p/google-enterprise-connector-notes/
 
 
+Release 3.0.4, December 2012
+============================
+
+This is an upgrade release with performance enhancements.  Users of version
+2.8.4 through 3.0.0 are encouraged to upgrade.
+
+
+Summary of Changes
+------------------
+  * Fix issue 7431512: Notes tables are missing indexes.  This fix is to
+    initialize table indexes automatically when they are missing.
+  * Suppress Java 7 compilation warnings during the build unification.
+
+
 
 Release 3.0.0, October 2012
 ===========================
