@@ -308,6 +308,9 @@ class NotesUserGroupManager {
       }
       User user = new User(userId, notesName, gsaName);
 
+      // User is authenticated and should be a member of "-default-" group.
+      user.addGroup("-default-");
+
       // Find user groups and nested groups
       pstmt = lookupConn.prepareStatement(
           Util.buildString(
