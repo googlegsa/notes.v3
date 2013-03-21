@@ -394,21 +394,20 @@ public class NotesDatabasePoller {
       LOGGER.logp(Level.FINER, CLASS_NAME, METHOD,
           "Checking ACL Entry: " + ae.getName());
       int userType = ae.getUserType();
-      // If this is a user explicitly listed with DEPOSITOR or NO ACCESS
-      if (NotesACL.LEVEL_READER > ae.getLevel()) {
+      // If this is a user explicitly listed with NO ACCESS
+      if (NotesACL.LEVEL_DEPOSITOR > ae.getLevel()) {
+        // Send both specified and unspecified users with NO ACCESS to GSA as
+        // DENY users.  As a result, unspecified groups with NO ACCESS will also
+        // be included in the DENY user list but they will not have any impact
+        // to authenticated users.
         if ((userType == NotesACLEntry.TYPE_PERSON) ||
             (userType == NotesACLEntry.TYPE_UNSPECIFIED)) {
           LOGGER.logp(Level.FINER, CLASS_NAME, METHOD,
               "Adding the user entry to deny list: " + ae.getName());
           noAccessUsers.add(ae.getName().toLowerCase());
         }
-        if  ((userType == NotesACLEntry.TYPE_MIXED_GROUP) ||
-            (userType == NotesACLEntry.TYPE_PERSON_GROUP) ||
-            (userType == NotesACLEntry.TYPE_UNSPECIFIED)) {
-          LOGGER.logp(Level.FINER, CLASS_NAME, METHOD,
-              "Adding the acl entry to group deny list: " + ae.getName());
-          noAccessGroups.add(ae.getName().toLowerCase());
-        }
+        // Skip unspecified groups such as -Default- and Anonymous.
+        // Do not need to send deny access for groups and unspecified groups.
       }
 
       // If this entry has an access level greater than DEPOSITOR
