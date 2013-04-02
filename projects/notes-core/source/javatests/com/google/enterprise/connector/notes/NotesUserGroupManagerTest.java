@@ -602,7 +602,7 @@ public class NotesUserGroupManagerTest extends TestCase {
     assertEquals("yoda", user.getGsaName());
     assertEquals("cn=yoda/ou=tests/o=tests", user.getNotesName());
     Collection<String> groups = user.getGroups();
-    assertEquals("size of: " + groups, 7, groups.size());
+    assertEquals("size of: " + groups, 8, groups.size());
     assertTrue("good guys", groups.contains("good guys"));
     assertTrue("jedi", groups.contains("jedi"));
     assertTrue("masters", groups.contains("masters"));
@@ -634,7 +634,7 @@ public class NotesUserGroupManagerTest extends TestCase {
     assertEquals("cody", user.getGsaName());
     assertEquals("cn=cody/ou=tests/o=tests", user.getNotesName());
     Collection<String> groups = user.getGroups();
-    assertEquals("size of: " + groups, 6, groups.size());
+    assertEquals("size of: " + groups, 7, groups.size());
     assertTrue("good guys", groups.contains("good guys"));
     assertTrue("jedi", groups.contains("clones"));
     assertTrue("o=tests", groups.contains("o=tests"));

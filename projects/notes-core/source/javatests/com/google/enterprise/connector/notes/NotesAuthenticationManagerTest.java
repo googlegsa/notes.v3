@@ -160,7 +160,7 @@ public class NotesAuthenticationManagerTest extends TestCase {
         Collection<Principal> groups =
         (Collection<Principal>) response.getGroups();
     assertNotNull("Missing groups", groups);
-    assertEquals(groups.toString(), 9, groups.size());
+    assertEquals(groups.toString(), 10, groups.size());
     Collection<String> groupNames = new ArrayList<String>();
     for (Principal principal : groups) {
       groupNames.add(principal.getName());
