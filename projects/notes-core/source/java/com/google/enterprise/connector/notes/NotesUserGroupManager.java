@@ -369,15 +369,20 @@ class NotesUserGroupManager {
         Util.close(pstmt);
       }
 
-      // Find any roles they acquire because of group membership.
+      // Find any roles they acquire because of direct group membership and
+      // via parent groups.
       pstmt = lookupConn.prepareStatement("select replicaid, rolename from "
           + roleTableName + " where roleid in (select roleid from "
           + groupRolesTableName + " where groupid in "
           + "(select groupid from " + userGroupsTableName
-          + " where userid = ?))",
+          + " where userid = ?) union (select parentgroupid from "
+          + groupChildrenTableName
+          + " where childgroupid in (select groupid from "
+          + userGroupsTableName + " where userid = ?)))",
           ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
       try {
         pstmt.setLong(1, userId);
+        pstmt.setLong(2, userId);
         rs = pstmt.executeQuery();
         while (rs.next()) {
           user.addRole(rs.getString(1), rs.getString(2));

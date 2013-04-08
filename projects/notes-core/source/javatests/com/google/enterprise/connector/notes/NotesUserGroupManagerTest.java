@@ -106,7 +106,8 @@ public class NotesUserGroupManagerTest extends TestCase {
             "CN=Anakin Skywalker/OU=Tests/O=Tests",
             "CN=Obi-Wan Kenobi/OU=Tests/O=Tests",
             "CN=Mace Windu/OU=Tests/O=Tests",
-            "CN=Yoda/OU=Tests/O=Tests");
+            "CN=Yoda/OU=Tests/O=Tests",
+            "*/ou=Tests/o=Tests");
         addNotesGroup(namesDatabase, "Padawan Learners",
           "cn=ahsoka tano/ou=tests/o=tests");
         addNotesGroup(namesDatabase, "Separatists",
@@ -208,6 +209,9 @@ public class NotesUserGroupManagerTest extends TestCase {
         acl.addAclEntry(new NotesACLEntryMock(
             "bad guys", NotesACLEntry.TYPE_PERSON_GROUP,
             NotesACL.LEVEL_READER));
+        acl.addAclEntry(new NotesACLEntryMock("jedi",
+            NotesACLEntry.TYPE_PERSON_GROUP,
+            NotesACL.LEVEL_READER, "[reader]"));
         notesDatabase.setACL(acl);
 
         try {
@@ -302,13 +306,15 @@ public class NotesUserGroupManagerTest extends TestCase {
     userGroupManager = new NotesUserGroupManager(connectorSession);
     userGroupManager.setUpResources(true);
     conn = userGroupManager.getConnection();
+    userGroupManager.initializeUserCache();
   }
 
   protected void tearDown() {
+    userGroupManager.clearTables(conn);
     userGroupManager.releaseResources();
   }
 
-  public void testDropTables() {
+  public void testDropTables() throws Exception {
     JdbcDatabase jdbcDatabase =
         connectorSession.getConnector().getJdbcDatabase();
     assertTrue(jdbcDatabase.verifyTableExists(
@@ -340,6 +346,8 @@ public class NotesUserGroupManagerTest extends TestCase {
             userGroupManager.groupRolesTableName, null));
     assertFalse(jdbcDatabase.verifyTableExists(
             userGroupManager.groupChildrenTableName, null));
+    // Re-initialize cache after this test for the tearDown.clearTables
+    userGroupManager.initializeUserCache();
   }
 
   public void testInitializeUserCache() throws Exception {
@@ -361,18 +369,33 @@ public class NotesUserGroupManagerTest extends TestCase {
             userGroupManager.groupChildrenTableName, null));
   }
 
+  public void testNestedGroups() throws Exception {
+    setUpUsers();
+    assertGroupExists("jedi");
+    assertGroupHasChild("jedi", "masters");
+    assertUserHasGroup("echo", "masters");
+  }
+
+  public void testInheritedRoles() throws Exception {
+    String testRole = "espreplicaid0123/[reader]";
+    setUpRoles();
+    assertRoleExists(testRole);
+    assertGroupHasRole("jedi", testRole);
+    assertUserHasRole("echo", testRole);
+  }
+
   public void testUpdateGroups() throws Exception {
     setUpGroups();
-    assertEquals(groups.toString(), groupCount, groups.size());
+    assertEquals(groups.toString(), groupCount + 1, groups.size());
     HashSet<Long> children = groupChildren.get(groups.get("good guys"));
-    assertEquals(5, children.size());
+    assertEquals(6, children.size());
     assertGroupHasChild("good guys", "jedi");
     assertGroupHasChild("good guys", "masters");
     assertGroupHasChild("good guys", "padawan learners");
     assertGroupHasChild("good guys", "senators");
     assertGroupHasChild("good guys", "clones");
     children = groupChildren.get(groups.get("jedi"));
-    assertEquals(2, children.size());
+    assertEquals(3, children.size());
     assertGroupHasChild("jedi", "masters");
     assertGroupHasChild("jedi", "padawan learners");
   }
@@ -611,7 +634,7 @@ public class NotesUserGroupManagerTest extends TestCase {
     assertTrue("ou=tests/o=tests", groups.contains("ou=tests/o=tests"));
     assertTrue("*/ou=tests/o=tests", groups.contains("*/ou=tests/o=tests"));
     Collection<String> roles = user.getRoles();
-    assertEquals("size of: " + roles, 3, roles.size());
+    assertEquals("size of: " + roles, 4, roles.size());
     assertTrue("jtmreplicaid0123/[philosopher]",
         roles.contains("jtmreplicaid0123/[philosopher]"));
     assertTrue("jtmreplicaid0123/[holderofopinions]",
@@ -634,7 +657,7 @@ public class NotesUserGroupManagerTest extends TestCase {
     assertEquals("cody", user.getGsaName());
     assertEquals("cn=cody/ou=tests/o=tests", user.getNotesName());
     Collection<String> groups = user.getGroups();
-    assertEquals("size of: " + groups, 7, groups.size());
+    assertEquals("size of: " + groups, 9, groups.size());
     assertTrue("good guys", groups.contains("good guys"));
     assertTrue("jedi", groups.contains("clones"));
     assertTrue("o=tests", groups.contains("o=tests"));
@@ -642,7 +665,7 @@ public class NotesUserGroupManagerTest extends TestCase {
     assertTrue("ou=tests/o=tests", groups.contains("ou=tests/o=tests"));
     assertTrue("*/ou=tests/o=tests", groups.contains("*/ou=tests/o=tests"));
     Collection<String> roles = user.getRoles();
-    assertEquals("size of: " + roles, 0, roles.size());
+    assertEquals("size of: " + roles, 2, roles.size());
   }
 
   public void testMapNotesNamesToGsaNames() throws Exception {
@@ -785,8 +808,22 @@ public class NotesUserGroupManagerTest extends TestCase {
       throws Exception {
     Long roleId = assertRoleExists(role);
     Long userId = assertUserExists(gsaname);
-    assertTrue(gsaname + " missing role: " + role,
-        userRoles.get(userId).contains(roleId));
+    assertNotNull(roleId);
+    assertNotNull(userId);
+    assertNotNull(userRoles);
+    HashSet<Long> uRoles = userRoles.get(userId);
+    if (uRoles != null && uRoles.contains(roleId)) {
+      return;
+    }
+    HashSet<Long> uGroups = userGroups.get(userId);
+    assertNotNull(uGroups);
+    for (Long groupId : uGroups) {
+      HashSet<Long> roles = groupRoles.get(groupId);
+      if (roles != null && roles.contains(roleId)) {
+        return;
+      }
+    }
+    assertTrue(gsaname + " missing role: " + role, false);
   }
 
   private void assertUserDoesNotHaveRole(String gsaname, String role) {
@@ -851,17 +888,20 @@ public class NotesUserGroupManagerTest extends TestCase {
     }
     rs = conn.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE,
           ResultSet.CONCUR_READ_ONLY).executeQuery(
-        "select * from " + userGroupManager.userGroupsTableName);
+        "select * from " + userGroupManager.userGroupsTableName +
+        " left join " + userGroupManager.groupChildrenTableName + " on " +
+        " groupid = childgroupid");
     while (rs.next()) {
       Long userId = rs.getLong("userid");
       Long groupId = rs.getLong("groupid");
+      Long parentId = rs.getLong("parentgroupid");
       HashSet<Long> tmp = userGroups.get(userId);
       if (tmp == null) {
         tmp = new HashSet<Long>();
         userGroups.put(userId, tmp);
       }
-      assertTrue("Duplicate group membership: " + userId + ", " + groupId,
-          tmp.add(groupId));
+      tmp.add(groupId);
+      tmp.add(parentId);
       assertTrue("No user record for " + userId,
           gsaUserNames.containsValue(userId));
       assertTrue("No group record for " + groupId,
@@ -932,4 +972,3 @@ public class NotesUserGroupManagerTest extends TestCase {
     System.out.println("**************************");
   }
 }
-

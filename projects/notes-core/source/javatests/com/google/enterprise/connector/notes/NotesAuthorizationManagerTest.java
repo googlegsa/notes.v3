@@ -15,39 +15,36 @@
 package com.google.enterprise.connector.notes;
 
 import com.google.common.collect.Lists;
-import com.google.enterprise.connector.notes.NotesConnector;
-import com.google.enterprise.connector.notes.NotesConnectorSession;
 import com.google.enterprise.connector.notes.NotesUserGroupManager.User;
 import com.google.enterprise.connector.notes.client.NotesACL;
 import com.google.enterprise.connector.notes.client.NotesACLEntry;
-import com.google.enterprise.connector.notes.client.NotesDatabase;
-import com.google.enterprise.connector.notes.client.NotesDocument;
 import com.google.enterprise.connector.notes.client.NotesItem;
 import com.google.enterprise.connector.notes.client.NotesSession;
-import com.google.enterprise.connector.notes.client.NotesView;
-import com.google.enterprise.connector.notes.client.mock.NotesACLMock;
 import com.google.enterprise.connector.notes.client.mock.NotesACLEntryMock;
+import com.google.enterprise.connector.notes.client.mock.NotesACLMock;
 import com.google.enterprise.connector.notes.client.mock.NotesDatabaseMock;
 import com.google.enterprise.connector.notes.client.mock.NotesDocumentMock;
 import com.google.enterprise.connector.notes.client.mock.NotesItemMock;
 import com.google.enterprise.connector.notes.client.mock.NotesSessionMock;
 import com.google.enterprise.connector.notes.client.mock.SessionFactoryMock;
-import com.google.enterprise.connector.spi.AuthorizationManager;
 import com.google.enterprise.connector.spi.AuthorizationResponse;
-import com.google.enterprise.connector.spi.Session;
+import com.google.enterprise.connector.spi.Property;
 import com.google.enterprise.connector.spi.SimpleAuthenticationIdentity;
+import com.google.enterprise.connector.spi.SimpleTraversalContext;
+import com.google.enterprise.connector.spi.SpiConstants;
+import com.google.enterprise.connector.spi.SpiConstants.ActionType;
+import com.google.enterprise.connector.spi.TraversalContextAware;
+import com.google.enterprise.connector.spi.Value;
 
 import junit.extensions.TestSetup;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
 
+import java.net.URLDecoder;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Vector;
+import java.util.Date;
 
 public class NotesAuthorizationManagerTest extends TestCase {
 
@@ -56,6 +53,7 @@ public class NotesAuthorizationManagerTest extends TestCase {
   private static NotesConnectorSession connectorSession;
   private static NotesSession session;
   private static NotesDatabaseMock namesDatabase;
+  private static NotesDatabaseMock testDb;
 
   public static Test suite() {
     return new TestSetup(
@@ -72,9 +70,13 @@ public class NotesAuthorizationManagerTest extends TestCase {
         NotesUserGroupManagerTest.addNotesUser(connectorSession,
             namesDatabase, "cn=Anakin Skywalker/ou=Tests/o=Tests",
             "anakin");
+        NotesUserGroupManagerTest.addNotesUser(connectorSession,
+            namesDatabase, "cn=Jane Smith/ou=Tests/o=Tests",
+            "jsmith");
         NotesUserGroupManagerTest.addNotesGroup(namesDatabase,
             "masters",
-            "cn=anakin skywalker/ou=tests/o=tests");
+            "cn=anakin skywalker/ou=tests/o=tests",
+            "*/ou=tests/o=tests");
         NotesUserGroupManagerTest.addNotesGroup(namesDatabase,
             "jedi", "masters");
         NotesUserGroupManagerTest.addNotesGroup(namesDatabase,
@@ -108,6 +110,29 @@ public class NotesAuthorizationManagerTest extends TestCase {
             NotesACLEntry.TYPE_PERSON_GROUP, NotesACL.LEVEL_AUTHOR,
             "[holderofopinions]"));
         notesDatabase.setACL(acl);
+
+        databaseDocument = new NotesDocumentMock();
+        databaseDocument.addItem(new NotesItemMock("name", NCCONST.DITM_DBNAME,
+            "type", NotesItem.TEXT, "values", "testDb.nsf"));
+        databaseDocument.addItem(new NotesItemMock("name",
+            NCCONST.DITM_REPLICAID, "type", NotesItem.TEXT,
+            "values", "testdb_replicaid"));
+        databaseDocument.addItem(new NotesItemMock("name", NCCONST.DITM_SERVER,
+            "type", NotesItem.TEXT, "values", "server"));
+        databaseDocument.addItem(new NotesItemMock("name",
+            NCCONST.NCITM_DBPERMITGROUPS, "type", NotesItem.TEXT,
+            "values", "jedi"));
+        configDatabase.addDocument(databaseDocument, NCCONST.VIEWDATABASES,
+                NCCONST.VIEWSECURITY);
+
+        testDb = new NotesDatabaseMock(
+            "server", "testDb.nsf", "testdb_replicaid");
+        ((NotesSessionMock) session).addDatabase(testDb);
+        NotesACLMock testAcl = new NotesACLMock();
+        testAcl.addAclEntry(new NotesACLEntryMock("jedi",
+            NotesACLEntry.TYPE_PERSON_GROUP,
+            NotesACL.LEVEL_READER, "[reader]"));
+        testDb.setACL(testAcl);
 
         NotesUserGroupManager userGroupManager =
             connectorSession.getUserGroupManager();
@@ -268,6 +293,102 @@ public class NotesAuthorizationManagerTest extends TestCase {
     assertTrue(authorizationManager.checkDocumentReaders(user,
             Lists.newArrayList("[tacticsexpert]"),
             "jtmreplicaid0123"));
+  }
+
+  public void testCheckDocumentReadersWithRoles() throws Exception {
+    super.setUp();
+    SimpleTraversalContext context = new SimpleTraversalContext();
+    context.setSupportsInheritedAcls(true);
+    ((TraversalContextAware) connectorSession.getTraversalManager())
+        .setTraversalContext(context);
+
+    User user =
+        connectorSession.getUserGroupManager().getUserByGsaName("jsmith");
+    assertNotNull(user);
+
+    NotesDocumentMock notesDoc = createNotesDocument("server",
+        "testdb_replicaid", "unid0001", ActionType.ADD);
+    NotesConnectorDocument document = new NotesConnectorDocument(
+        connectorSession, session, testDb);
+    document.setCrawlDoc("unid0001", notesDoc);
+
+    Collection<String> readers = new ArrayList<String>();
+    getDocumentProperty(document, readers, SpiConstants.PROPNAME_ACLUSERS);
+    getDocumentProperty(document, readers, SpiConstants.PROPNAME_ACLGROUPS);
+
+    assertTrue(isMember(user, readers));
+  }
+
+  private boolean isMember(User user, Collection<String> readers) {
+    for (String userRole : user.getRoles()) {
+      for (String reader : readers) {
+        if (reader.indexOf(userRole) > -1) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  private void getDocumentProperty(NotesConnectorDocument doc,
+      Collection<String> readers, String propName) throws Exception {
+    Property prop = doc.findProperty(propName);
+    assertNotNull(prop);
+    Value v;
+    while ((v = prop.nextValue()) != null) {
+      String decoded = URLDecoder.decode(v.toString(), "UTF-8");
+      readers.add(decoded.replaceFirst("Domino/", ""));
+    }
+  }
+
+  private NotesDocumentMock createNotesDocument(String server, String replicaid,
+      String unid, ActionType actionType) throws Exception {
+    String docid = "http://" + server + "/" + replicaid + "/0/" + unid;
+    NotesDocumentMock doc = new NotesDocumentMock();
+    doc.addItem(new NotesItemMock("name", NCCONST.ITM_ACTION, "type",
+            NotesItem.TEXT, "values", actionType));
+    doc.addItem(new NotesItemMock("name", NCCONST.ITM_DOCID, "type",
+            NotesItem.TEXT, "values", docid));
+    doc.addItem(new NotesItemMock("name", NCCONST.NCITM_REPLICAID,
+            "type", NotesItem.TEXT, "values", replicaid));
+    doc.addItem(new NotesItemMock("name", NCCONST.ITM_MIMETYPE,
+            "type", NotesItem.TEXT, "values", "text/plain"));
+    doc.addItem(new NotesItemMock("name", NCCONST.ITM_ISPUBLIC,
+            "type", NotesItem.TEXT, "values", "false"));
+    doc.addItem(new NotesItemMock("name", NCCONST.NCITM_DOCAUTHORREADERS,
+            "type", NotesItem.READERS, "values", "[reader]"));
+    doc.addItem(new NotesItemMock("name", NCCONST.NCITM_AUTHTYPE,
+            "type", NotesItem.TEXT, "values", NCCONST.AUTH_ACL));
+
+    doc.addItem(new NotesItemMock("name", NCCONST.ITM_TITLE,
+            "type", NotesItem.TEXT, "values", "Test document with readers"));
+    doc.addItem(new NotesItemMock("name", NCCONST.ITM_GMETADESCRIPTION,
+            "type", NotesItem.TEXT, "values",
+            "Test parent groups with [reader] role"));
+    doc.addItem(new NotesItemMock("name", NCCONST.ITM_CONTENT,
+            "type", NotesItem.TEXT, "values",
+            "Test parent groups with [reader] role where [reader] is in the readers field"));
+
+    doc.addItem(new NotesItemMock("name", NCCONST.ITM_GMETADATABASE,
+            "type", NotesItem.TEXT, "values", "Database Title"));
+    doc.addItem(new NotesItemMock("name", NCCONST.ITM_GMETACATEGORIES,
+            "type", NotesItem.TEXT, "values", "Category 1"));
+    doc.addItem(new NotesItemMock("name", NCCONST.ITM_GMETAREPLICASERVERS,
+            "type", NotesItem.TEXT, "values", server));
+    doc.addItem(new NotesItemMock("name", NCCONST.ITM_GMETANOTESLINK,
+            "type", NotesItem.TEXT, "values",
+            "notes://" + server + "/" + replicaid));
+    doc.addItem(new NotesItemMock("name", NCCONST.ITM_GMETAWRITERNAME,
+            "type", NotesItem.TEXT, "values", "Walt Disney"));
+    doc.addItem(new NotesItemMock("name", NCCONST.ITM_GMETAFORM,
+            "type", NotesItem.TEXT, "values", "Discussion"));
+
+    Date d = new Date();
+    doc.addItem(new NotesItemMock("name", NCCONST.ITM_GMETALASTUPDATE,
+            "type", NotesItem.TEXT, "values", d));
+    doc.addItem(new NotesItemMock("name", NCCONST.ITM_GMETACREATEDATE,
+            "type", NotesItem.TEXT, "values", d));
+    return doc;
   }
 
   public void testAuthorizeDocidsUnknownUser() throws Exception {
