@@ -60,6 +60,7 @@ public class NotesConnectorSession implements Session {
   private String gsaGroupPrefix;
   private boolean retainMetaData = true;
   private final NotesDocumentManager notesDocManager;
+  private NotesUsernameType usernameType = NotesUsernameType.USERNAME;
 
   public NotesConnectorSession(NotesConnector Connector,
       NotesPollerNotifier connectorNpn, String Password,
@@ -229,6 +230,14 @@ public class NotesConnectorSession implements Session {
       }
       LOGGER.logp(Level.CONFIG, CLASS_NAME, METHOD,
             "User Name formula: " + userNameFormula);
+
+      String usernameTypeConfig = systemDoc.getItemValueString(
+          NCCONST.SITM_USERNAMETYPE);
+      if (usernameTypeConfig != null && usernameTypeConfig.length() > 0) {
+        usernameType = NotesUsernameType.findUsernameType(
+            usernameTypeConfig.toUpperCase());
+      }
+      LOGGER.log(Level.CONFIG, "Notes username type: " + usernameType.name());
 
       userSelectionFormula = systemDoc.getItemValueString(
           NCCONST.SITM_USERSELECTIONFORMULA);
@@ -409,6 +418,10 @@ public class NotesConnectorSession implements Session {
 
   public String getUserNameFormula() {
     return userNameFormula;
+  }
+
+  public NotesUsernameType getUsernameType() {
+    return usernameType;
   }
 
   public String getUserSelectionFormula() {

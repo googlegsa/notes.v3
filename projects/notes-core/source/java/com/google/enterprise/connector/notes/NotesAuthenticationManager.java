@@ -59,9 +59,10 @@ class NotesAuthenticationManager implements AuthenticationManager {
     LOGGER.entering(CLASS_NAME, METHOD);
 
     try {
-      String gsaName = id.getUsername();
+      String gsaName = connectorSession.getUsernameType().getUsername(id);
       LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
-          "Authenticating user: " + gsaName);
+          "Authenticating user: " + gsaName + " using " +
+          connectorSession.getUsernameType() + " username type");
 
       // Find the user in the connector cache.
       User user =
