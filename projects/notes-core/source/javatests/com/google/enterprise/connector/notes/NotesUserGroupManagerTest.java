@@ -665,7 +665,10 @@ public class NotesUserGroupManagerTest extends TestCase {
     assertTrue("ou=tests/o=tests", groups.contains("ou=tests/o=tests"));
     assertTrue("*/ou=tests/o=tests", groups.contains("*/ou=tests/o=tests"));
     Collection<String> roles = user.getRoles();
-    assertEquals("size of: " + roles, 2, roles.size());
+    assertEquals("size of: " + roles, 3, roles.size());
+    assertTrue(roles.contains("espreplicaid0123/[reader]"));
+    assertTrue(roles.contains("jtmreplicaid0123/[holderofopinions]"));
+    assertTrue(roles.contains("jtmreplicaid0123/[duplicategroupname]"));
   }
 
   public void testMapNotesNamesToGsaNames() throws Exception {

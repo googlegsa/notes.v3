@@ -375,7 +375,7 @@ class NotesUserGroupManager {
           + roleTableName + " where roleid in (select roleid from "
           + groupRolesTableName + " where groupid in "
           + "(select groupid from " + userGroupsTableName
-          + " where userid = ?) union (select parentgroupid from "
+          + " where userid = ? union select parentgroupid from "
           + groupChildrenTableName
           + " where childgroupid in (select groupid from "
           + userGroupsTableName + " where userid = ?)))",
