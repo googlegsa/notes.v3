@@ -2174,6 +2174,11 @@ class NotesUserGroupManager {
           + " groupname varchar(254), pseudogroup boolean)"});
       LOGGER.logp(Level.INFO, CLASS_NAME, METHOD,
           "Created/verified table: " + groupTableName);
+      Util.executeStatements(conn, true,
+          "create index if not exists idx_groupname_groups on "
+          + groupTableName + "(groupname)");
+      LOGGER.logp(Level.INFO, CLASS_NAME, METHOD,
+          "Created/verified index: idx_groupname_groups on " + groupTableName);
 
       // Role names have a max size of 15.
       jdbcDatabase.verifyTableExists(roleTableName, new String[] {
@@ -2182,42 +2187,69 @@ class NotesUserGroupManager {
           + " rolename varchar(32), replicaid varchar(32))"});
       LOGGER.logp(Level.INFO, CLASS_NAME, METHOD,
           "Created/verified table: " + roleTableName);
+      Util.executeStatements(conn, true,
+          "create index if not exists idx_rolename_roles on "
+          + roleTableName + "(rolename)",
+          "create index if not exists idx_replicaid_roles on "
+          + roleTableName + "(replicaid)");
+      LOGGER.logp(Level.INFO, CLASS_NAME, METHOD, "Created/verified indexes: "
+          + "idx_rolename_roles and idx_replicaid_roles on " + roleTableName);
 
       jdbcDatabase.verifyTableExists(userGroupsTableName, new String[] {
           "create table " + userGroupsTableName + " (userid long,"
           + " groupid long)"});
       LOGGER.logp(Level.INFO, CLASS_NAME, METHOD,
           "Created/verified table: " + userGroupsTableName);
-      Util.executeStatements(conn, true, new String[] {
-          "create index if not exists idx_" + userGroupsTableName
-          + " on " + userGroupsTableName + "(userid, groupid)"});
-      LOGGER.logp(Level.INFO, CLASS_NAME, METHOD,
-          "Created/verified index: idx_" + userGroupsTableName);
+      Util.executeStatements(conn, true,
+          "create index if not exists idx_userid_usergroups on "
+          + userGroupsTableName + "(userid)",
+          "create index if not exists idx_groupid_usergroups on "
+          + userGroupsTableName + "(groupid)");
+      LOGGER.logp(Level.INFO, CLASS_NAME, METHOD, "Created/verified indexes: "
+          + "idx_userid_usergroups and idx_groupid_usergroups on "
+          + userGroupsTableName);
 
       jdbcDatabase.verifyTableExists(userRolesTableName, new String[] {
-          "create table " + userRolesTableName + " (userid long,"
-          + " roleid long)"});
+          "create table " + userRolesTableName + " (userid long, "
+          + "roleid long)"});
       LOGGER.logp(Level.INFO, CLASS_NAME, METHOD,
           "Created/verified table: " + userRolesTableName);
+      Util.executeStatements(conn, true,
+          "create index if not exists idx_userid_userroles on "
+          + userRolesTableName + "(userid)",
+          "create index if not exists idx_roleid_userroles on "
+          + userRolesTableName + "(roleid)");
+      LOGGER.logp(Level.INFO, CLASS_NAME, METHOD, "Created/verified indexes: "
+          + "idx_userid_userroles and idx_roleid_userroles on "
+          + userRolesTableName);
 
       jdbcDatabase.verifyTableExists(groupRolesTableName, new String[] {
           "create table " + groupRolesTableName + " (groupid long,"
           + " roleid long)"});
       LOGGER.logp(Level.INFO, CLASS_NAME, METHOD,
           "Created/verified table: " + groupRolesTableName);
+      Util.executeStatements(conn, true,
+          "create index if not exists idx_groupid_grouproles on "
+          + groupRolesTableName + "(groupid)",
+          "create index if not exists idx_roleid_grouproles on "
+          + groupRolesTableName + "(roleid)");
+      LOGGER.logp(Level.INFO, CLASS_NAME, METHOD, "Created/verified indexes: "
+          + "idx_groupid_grouproles and idx_roleid_grouproles on "
+          + groupRolesTableName);
 
       jdbcDatabase.verifyTableExists(groupChildrenTableName, new String[] {
           "create table " + groupChildrenTableName + " (parentgroupid long,"
           + " childgroupid long)"});
       LOGGER.logp(Level.INFO, CLASS_NAME, METHOD,
           "Created/verified table: " + groupChildrenTableName);
-      Util.executeStatements(conn, true, new String[] {
-          "create index if not exists idx_" + groupChildrenTableName + " on " 
+      Util.executeStatements(conn, true,
+          "create index if not exists idx_parentgroupid_groupchildren on "
           + groupChildrenTableName + "(parentgroupid)",
-          "create index if not exists idx_" + groupChildrenTableName + " on " 
-          + groupChildrenTableName + "(childgroupid)"});
-      LOGGER.logp(Level.INFO, CLASS_NAME, METHOD,
-          "Created/verified index: idx_" + groupChildrenTableName);
+          "create index if not exists idx_childgroupid_groupchildren on "
+          + groupChildrenTableName + "(childgroupid)");
+      LOGGER.logp(Level.INFO, CLASS_NAME, METHOD, "Created/verified indexes: "
+          + "idx_parentgroupid_groupchildren and idx_childgroupid_groupchildren"
+          + " on " + groupChildrenTableName);
     } catch (Exception e) {
       LOGGER.logp(Level.SEVERE, CLASS_NAME, METHOD,
           "Failed to initialize user cache", e);
