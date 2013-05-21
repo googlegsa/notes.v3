@@ -630,12 +630,16 @@ class NotesUserGroupManager {
     final String METHOD = "updateGroups";
     LOGGER.entering(CLASS_NAME, METHOD);
 
+    long timeStart = System.currentTimeMillis();
+    NotesView groupsView = null;
     NotesDocument groupDoc = null;
     String groupName = null;
     try {
-      for (groupDoc = peopleGroupsView.getFirstDocument();
+      groupsView = directoryDatabase.getView(NCCONST.DIRVIEW_VIMGROUPS);
+      groupsView.refresh();
+      for (groupDoc = groupsView.getFirstDocument();
            groupDoc != null;
-           groupDoc = getNextDocument(peopleGroupsView, groupDoc)) {
+           groupDoc = getNextDocument(groupsView, groupDoc)) {
         try {
           groupName = groupDoc.getItemValueString(NCCONST.GITM_LISTNAME);
           if (Strings.isNullOrEmpty(groupName)) {
@@ -659,7 +663,10 @@ class NotesUserGroupManager {
           "Error updating group cache", e);
     } finally {
       Util.recycle(groupDoc);
+      Util.recycle(groupsView);
     }
+    long timeFinish = System.currentTimeMillis();
+    LOGGER.log(Level.FINE, "Update groups: " + (timeFinish - timeStart) + "ms");
   }
 
   private void updateGroup(NotesDocument groupDoc, String groupName) {
@@ -779,8 +786,10 @@ class NotesUserGroupManager {
   private void updateNotesDomainNames() {
     final String METHOD = "updateNotesDomainNames";
     LOGGER.entering(CLASS_NAME, METHOD);
-    
+
+    long timeStart = System.currentTimeMillis();
     NotesSession ns = null;
+    NotesDatabase nab = null;
     NotesView peopleView = null;
     try {
       ns = connectorSession.createNotesSession();
@@ -788,7 +797,7 @@ class NotesUserGroupManager {
           Util.buildString("Open Notes directory: ",
               connectorSession.getServer(), "!!",
               connectorSession.getDirectory()));
-      NotesDatabase nab = ns.getDatabase(connectorSession.getServer(),
+      nab = ns.getDatabase(connectorSession.getServer(),
           connectorSession.getDirectory());
       peopleView = nab.getView(NCCONST.DIRVIEW_VIMUSERS);
       peopleView.refresh();
@@ -820,8 +829,12 @@ class NotesUserGroupManager {
           "Failed to update Notes domain names", e);
     } finally {
       Util.recycle(peopleView);
+      Util.recycle(nab);
       Util.recycle(ns);
     }
+    long timeFinish = System.currentTimeMillis();
+    LOGGER.log(Level.FINE, "Update Notes domain names: "
+        + (timeFinish - timeStart) + "ms");
     LOGGER.exiting(CLASS_NAME, METHOD);
   }
 
@@ -949,6 +962,9 @@ class NotesUserGroupManager {
     final String METHOD = "updateUsers";
     LOGGER.entering(CLASS_NAME, METHOD);
 
+    long timeStart = System.currentTimeMillis();
+    NotesView serverAccessView = null;
+    NotesView peopleView = null;
     NotesDocument personDoc = null;
     try {
       String userSelectionFormula = connectorSession.getUserSelectionFormula();
@@ -958,13 +974,15 @@ class NotesUserGroupManager {
             "User selection formula is: " + userSelectionFormula
             + "\nUser name formula is: " + userNameFormula);
       }
-      NotesView serverAccessView = directoryDatabase.getView(
+      serverAccessView = directoryDatabase.getView(
           NCCONST.DIRVIEW_SERVERACCESS);
       serverAccessView.refresh();
 
-      for (personDoc = peopleGroupsView.getFirstDocument();
+      peopleView = directoryDatabase.getView(NCCONST.DIRVIEW_VIMUSERS);
+      peopleView.refresh();
+      for (personDoc = peopleView.getFirstDocument();
            personDoc != null;
-           personDoc = getNextDocument(peopleGroupsView, personDoc)) {
+           personDoc = getNextDocument(peopleView, personDoc)) {
         String notesName = null;
         try {
           if (!personDoc.getItemValueString(NCCONST.ITMFORM).contentEquals(
@@ -1030,8 +1048,12 @@ class NotesUserGroupManager {
           "Error processing users", e);
     } finally {
       Util.recycle(personDoc);
+      Util.recycle(peopleView);
+      Util.recycle(serverAccessView);
       LOGGER.exiting(CLASS_NAME, METHOD);
     }
+    long timeFinish = System.currentTimeMillis();
+    LOGGER.log(Level.FINE, "Update users: " + (timeFinish - timeStart) + "ms");
   }
 
   private void updateUser(NotesDocument personDoc,
@@ -2116,6 +2138,7 @@ class NotesUserGroupManager {
   // Helpers
   private NotesDocument getNextDocument(NotesView view, NotesDocument doc)
       throws RepositoryException {
+    view.refresh();
     NotesDocument nextDoc = view.getNextDocument(doc);
     doc.recycle();
     return nextDoc;
