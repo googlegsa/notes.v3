@@ -10,6 +10,44 @@ documentation.
 Web Site: http://code.google.com/p/google-enterprise-connector-notes/
 
 
+Release 3.0.8, May 2013
+=======================
+
+This is an upgrade release with performance enhancements and bug fixes.
+Users of version 2.8.4 through 3.0.4 are encouraged to upgrade.
+
+Summary of Changes:
+-------------------
+  * Fix issue 7623238: Support different authentication and authorization
+    mechanisms by providing a configuration for three username types such as
+    UserName (default), Domain\UserName and UserName@internet.com.  Customers
+    need to refresh the design of the GSA Configuration database using the
+    gsa-connector.ntf template in order to have the configuration for username
+    types.
+  * Fix issue 7635407: Add "-default-" group to user's groups once the user is
+    authenticated during serve time.
+  * Fix issue 7896304: Do not send specified and unspecified NO ACCESS groups
+    and DEPOSITOR users as denied groups and users to the GSA respectively.
+  * Fix issue 8319071: Create indexes automatically for all lookups and joins
+    in H2 database.
+  * Fix issue 8333989: Fix the query to lookup roles which users inherit from
+    direct group membership, parent groups and wildcard members.
+  * Fix issue 8761274: Fix an exception encountered when the connector
+    traverses a large Names and Address Book to update directory cache.
+
+Version Compatibility
+---------------------
+Connector instances created using versions 2.8.6 or older will need to migrate
+the Lotus Notes GSA Configuration database to a new database instance using the
+GSA Configuration template version 3.0.0 or later.  Please refer to the "Guide
+to the Google Search Appliance Connector for Lotus Notes 3.0" document for more
+details.  Customers need to refresh the design of the GSA Configuration
+database using the gsa-connector.ntf template in order to have the configuration
+for username types.  This version works with Connector Manager version 3.0.0
+or later.
+
+
+
 Release 3.0.4, December 2012
 ============================
 
