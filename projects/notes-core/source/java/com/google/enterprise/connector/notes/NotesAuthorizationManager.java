@@ -91,18 +91,19 @@ class NotesAuthorizationManager implements AuthorizationManager {
         new ArrayList<AuthorizationResponse>(docIds.size());
     try {
       // Find the user in the connector cache.
-      String gsaName = id.getUsername();
+      String gsaName = ncs.getUsernameType().getUsername(id);
       User user = ncs.getUserGroupManager().getUserByGsaName(gsaName);
       if (user == null) {
         LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
-            "Person not found in connector user database: " + gsaName);
+            "Person not found in connector user database: " + gsaName +
+            " using " + ncs.getUsernameType() + " username type");
         for (String docId : docIds) {
           authorized.add(new AuthorizationResponse(false, docId));
         }
       } else {
         LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
-            "Authorizing documents for user " + gsaName);
-        String notesName = user.getNotesName();
+            "Authorizing documents for user " + gsaName +
+            " using " + ncs.getUsernameType() + " username type");
         ArrayList<String> userGroups = new ArrayList<String>(user.getGroups());
         LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
             "Groups for " + gsaName + " are: " + userGroups);

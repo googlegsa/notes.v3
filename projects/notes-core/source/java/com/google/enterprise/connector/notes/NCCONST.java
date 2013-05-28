@@ -260,6 +260,7 @@ public class NCCONST {
   public static final String SITM_CACHEUPDATEINTERVAL = "CacheUpdateInterval";
   public static final String SITM_LASTCACHEUPDATE = "LastCacheUpdate";
   public static final String SITM_RETAINMETADATA = "RetainMetaData";
+  public static final String SITM_USERNAMETYPE = "UserNameType";
 
   /** Path to the Domino directory on the server */
   public static final String SITM_DIRECTORY = "Directory";

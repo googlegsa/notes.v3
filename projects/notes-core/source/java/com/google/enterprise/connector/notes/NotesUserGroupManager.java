@@ -308,6 +308,9 @@ class NotesUserGroupManager {
       }
       User user = new User(userId, notesName, gsaName);
 
+      // User is authenticated and should be a member of "-default-" group.
+      user.addGroup("-default-");
+
       // Find user groups and nested groups
       pstmt = lookupConn.prepareStatement(
           Util.buildString(
@@ -366,15 +369,20 @@ class NotesUserGroupManager {
         Util.close(pstmt);
       }
 
-      // Find any roles they acquire because of group membership.
+      // Find any roles they acquire because of direct group membership and
+      // via parent groups.
       pstmt = lookupConn.prepareStatement("select replicaid, rolename from "
           + roleTableName + " where roleid in (select roleid from "
           + groupRolesTableName + " where groupid in "
           + "(select groupid from " + userGroupsTableName
-          + " where userid = ?))",
+          + " where userid = ? union select parentgroupid from "
+          + groupChildrenTableName
+          + " where childgroupid in (select groupid from "
+          + userGroupsTableName + " where userid = ?)))",
           ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
       try {
         pstmt.setLong(1, userId);
+        pstmt.setLong(2, userId);
         rs = pstmt.executeQuery();
         while (rs.next()) {
           user.addRole(rs.getString(1), rs.getString(2));
@@ -622,12 +630,16 @@ class NotesUserGroupManager {
     final String METHOD = "updateGroups";
     LOGGER.entering(CLASS_NAME, METHOD);
 
+    long timeStart = System.currentTimeMillis();
+    NotesView groupsView = null;
     NotesDocument groupDoc = null;
     String groupName = null;
     try {
-      for (groupDoc = peopleGroupsView.getFirstDocument();
+      groupsView = directoryDatabase.getView(NCCONST.DIRVIEW_VIMGROUPS);
+      groupsView.refresh();
+      for (groupDoc = groupsView.getFirstDocument();
            groupDoc != null;
-           groupDoc = getNextDocument(peopleGroupsView, groupDoc)) {
+           groupDoc = getNextDocument(groupsView, groupDoc)) {
         try {
           groupName = groupDoc.getItemValueString(NCCONST.GITM_LISTNAME);
           if (Strings.isNullOrEmpty(groupName)) {
@@ -651,7 +663,10 @@ class NotesUserGroupManager {
           "Error updating group cache", e);
     } finally {
       Util.recycle(groupDoc);
+      Util.recycle(groupsView);
     }
+    long timeFinish = System.currentTimeMillis();
+    LOGGER.log(Level.FINE, "Update groups: " + (timeFinish - timeStart) + "ms");
   }
 
   private void updateGroup(NotesDocument groupDoc, String groupName) {
@@ -771,8 +786,10 @@ class NotesUserGroupManager {
   private void updateNotesDomainNames() {
     final String METHOD = "updateNotesDomainNames";
     LOGGER.entering(CLASS_NAME, METHOD);
-    
+
+    long timeStart = System.currentTimeMillis();
     NotesSession ns = null;
+    NotesDatabase nab = null;
     NotesView peopleView = null;
     try {
       ns = connectorSession.createNotesSession();
@@ -780,7 +797,7 @@ class NotesUserGroupManager {
           Util.buildString("Open Notes directory: ",
               connectorSession.getServer(), "!!",
               connectorSession.getDirectory()));
-      NotesDatabase nab = ns.getDatabase(connectorSession.getServer(),
+      nab = ns.getDatabase(connectorSession.getServer(),
           connectorSession.getDirectory());
       peopleView = nab.getView(NCCONST.DIRVIEW_VIMUSERS);
       peopleView.refresh();
@@ -812,8 +829,12 @@ class NotesUserGroupManager {
           "Failed to update Notes domain names", e);
     } finally {
       Util.recycle(peopleView);
+      Util.recycle(nab);
       Util.recycle(ns);
     }
+    long timeFinish = System.currentTimeMillis();
+    LOGGER.log(Level.FINE, "Update Notes domain names: "
+        + (timeFinish - timeStart) + "ms");
     LOGGER.exiting(CLASS_NAME, METHOD);
   }
 
@@ -941,6 +962,9 @@ class NotesUserGroupManager {
     final String METHOD = "updateUsers";
     LOGGER.entering(CLASS_NAME, METHOD);
 
+    long timeStart = System.currentTimeMillis();
+    NotesView serverAccessView = null;
+    NotesView peopleView = null;
     NotesDocument personDoc = null;
     try {
       String userSelectionFormula = connectorSession.getUserSelectionFormula();
@@ -950,13 +974,15 @@ class NotesUserGroupManager {
             "User selection formula is: " + userSelectionFormula
             + "\nUser name formula is: " + userNameFormula);
       }
-      NotesView serverAccessView = directoryDatabase.getView(
+      serverAccessView = directoryDatabase.getView(
           NCCONST.DIRVIEW_SERVERACCESS);
       serverAccessView.refresh();
 
-      for (personDoc = peopleGroupsView.getFirstDocument();
+      peopleView = directoryDatabase.getView(NCCONST.DIRVIEW_VIMUSERS);
+      peopleView.refresh();
+      for (personDoc = peopleView.getFirstDocument();
            personDoc != null;
-           personDoc = getNextDocument(peopleGroupsView, personDoc)) {
+           personDoc = getNextDocument(peopleView, personDoc)) {
         String notesName = null;
         try {
           if (!personDoc.getItemValueString(NCCONST.ITMFORM).contentEquals(
@@ -1022,8 +1048,12 @@ class NotesUserGroupManager {
           "Error processing users", e);
     } finally {
       Util.recycle(personDoc);
+      Util.recycle(peopleView);
+      Util.recycle(serverAccessView);
       LOGGER.exiting(CLASS_NAME, METHOD);
     }
+    long timeFinish = System.currentTimeMillis();
+    LOGGER.log(Level.FINE, "Update users: " + (timeFinish - timeStart) + "ms");
   }
 
   private void updateUser(NotesDocument personDoc,
@@ -2108,6 +2138,7 @@ class NotesUserGroupManager {
   // Helpers
   private NotesDocument getNextDocument(NotesView view, NotesDocument doc)
       throws RepositoryException {
+    view.refresh();
     NotesDocument nextDoc = view.getNextDocument(doc);
     doc.recycle();
     return nextDoc;
@@ -2166,6 +2197,11 @@ class NotesUserGroupManager {
           + " groupname varchar(254), pseudogroup boolean)"});
       LOGGER.logp(Level.INFO, CLASS_NAME, METHOD,
           "Created/verified table: " + groupTableName);
+      Util.executeStatements(conn, true,
+          "create index if not exists idx_groupname_groups on "
+          + groupTableName + "(groupname)");
+      LOGGER.logp(Level.INFO, CLASS_NAME, METHOD,
+          "Created/verified index: idx_groupname_groups on " + groupTableName);
 
       // Role names have a max size of 15.
       jdbcDatabase.verifyTableExists(roleTableName, new String[] {
@@ -2174,42 +2210,69 @@ class NotesUserGroupManager {
           + " rolename varchar(32), replicaid varchar(32))"});
       LOGGER.logp(Level.INFO, CLASS_NAME, METHOD,
           "Created/verified table: " + roleTableName);
+      Util.executeStatements(conn, true,
+          "create index if not exists idx_rolename_roles on "
+          + roleTableName + "(rolename)",
+          "create index if not exists idx_replicaid_roles on "
+          + roleTableName + "(replicaid)");
+      LOGGER.logp(Level.INFO, CLASS_NAME, METHOD, "Created/verified indexes: "
+          + "idx_rolename_roles and idx_replicaid_roles on " + roleTableName);
 
       jdbcDatabase.verifyTableExists(userGroupsTableName, new String[] {
           "create table " + userGroupsTableName + " (userid long,"
           + " groupid long)"});
       LOGGER.logp(Level.INFO, CLASS_NAME, METHOD,
           "Created/verified table: " + userGroupsTableName);
-      Util.executeStatements(conn, true, new String[] {
-          "create index if not exists idx_" + userGroupsTableName
-          + " on " + userGroupsTableName + "(userid, groupid)"});
-      LOGGER.logp(Level.INFO, CLASS_NAME, METHOD,
-          "Created/verified index: idx_" + userGroupsTableName);
+      Util.executeStatements(conn, true,
+          "create index if not exists idx_userid_usergroups on "
+          + userGroupsTableName + "(userid)",
+          "create index if not exists idx_groupid_usergroups on "
+          + userGroupsTableName + "(groupid)");
+      LOGGER.logp(Level.INFO, CLASS_NAME, METHOD, "Created/verified indexes: "
+          + "idx_userid_usergroups and idx_groupid_usergroups on "
+          + userGroupsTableName);
 
       jdbcDatabase.verifyTableExists(userRolesTableName, new String[] {
-          "create table " + userRolesTableName + " (userid long,"
-          + " roleid long)"});
+          "create table " + userRolesTableName + " (userid long, "
+          + "roleid long)"});
       LOGGER.logp(Level.INFO, CLASS_NAME, METHOD,
           "Created/verified table: " + userRolesTableName);
+      Util.executeStatements(conn, true,
+          "create index if not exists idx_userid_userroles on "
+          + userRolesTableName + "(userid)",
+          "create index if not exists idx_roleid_userroles on "
+          + userRolesTableName + "(roleid)");
+      LOGGER.logp(Level.INFO, CLASS_NAME, METHOD, "Created/verified indexes: "
+          + "idx_userid_userroles and idx_roleid_userroles on "
+          + userRolesTableName);
 
       jdbcDatabase.verifyTableExists(groupRolesTableName, new String[] {
           "create table " + groupRolesTableName + " (groupid long,"
           + " roleid long)"});
       LOGGER.logp(Level.INFO, CLASS_NAME, METHOD,
           "Created/verified table: " + groupRolesTableName);
+      Util.executeStatements(conn, true,
+          "create index if not exists idx_groupid_grouproles on "
+          + groupRolesTableName + "(groupid)",
+          "create index if not exists idx_roleid_grouproles on "
+          + groupRolesTableName + "(roleid)");
+      LOGGER.logp(Level.INFO, CLASS_NAME, METHOD, "Created/verified indexes: "
+          + "idx_groupid_grouproles and idx_roleid_grouproles on "
+          + groupRolesTableName);
 
       jdbcDatabase.verifyTableExists(groupChildrenTableName, new String[] {
           "create table " + groupChildrenTableName + " (parentgroupid long,"
           + " childgroupid long)"});
       LOGGER.logp(Level.INFO, CLASS_NAME, METHOD,
           "Created/verified table: " + groupChildrenTableName);
-      Util.executeStatements(conn, true, new String[] {
-          "create index if not exists idx_" + groupChildrenTableName + " on " 
+      Util.executeStatements(conn, true,
+          "create index if not exists idx_parentgroupid_groupchildren on "
           + groupChildrenTableName + "(parentgroupid)",
-          "create index if not exists idx_" + groupChildrenTableName + " on " 
-          + groupChildrenTableName + "(childgroupid)"});
-      LOGGER.logp(Level.INFO, CLASS_NAME, METHOD,
-          "Created/verified index: idx_" + groupChildrenTableName);
+          "create index if not exists idx_childgroupid_groupchildren on "
+          + groupChildrenTableName + "(childgroupid)");
+      LOGGER.logp(Level.INFO, CLASS_NAME, METHOD, "Created/verified indexes: "
+          + "idx_parentgroupid_groupchildren and idx_childgroupid_groupchildren"
+          + " on " + groupChildrenTableName);
     } catch (Exception e) {
       LOGGER.logp(Level.SEVERE, CLASS_NAME, METHOD,
           "Failed to initialize user cache", e);

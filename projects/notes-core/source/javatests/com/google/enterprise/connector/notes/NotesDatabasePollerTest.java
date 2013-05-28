@@ -67,6 +67,8 @@ public class NotesDatabasePollerTest extends TestCase {
 
   static {
     acl = new NotesACLMock();
+    acl.addAclEntry(new NotesACLEntryMock("-Default-",
+        NotesACLEntry.TYPE_UNSPECIFIED, NotesACL.LEVEL_NOACCESS));
     acl.addAclEntry(new NotesACLEntryMock("allowed user1",
         NotesACLEntry.TYPE_PERSON, NotesACL.LEVEL_READER));
     acl.addAclEntry(new NotesACLEntryMock("allowed user2",
@@ -126,13 +128,12 @@ public class NotesDatabasePollerTest extends TestCase {
     assertEquals(2, permitUsers.size());
     assertEquals("allowed user1", permitUsers.get(0));
     assertEquals("allowed user2", permitUsers.get(1));
-    assertEquals(1, noAccessUsers.size());
-    assertEquals("denied user1", noAccessUsers.get(0));
+    assertEquals(2, noAccessUsers.size());
+    assertEquals("denied user1", noAccessUsers.get(1));
     assertEquals(2, permitGroups.size());
     assertEquals("allowed group1", permitGroups.get(0));
     assertEquals("allowed group2", permitGroups.get(1));
-    assertEquals(1, noAccessGroups.size());
-    assertEquals("denied group1", noAccessGroups.get(0));
+    assertEquals("denied groups is not zero", 0, noAccessGroups.size());
   }
 
   public void testProcessAclCreateDbAclCrawlDoc() throws Exception {
