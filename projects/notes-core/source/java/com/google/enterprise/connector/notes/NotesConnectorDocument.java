@@ -1,10 +1,10 @@
-// Copyright 2011 Google Inc.
+// Copyright 2011 Google Inc. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
+//     http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -153,37 +153,15 @@ public class NotesConnectorDocument implements Document {
       setDateProperties();
       setContentProperty();
 
-      // PROPNAME_CONTENTURL
-      // PROPNAME_FEEDTYPE
-      // PROPNAME_FEEDID
       // PROPNAME_SEARCHURL -> DO NOT MAP THIS - it causes the
       //     gsa to try and crawl the doc
-      // PROPNAME_SECURITYTOKEN
       putTextItem(SpiConstants.PROPNAME_MIMETYPE, NCCONST.ITM_MIMETYPE, null);
       putTextItem(SpiConstants.PROPNAME_DISPLAYURL, NCCONST.ITM_DOCID, null);
       putBooleanItem(SpiConstants.PROPNAME_ISPUBLIC, NCCONST.ITM_ISPUBLIC, null);
-      // PROPNAME_ACLGROUPS
-      // PROPNAME_ACLUSERS
-      // PROPNAME_GROUP_ROLES_PROPNAME_PREFIX
-      // PROPNAME_USER_ROLES_PROPNAME_PREFIX
       putTextItem(SpiConstants.PROPNAME_ACTION, NCCONST.ITM_ACTION, null);
-      // PROPNAME_FOLDER
       // TODO: FIX THIS UPGRADE TO NEW SPI
       //putBooleanItem("google:lock", NCCONST.ITM_LOCK, "true");
       putBooleanItem(SpiConstants.PROPNAME_LOCK, NCCONST.ITM_LOCK, "true");
-
-      // PROPNAME_PAGERANK
-      // PERSISTABLE_ATTRIBUTES
-      // PROPNAME_MANAGER_SHOULD_PERSIST
-      // PROPNAME_CONNECTOR_INSTANCE - Reserved for CM
-      // PROPNAME_CONNECTOR_TYPE
-      // PROPNAME_PRIMARY_FOLDER
-      // PROPNAME_TIMESTAMP
-      // PROPNAME_MESSAGE
-      // PROPNAME_SNAPSHOT
-      // PROPNAME_CONTAINER
-      // PROPNAME_PERSISTED_CUSTOMDATA_1
-      // PROPNAME_PERSISTED_CUSTOMDATA_2
 
       putTextItem(NCCONST.PROPNAME_DESCRIPTION,
           NCCONST.ITM_GMETADESCRIPTION, null);
