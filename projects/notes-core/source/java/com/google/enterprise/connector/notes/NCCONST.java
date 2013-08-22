@@ -319,5 +319,7 @@ public class NCCONST {
   public static final int COLUMN_SIZE_SERVER = 100;
   public static final int COLUMN_SIZE_HOST = 100;
   public static final int COLUMN_SIZE_PROTOCOL = 5;
+
+  public static final int GC_INVOCATION_INTERVAL = 1000;
 }
 

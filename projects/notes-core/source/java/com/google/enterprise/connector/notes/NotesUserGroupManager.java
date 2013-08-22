@@ -633,13 +633,17 @@ class NotesUserGroupManager {
     long timeStart = System.currentTimeMillis();
     NotesView groupsView = null;
     NotesDocument groupDoc = null;
-    String groupName = null;
     try {
       groupsView = directoryDatabase.getView(NCCONST.DIRVIEW_VIMGROUPS);
       groupsView.refresh();
+      int count = 0;
       for (groupDoc = groupsView.getFirstDocument();
            groupDoc != null;
            groupDoc = getNextDocument(groupsView, groupDoc)) {
+        if (count++ % NCCONST.GC_INVOCATION_INTERVAL == 0) {
+          Util.invokeGC();
+        }
+        String groupName = null;
         try {
           groupName = groupDoc.getItemValueString(NCCONST.GITM_LISTNAME);
           if (Strings.isNullOrEmpty(groupName)) {
@@ -803,7 +807,11 @@ class NotesUserGroupManager {
       peopleView.refresh();
       NotesDocument docNext = null;
       NotesDocument doc = peopleView.getFirstDocument();
+      int count = 0;
       while (doc != null) {
+        if (count++ % NCCONST.GC_INVOCATION_INTERVAL == 0) {
+          Util.invokeGC();
+        }
         Vector fullNames = doc.getItemValue(NCCONST.PITM_FULLNAME);
         if (fullNames.size() == 0) {
           docNext = peopleView.getNextDocument(doc);
@@ -980,11 +988,15 @@ class NotesUserGroupManager {
 
       peopleView = directoryDatabase.getView(NCCONST.DIRVIEW_VIMUSERS);
       peopleView.refresh();
+      int count = 0;
       for (personDoc = peopleView.getFirstDocument();
            personDoc != null;
            personDoc = getNextDocument(peopleView, personDoc)) {
         String notesName = null;
         try {
+          if (count++ % NCCONST.GC_INVOCATION_INTERVAL == 0) {
+            Util.invokeGC();
+          }
           if (!personDoc.getItemValueString(NCCONST.ITMFORM).contentEquals(
                   NCCONST.DIRFORM_PERSON)) {
             continue;
