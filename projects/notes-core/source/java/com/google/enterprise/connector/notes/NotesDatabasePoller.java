@@ -37,7 +37,6 @@ import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.Set;
 import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -667,6 +666,11 @@ public class NotesDatabasePoller {
       }
 
       if (processACL(ns, cdb, srcdb, srcdbDoc)) {
+        // Scan database ACLs and update H2 cache
+        LOGGER.log(Level.FINE, "Scan ACLs and update H2 for {0} replica",
+            srcdb.getReplicaID());
+        notesConnectorSession.getUserGroupManager().updateRoles(srcdb);
+
         // If the ACL has changed and we are using per Document
         // ACLs we need to resend all documents.
         if (srcdbDoc.getItemValueString(NCCONST.DITM_AUTHTYPE)

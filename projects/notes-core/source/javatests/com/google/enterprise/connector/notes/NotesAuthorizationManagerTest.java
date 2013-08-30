@@ -157,6 +157,7 @@ public class NotesAuthorizationManagerTest extends TestCase {
     super.setUp();
     authorizationManager =
         (NotesAuthorizationManager) connectorSession.getAuthorizationManager();
+    connectorSession.getUserGroupManager().updateRoles(testDb);
   }
 
   public void testCheckAllowUserFullName() throws Exception {

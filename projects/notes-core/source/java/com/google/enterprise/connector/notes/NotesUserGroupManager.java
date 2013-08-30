@@ -39,7 +39,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -135,6 +134,7 @@ class NotesUserGroupManager {
   private NotesView peopleGroupsView;
   private DatabaseConnectionPool connectionPool;
   private boolean originalAutoCommit;
+  private boolean cacheInitialized = false;
   private int originalTransactionIsolation;
   private final NotesDomainNames notesDomainNames;
   private Connection conn;
@@ -508,7 +508,7 @@ class NotesUserGroupManager {
   }
 
   public void updateUsersGroups() {
-    updateUsersGroups(false);
+    updateUsersGroups(!isCacheInitialized());
   }
 
   /**
@@ -536,7 +536,8 @@ class NotesUserGroupManager {
       updateUsers();
 
       // Pass 3 - Update roles
-      updateRoles();
+      // Role update is moved from the maintenance thread to the traversal
+      // thread so that the update only occurs when the database ACL is updated.
 
       // Pass 4 - Delete any users that no longer exist
       checkUserDeletions();
@@ -545,6 +546,7 @@ class NotesUserGroupManager {
       checkGroupDeletions();
 
       setLastCacheUpdate();
+      setCacheInitialized();
     } catch (Exception e) {
       LOGGER.logp(Level.SEVERE, CLASS_NAME, METHOD,
           "Failure updating user/group cache", e);
@@ -1450,6 +1452,12 @@ class NotesUserGroupManager {
     }
   }
 
+  void updateRoles(NotesDatabase db) throws RepositoryException {
+    setUpResources(true);
+    updateRolesForDatabase(db, db.getReplicaID());
+    releaseResources();
+  }
+
   private void updateRolesForDatabase(NotesDatabase crawlDatabase,
       String databaseReplicaId) {
     final String METHOD = "updateRolesForDatabase";
@@ -2353,6 +2361,14 @@ class NotesUserGroupManager {
       }
       LOGGER.exiting(CLASS_NAME, METHOD);
     }
+  }
+
+  synchronized boolean isCacheInitialized() {
+    return cacheInitialized;
+  }
+
+  private synchronized void setCacheInitialized() {
+    cacheInitialized = true;
   }
 
   public static class User {

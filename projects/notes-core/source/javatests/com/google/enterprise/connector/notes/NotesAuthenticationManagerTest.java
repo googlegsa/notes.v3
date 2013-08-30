@@ -14,17 +14,12 @@
 
 package com.google.enterprise.connector.notes;
 
-import com.google.enterprise.connector.notes.NotesConnector;
-import com.google.enterprise.connector.notes.NotesConnectorSession;
 import com.google.enterprise.connector.notes.client.NotesACL;
 import com.google.enterprise.connector.notes.client.NotesACLEntry;
-import com.google.enterprise.connector.notes.client.NotesDatabase;
-import com.google.enterprise.connector.notes.client.NotesDocument;
 import com.google.enterprise.connector.notes.client.NotesItem;
 import com.google.enterprise.connector.notes.client.NotesSession;
-import com.google.enterprise.connector.notes.client.NotesView;
-import com.google.enterprise.connector.notes.client.mock.NotesACLMock;
 import com.google.enterprise.connector.notes.client.mock.NotesACLEntryMock;
+import com.google.enterprise.connector.notes.client.mock.NotesACLMock;
 import com.google.enterprise.connector.notes.client.mock.NotesDatabaseMock;
 import com.google.enterprise.connector.notes.client.mock.NotesDocumentMock;
 import com.google.enterprise.connector.notes.client.mock.NotesItemMock;
@@ -33,7 +28,6 @@ import com.google.enterprise.connector.notes.client.mock.SessionFactoryMock;
 import com.google.enterprise.connector.spi.AuthenticationManager;
 import com.google.enterprise.connector.spi.AuthenticationResponse;
 import com.google.enterprise.connector.spi.Principal;
-import com.google.enterprise.connector.spi.Session;
 import com.google.enterprise.connector.spi.SimpleAuthenticationIdentity;
 
 import junit.extensions.TestSetup;
@@ -42,11 +36,7 @@ import junit.framework.TestCase;
 import junit.framework.TestSuite;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Vector;
 
 public class NotesAuthenticationManagerTest extends TestCase {
 
@@ -117,6 +107,7 @@ public class NotesAuthenticationManagerTest extends TestCase {
   }
 
   private AuthenticationManager authenticationManager;
+  private NotesUserGroupManager nugm;
 
   public NotesAuthenticationManagerTest() {
     super();
@@ -125,6 +116,17 @@ public class NotesAuthenticationManagerTest extends TestCase {
   protected void setUp() throws Exception {
     super.setUp();
     authenticationManager = connectorSession.getAuthenticationManager();
+    nugm = connectorSession.getUserGroupManager();
+    nugm.setUpResources(true);
+    nugm.updateRoles();
+  }
+
+  protected void tearDown() throws Exception {
+    try {
+      nugm.releaseResources();
+    } finally {
+      super.tearDown();
+    }
   }
 
   public void testAuthenticateUnknownUser() throws Exception {

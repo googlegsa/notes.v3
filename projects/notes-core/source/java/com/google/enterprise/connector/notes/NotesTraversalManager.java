@@ -20,7 +20,6 @@ import com.google.enterprise.connector.notes.client.NotesView;
 import com.google.enterprise.connector.notes.client.NotesViewEntry;
 import com.google.enterprise.connector.notes.client.NotesViewNavigator;
 import com.google.enterprise.connector.spi.DocumentList;
-import com.google.enterprise.connector.spi.RepositoryException;
 import com.google.enterprise.connector.spi.TraversalContext;
 import com.google.enterprise.connector.spi.TraversalContextAware;
 import com.google.enterprise.connector.spi.TraversalManager;
@@ -91,6 +90,10 @@ public class NotesTraversalManager implements TraversalManager,
 
     try {
       LOGGER.entering(CLASS_NAME, METHOD);
+      if (ncs.getUserGroupManager().isCacheInitialized() == false) {
+        LOGGER.log(Level.FINE, "Skip traversal until cache is initialized");
+        return null;
+      }
 
       LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
           "Resuming from checkpoint: " + checkpoint);
