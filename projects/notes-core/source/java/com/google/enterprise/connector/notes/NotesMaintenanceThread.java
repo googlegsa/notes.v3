@@ -24,7 +24,10 @@ import com.google.enterprise.connector.notes.client.NotesView;
 import com.google.enterprise.connector.spi.RepositoryException;
 import com.google.enterprise.connector.spi.SpiConstants.ActionType;
 
+import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.Map;
+import java.util.Set;
 import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -182,7 +185,7 @@ public class NotesMaintenanceThread extends Thread {
             LOGGER.logp(Level.FINER, CLASS_NAME, METHOD,
                 "MaintenanceThread: Deleting document because database " +
                 "is being purged. " + unid);
-            createDeleteRequest(notesId.toString());
+            sendDeleteRequest(notesId);
             continue;
           }
           //Is this database configured to check for deletions?
@@ -215,13 +218,13 @@ public class NotesMaintenanceThread extends Thread {
 
           boolean isDocDeleted = loadSourceDocument(unid);
           if (isDocDeleted) {
-            createDeleteRequest(notesId.toString());
+            sendDeleteRequest(notesId);
             continue;
           }
 
           boolean isConflict = SourceDocument.hasItem(NCCONST.NCITM_CONFLICT);
           if (isConflict) {
-            createDeleteRequest(notesId.toString());
+            sendDeleteRequest(notesId);
             continue;
           }
 
@@ -238,7 +241,7 @@ public class NotesMaintenanceThread extends Thread {
             LOGGER.logp(Level.FINER, CLASS_NAME, METHOD,
                 "MaintenanceThread: Deleting document because " +
                 "selection formula returned false : " + unid);
-            createDeleteRequest(notesId.toString());
+            sendDeleteRequest(notesId);
             continue;
           }
         } catch (RepositoryException e) {
@@ -481,5 +484,39 @@ public class NotesMaintenanceThread extends Thread {
     DeleteReq.save(true);
     DeleteReq.recycle();
     LOGGER.exiting(CLASS_NAME, METHOD);
+  }
+
+  private void createDeleteRequestForAttachments(NotesDocId notesId)
+      throws RepositoryException {
+    NotesDocumentManager docMgr = ncs.getNotesDocumentManager();
+    Connection conn = null;
+    try {
+      conn = docMgr.getDatabaseConnection();
+      Set<String> attachmentSet = docMgr.getDocumentAttachmentNames(conn,
+          notesId.getDocId(), notesId.getReplicaId());
+      for (String encodedName : attachmentSet) {
+        String attachmentUrl = String.format("%s/$File/%s?OpenElement",
+            notesId.toString(), encodedName);
+        try {
+          createDeleteRequest(attachmentUrl);
+        } catch (RepositoryException e) {
+          LOGGER.log(Level.WARNING, "Failed to remove attachment: " +
+              attachmentUrl);
+        }
+      }
+    } catch (SQLException e) {
+      throw new RepositoryException("Failed to create delete request for " +
+          notesId.toString() + " attachments", e);
+    } finally {
+      if (conn != null) {
+        docMgr.releaseDatabaseConnection(conn);
+      }
+    }
+  }
+
+  private void sendDeleteRequest(NotesDocId notesId)
+      throws RepositoryException {
+    createDeleteRequestForAttachments(notesId);
+    createDeleteRequest(notesId.toString());
   }
 }

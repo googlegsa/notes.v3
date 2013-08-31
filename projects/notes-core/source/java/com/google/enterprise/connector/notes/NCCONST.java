@@ -310,12 +310,16 @@ public class NCCONST {
   public static final String DB_ACL_INHERIT_TYPE_PARENTOVERRIDES
       = "ParentOverrides";
   
-  //Constants for Indexed and Readers tables
+  // Constants for Indexed, Readers and Attachments tables
   public static final String TABLE_INDEXED_PREFIX = "NCIndexed_";
   public static final String TABLE_READERS_PREFIX = "NCIndexedReaders_";
+  public static final String TABLE_ATTACHMENTS_PREFIX = "NCIndexedAttachments_";
   public static final int COLUMN_SIZE_UNID = 32;
   public static final int COLUMN_SIZE_REPLICAID = 16;
   public static final int COLUMN_SIZE_READER = 100;
+  // Windows system uses 260 characters for file name including path.
+  // Set filename column to 255 characters for database efficiency.
+  public static final int COLUMN_SIZE_FILENAME = 255;
   public static final int COLUMN_SIZE_SERVER = 100;
   public static final int COLUMN_SIZE_HOST = 100;
   public static final int COLUMN_SIZE_PROTOCOL = 5;

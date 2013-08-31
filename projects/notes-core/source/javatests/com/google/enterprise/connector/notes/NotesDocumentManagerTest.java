@@ -170,6 +170,42 @@ public class NotesDocumentManagerTest extends TestCase{
     }
   }
 
+  public void testDeleteAttachments() throws RepositoryException {
+    Connection conn = null;
+    try {
+      conn = notesDocManager.getDatabaseConnection();
+      NotesDocument doc = docs.get(0);
+      assertNotNull(doc);
+      
+      String unid = doc.getItemValueString(NCCONST.NCITM_UNID);
+      String repid = doc.getItemValueString(NCCONST.NCITM_REPLICAID);
+      
+      Vector attachmentNames = new Vector();
+      attachmentNames.add("attachment1.doc");
+      attachmentNames.add("attachment2.doc");
+      doc.replaceItemValue(NCCONST.ITM_GMETAALLATTACHMENTS, attachmentNames);
+      
+      notesDocManager.addIndexedDocument(doc, conn);
+      Set<String> fileNames =
+          notesDocManager.getDocumentAttachmentNames(conn, unid, repid);
+
+      assertEquals(attachmentNames.size(), fileNames.size());
+      for (Object filename : attachmentNames) {
+        assertTrue(filename.toString(), fileNames.contains(filename));
+      }
+
+      notesDocManager.deleteDocument(unid, repid);
+      fileNames = notesDocManager.getDocumentAttachmentNames(conn, unid, repid);
+      assertEquals(0, fileNames.size());
+    } catch (SQLException e) {
+      throw new RepositoryException(e);
+    } finally {
+      if (conn != null) {
+        notesDocManager.releaseDatabaseConnection(conn);
+      }
+    }
+  }
+
   public void testClearTables() throws RepositoryException {
     assertTrue(notesDocManager.clearTables());
   }

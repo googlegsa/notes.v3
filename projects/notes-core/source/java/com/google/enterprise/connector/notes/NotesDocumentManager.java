@@ -14,14 +14,17 @@
 
 package com.google.enterprise.connector.notes;
 
+import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Strings;
 import com.google.enterprise.connector.notes.client.NotesDocument;
+import com.google.enterprise.connector.notes.client.NotesItem;
 import com.google.enterprise.connector.spi.RepositoryException;
 import com.google.enterprise.connector.util.database.DatabaseConnectionPool;
 import com.google.enterprise.connector.util.database.JdbcDatabase;
-import com.google.common.annotations.VisibleForTesting;
-import com.google.common.base.Strings;
 
+import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
+import java.net.URLEncoder;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -65,6 +68,7 @@ public class NotesDocumentManager {
   private final DatabaseConnectionPool connectionPool;
   @VisibleForTesting final String indexedTableName;
   @VisibleForTesting final String readersTableName;
+  @VisibleForTesting final String attachmentsTableName;
 
   NotesDocumentManager(NotesConnectorSession ncs)
       throws RepositoryException {
@@ -76,6 +80,8 @@ public class NotesDocumentManager {
         NCCONST.TABLE_INDEXED_PREFIX, connectorName);
     this.readersTableName = jdbcDatabase.makeTableName(
         NCCONST.TABLE_READERS_PREFIX, connectorName);
+    this.attachmentsTableName = jdbcDatabase.makeTableName(
+        NCCONST.TABLE_ATTACHMENTS_PREFIX, connectorName);
     initializeDatabase();
   }
 
@@ -123,6 +129,22 @@ public class NotesDocumentManager {
         new String[]{readersDDL.toString()});
     LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
         "Create/verify " + this.readersTableName);
+
+    // Verify and create attachments table
+    StringBuilder attachmentsDDL = new StringBuilder();
+    attachmentsDDL.append("create table ");
+    attachmentsDDL.append(attachmentsTableName).append("(");
+    attachmentsDDL.append("id long auto_increment primary key, ");
+    attachmentsDDL.append("filename varchar(");
+    attachmentsDDL.append(NCCONST.COLUMN_SIZE_FILENAME);
+    attachmentsDDL.append(") not null, ").append("docid long not null");
+    attachmentsDDL.append(", foreign key(docid) references ");
+    attachmentsDDL.append(indexedTableName).append("(docid))");
+    
+    jdbcDatabase.verifyTableExists(attachmentsTableName,
+        new String[]{attachmentsDDL.toString()});
+    LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
+        "Create/verify " + attachmentsTableName);
   }
 
   /**
@@ -227,24 +249,9 @@ public class NotesDocumentManager {
 
     PreparedStatement pstmt = null;
     try {
-      //Delete existing readers of indexed document
-      pstmt = connection.prepareStatement(
-          "delete from " + readersTableName +
-          " where docid = (select docid from " + indexedTableName +
-          " where unid=? and replicaid=?)");
-      pstmt.setString(1, unid);
-      pstmt.setString(2, notesId.getReplicaId());
-      pstmt.executeUpdate();
-      pstmt.close();
-
-      //Delete existing indexed document
-      pstmt = connection.prepareStatement(
-          "delete from " + indexedTableName + " where unid=? and replicaid=?");
-      pstmt.setString(1, unid);
-      pstmt.setString(2, notesId.getReplicaId());
-      pstmt.executeUpdate();
-      pstmt.close();
-
+      // Delete existing readers, attachments and document before inserting new
+      deleteDocument(unid, notesId.getReplicaId(), connection);
+      
       //Insert into indexed table
       pstmt = connection.prepareStatement(
           "insert into " + indexedTableName +
@@ -276,6 +283,32 @@ public class NotesDocumentManager {
         }
         pstmt.executeBatch();
         pstmt.close();
+        
+        // Insert attachment names
+        NotesItem itemAttachment =
+            docIndexed.getFirstItem(NCCONST.ITM_GMETAALLATTACHMENTS);
+        if (itemAttachment != null) {
+          Vector itemValues = itemAttachment.getValues();
+          if (itemValues != null && itemValues.size() > 0) {
+            pstmt = connection.prepareStatement(
+                "insert into " + attachmentsTableName
+                + "(filename, docid) values(?,?)");
+            for (int i = 0; i < itemValues.size(); i++) {
+              String attachmentName = (String) itemValues.get(i);
+              try {
+                String encodedName = URLEncoder.encode(attachmentName, "UTF-8");
+                pstmt.setString(1, encodedName);
+                pstmt.setLong(2, docid);
+                pstmt.addBatch();
+              } catch (UnsupportedEncodingException e) {
+                LOGGER.log(Level.WARNING, "Unable to encode attachment name: "
+                    + attachmentName + ", skip to the next file.");
+              }
+            }
+            pstmt.executeBatch();
+            pstmt.close();
+          }
+        }
       }
       connection.commit();
       isUpdated = true;
@@ -450,6 +483,39 @@ public class NotesDocumentManager {
     return hasItem;
   }
 
+  Set<String> getDocumentAttachmentNames(Connection conn, String unid,
+      String replicaid) {
+    LOGGER.log(Level.FINE,
+        "Get attachment names for document [UNID: {0}, REPLICAID: {1}]",
+        new Object[] {unid, replicaid});
+
+    Set<String> attachmentNames = new HashSet<String>();
+    if (conn == null) {
+      LOGGER.log(Level.WARNING,
+          "Failed to lookup attachment names.  Database connection is null");
+      return attachmentNames;
+    }
+
+    try {
+      PreparedStatement pstmt = conn.prepareStatement(
+          "select filename from " + attachmentsTableName
+          + " where docid in (select docid from " + indexedTableName
+          + " where unid = ? and replicaid = ?)");
+      pstmt.setString(1, unid);
+      pstmt.setString(2, replicaid);
+      ResultSet rs = pstmt.executeQuery();
+      while (rs.next()) {
+        attachmentNames.add(rs.getString(1));
+      }
+      rs.close();
+      pstmt.close();
+    } catch (SQLException e) {
+      LOGGER.log(Level.WARNING,
+          "Failed to get attachment file names from database", e);
+    }
+    return attachmentNames;
+  }
+
   boolean deleteDocument(String unid, String replicaid)
       throws RepositoryException {
     final String METHOD = "deleteDocument";
@@ -487,6 +553,16 @@ public class NotesDocumentManager {
       //Delete readers
       PreparedStatement pstmt = conn.prepareStatement(
           "delete from " + readersTableName +
+          " where docid = (select docid from " + indexedTableName +
+          " where unid = ? and replicaid = ?)");
+      pstmt.setString(1, unid);
+      pstmt.setString(2, replicaid);
+      pstmt.executeUpdate();
+      pstmt.close();
+
+      //Delete attachments
+      pstmt = conn.prepareStatement(
+          "delete from " + attachmentsTableName +
           " where docid = (select docid from " + indexedTableName +
           " where unid = ? and replicaid = ?)");
       pstmt.setString(1, unid);
@@ -603,6 +679,7 @@ public class NotesDocumentManager {
     try {
       String[] statements = {
           "delete from " + readersTableName,
+          "delete from " + attachmentsTableName,
           "delete from " + indexedTableName
       };
       executeUpdates(false, statements);
@@ -626,6 +703,7 @@ public class NotesDocumentManager {
       String[] statements = {
           "drop index if exists idx_" + indexedTableName,
           "drop table " + readersTableName,
+          "drop table " + attachmentsTableName,
           "drop table " + indexedTableName
       };
       executeUpdates(false, statements);
