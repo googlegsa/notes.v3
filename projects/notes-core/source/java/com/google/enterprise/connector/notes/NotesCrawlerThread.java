@@ -4,7 +4,7 @@
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
+//     http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -628,7 +628,21 @@ public class NotesCrawlerThread extends Thread {
     }
   }
 
-  // This function creates a document for an attachment
+  /**
+   * Creates a document for an attachment in the GSA Configuration database.  If
+   * the file size is exceeding the limit or the MIME type is not supported,
+   * only metadata and the attachment file name will be indexed.
+   * 
+   * @param crawlDoc document being crawled in the Crawl Queue view
+   * @param srcDoc source document where the attachment is located
+   * @param AttachmentName string file name without encoding
+   * @param MimeType string MIME type computed from file extension
+   * @return {@code true} if the attachment document is created and its content
+   *         will be indexed.
+   *         {@code false} if the attachment document is not created and its
+   *         content will not be indexed.
+   * @throws RepositoryException if embedded object is not accessible
+   */
   public boolean createAttachmentDoc(NotesDocument crawlDoc,
       NotesDocument srcDoc, String AttachmentName, String MimeType)
       throws RepositoryException {
@@ -642,17 +656,17 @@ public class NotesCrawlerThread extends Thread {
       // Error access the attachment
       eo = srcDoc.getAttachment(AttachmentName);
 
+      if (eo == null) {
+        LOGGER.log(Level.FINER, "Attachment could not be accessed {0}",
+            AttachmentName);
+        return false;
+      }
+
       if (eo.getType() != NotesEmbeddedObject.EMBED_ATTACHMENT) {
         // The object is not an attachment - could be an OLE object or link
         LOGGER.logp(Level.FINER, CLASS_NAME, METHOD,
             "Ignoring embedded object " + AttachmentName);
         eo.recycle();
-        return false;
-      }
-
-      if (null == eo) {
-        LOGGER.logp(Level.FINER, CLASS_NAME, METHOD,
-            "Attachment could not be accessed " + AttachmentName);
         return false;
       }
 
@@ -665,7 +679,7 @@ public class NotesCrawlerThread extends Thread {
 
       attachDoc = cdb.createDocument();
       crawlDoc.copyAllItems(attachDoc, true);
-      crawlDoc.replaceItemValue(NCCONST.ITM_GMETAATTACHMENTS, AttachmentName);
+
       // Store the filename of this attachment in the attachment crawl doc.
       attachDoc.replaceItemValue(NCCONST.ITM_GMETAATTACHMENTFILENAME,
           AttachmentName);
@@ -683,9 +697,11 @@ public class NotesCrawlerThread extends Thread {
           this.getHTTPURL(crawlDoc), encodedAttachmentName);
       attachDoc.replaceItemValue(NCCONST.ITM_DOCID, AttachmentURL);
 
-      // Only if we have a supported mime type do we send the content.
-      if ((0 != MimeType.length()) ||
-          (eo.getFileSize() > ncs.getMaxFileSize())) {
+      // Only if we have a supported mime type and file size is not exceeding
+      // the limit do we send the content, or only metadata and file name will
+      // be sent.
+      if ((0 != MimeType.length()) &&
+          eo.getFileSize() <= ncs.getMaxFileSize()) {
         attachDoc.replaceItemValue(NCCONST.ITM_MIMETYPE, MimeType);
         String attachmentPath = getAttachmentFilePath(crawlDoc,
             encodedAttachmentName);
