@@ -135,8 +135,8 @@ public class NotesDocumentManager {
     attachmentsDDL.append("create table ");
     attachmentsDDL.append(attachmentsTableName).append("(");
     attachmentsDDL.append("id long auto_increment primary key, ");
-    attachmentsDDL.append("filename varchar(");
-    attachmentsDDL.append(NCCONST.COLUMN_SIZE_FILENAME);
+    attachmentsDDL.append("attachment_unid varchar(");
+    attachmentsDDL.append(NCCONST.COLUMN_SIZE_UNID);
     attachmentsDDL.append(") not null, ").append("docid long not null");
     attachmentsDDL.append(", foreign key(docid) references ");
     attachmentsDDL.append(indexedTableName).append("(docid))");
@@ -285,25 +285,21 @@ public class NotesDocumentManager {
         pstmt.close();
         
         // Insert attachment names
-        NotesItem itemAttachment =
-            docIndexed.getFirstItem(NCCONST.ITM_GMETAALLATTACHMENTS);
-        if (itemAttachment != null) {
-          Vector itemValues = itemAttachment.getValues();
-          if (itemValues != null && itemValues.size() > 0) {
+        NotesItem itemAttachmentUnid =
+            docIndexed.getFirstItem(NCCONST.ITM_GMETAATTACHMENTDOCIDS);
+        if (itemAttachmentUnid != null) {
+          Vector attachmentUnids = itemAttachmentUnid.getValues();
+          if (attachmentUnids != null && attachmentUnids.size() > 0) {
             pstmt = connection.prepareStatement(
                 "insert into " + attachmentsTableName
-                + "(filename, docid) values(?,?)");
-            for (int i = 0; i < itemValues.size(); i++) {
-              String attachmentName = (String) itemValues.get(i);
-              try {
-                String encodedName = URLEncoder.encode(attachmentName, "UTF-8");
-                pstmt.setString(1, encodedName);
-                pstmt.setLong(2, docid);
-                pstmt.addBatch();
-              } catch (UnsupportedEncodingException e) {
-                LOGGER.log(Level.WARNING, "Unable to encode attachment name: "
-                    + attachmentName + ", skip to the next file.");
-              }
+                + "(attachment_unid, docid) values(?,?)");
+            for (int i = 0; i < attachmentUnids.size(); i++) {
+              String attachmentUnid = (String) attachmentUnids.get(i);
+              pstmt.setString(1, attachmentUnid);
+              pstmt.setLong(2, docid);
+              pstmt.addBatch();
+              LOGGER.log(Level.FINEST,
+                  "Insert attachment UNID: {0}", attachmentUnid);
             }
             pstmt.executeBatch();
             pstmt.close();
@@ -483,7 +479,7 @@ public class NotesDocumentManager {
     return hasItem;
   }
 
-  Set<String> getDocumentAttachmentNames(Connection conn, String unid,
+  Set<String> getAttachmentUnids(Connection conn, String unid,
       String replicaid) {
     LOGGER.log(Level.FINE,
         "Get attachment names for document [UNID: {0}, REPLICAID: {1}]",
@@ -498,7 +494,7 @@ public class NotesDocumentManager {
 
     try {
       PreparedStatement pstmt = conn.prepareStatement(
-          "select filename from " + attachmentsTableName
+          "select attachment_unid from " + attachmentsTableName
           + " where docid in (select docid from " + indexedTableName
           + " where unid = ? and replicaid = ?)");
       pstmt.setString(1, unid);

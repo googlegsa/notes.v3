@@ -492,11 +492,11 @@ public class NotesMaintenanceThread extends Thread {
     Connection conn = null;
     try {
       conn = docMgr.getDatabaseConnection();
-      Set<String> attachmentSet = docMgr.getDocumentAttachmentNames(conn,
+      Set<String> attachmentSet = docMgr.getAttachmentUnids(conn,
           notesId.getDocId(), notesId.getReplicaId());
-      for (String encodedName : attachmentSet) {
-        String attachmentUrl = String.format("%s/$File/%s?OpenElement",
-            notesId.toString(), encodedName);
+      for (String attachmentUnid : attachmentSet) {
+        String attachmentUrl = String.format(NCCONST.SITM_ATTACHMENTDOCID,
+            notesId.toString(), attachmentUnid);
         try {
           createDeleteRequest(attachmentUrl);
         } catch (RepositoryException e) {

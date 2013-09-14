@@ -236,6 +236,10 @@ public class NCCONST {
   /** The names of any attachments in this document */
   public static final String ITM_GMETAALLATTACHMENTS = "lnmeta.allattachments";
 
+  /** The doc IDs of all attachment documents */
+  public static final String ITM_GMETAATTACHMENTDOCIDS =
+      "lnmeta.attachmentdocids";
+
   /** The form name for this document */
   public static final String ITM_GMETAFORM = "lnmeta.form";
 
@@ -274,6 +278,12 @@ public class NCCONST {
   /** Group prefix for group names sent to the GSA. */
   public static final String SITM_GSAGROUPPREFIX = "GSAGroupPrefix";
 
+  /** URL format for attachment docid */
+  public static final String SITM_ATTACHMENTDOCID = "%s/$File/%s";
+
+  /** URL format for attachment display URL */
+  public static final String SITM_ATTACHMENTDISPLAYURL =
+      "%s/$File/%s?OpenElement";
 
   // Default configuration for the connector
 
@@ -317,9 +327,6 @@ public class NCCONST {
   public static final int COLUMN_SIZE_UNID = 32;
   public static final int COLUMN_SIZE_REPLICAID = 16;
   public static final int COLUMN_SIZE_READER = 100;
-  // Windows system uses 260 characters for file name including path.
-  // Set filename column to 255 characters for database efficiency.
-  public static final int COLUMN_SIZE_FILENAME = 255;
   public static final int COLUMN_SIZE_SERVER = 100;
   public static final int COLUMN_SIZE_HOST = 100;
   public static final int COLUMN_SIZE_PROTOCOL = 5;
