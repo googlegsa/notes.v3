@@ -156,7 +156,8 @@ public class NotesConnectorDocument implements Document {
       // PROPNAME_SEARCHURL -> DO NOT MAP THIS - it causes the
       //     gsa to try and crawl the doc
       putTextItem(SpiConstants.PROPNAME_MIMETYPE, NCCONST.ITM_MIMETYPE, null);
-      putTextItem(SpiConstants.PROPNAME_DISPLAYURL, NCCONST.ITM_DOCID, null);
+      putTextItem(SpiConstants.PROPNAME_DISPLAYURL,
+          NCCONST.ITM_DISPLAYURL,null);
       putBooleanItem(SpiConstants.PROPNAME_ISPUBLIC, NCCONST.ITM_ISPUBLIC, null);
       putTextItem(SpiConstants.PROPNAME_ACTION, NCCONST.ITM_ACTION, null);
       // TODO: FIX THIS UPGRADE TO NEW SPI

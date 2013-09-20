@@ -241,6 +241,18 @@ public class NotesConnectorDocumentTest extends TestCase {
     assertNull(document.findProperty(SpiConstants.PROPNAME_ACLGROUPS));
   }
 
+  public void testAttachmentURLs() throws Exception {
+    NotesDocumentMock crawlDoc = getAttachmentDoc();
+    NotesConnectorDocument document = new NotesConnectorDocument(
+        connectorSession, session, connectorDatabase);
+    document.setCrawlDoc("unid123", crawlDoc);
+    assertPropertyEquals("http://host:42/replicaid/0/docid",
+        document, SpiConstants.PROPNAME_DOCID);
+    assertPropertyEquals(
+        "http://host:42/replicaid/0/unid/$file/filename.doc?openelement",
+        document, SpiConstants.PROPNAME_DISPLAYURL);
+  }
+
   public void testAddDocumentWithReaders() throws Exception {
     NotesDocumentMock crawlDoc = getCrawlDoc(true);
     NotesConnectorDocument document = new NotesConnectorDocument(
@@ -481,6 +493,8 @@ public class NotesConnectorDocumentTest extends TestCase {
             "type", NotesItem.TEXT, "values", ActionType.ADD));
     crawlDoc.addItem(new NotesItemMock("name", NCCONST.ITM_DOCID, "type",
             NotesItem.TEXT, "values", "http://host:42/replicaid/0/docid"));
+    crawlDoc.addItem(new NotesItemMock("name", NCCONST.ITM_DISPLAYURL, "type",
+            NotesItem.TEXT, "values", "http://host:42/replicaid/0/docid"));
     crawlDoc.addItem(new NotesItemMock("name", NCCONST.NCITM_REPLICAID,
             "type", NotesItem.TEXT, "values", "replicaid"));
     crawlDoc.addItem(new NotesItemMock("name", NCCONST.ITM_TITLE, "type",
@@ -519,6 +533,13 @@ public class NotesConnectorDocumentTest extends TestCase {
     crawlDoc.addItem(new NotesItemMock("name", NCCONST.ITM_GMETACREATEDATE,
             "type", NotesItem.DATETIMES, "values", testDate));
 
+    return crawlDoc;
+  }
+
+  private NotesDocumentMock getAttachmentDoc() throws Exception {
+    NotesDocumentMock crawlDoc = getCrawlDoc(false);
+    crawlDoc.replaceItemValue(NCCONST.ITM_DISPLAYURL,
+        "http://host:42/replicaid/0/unid/$file/filename.doc?openelement");
     return crawlDoc;
   }
 

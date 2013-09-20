@@ -4,7 +4,7 @@
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
+//     http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -26,6 +26,7 @@ import com.google.enterprise.connector.notes.client.NotesView;
 import com.google.enterprise.connector.spi.RepositoryException;
 import com.google.enterprise.connector.spi.SpiConstants.ActionType;
 
+import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Vector;
@@ -578,6 +579,7 @@ public class NotesCrawlerThread extends Thread {
       // When there are multiple attachments with the same name
       // Lotus Notes automatically generates unique names for next document
       Vector<?> va = ns.evaluate("@AttachmentNames", srcDoc);
+      Vector<String> docIds = new Vector<String>();
 
       NotesItem attachItems = crawlDoc.replaceItemValue(
           NCCONST.ITM_GMETAATTACHMENTS, "");
@@ -595,10 +597,14 @@ public class NotesCrawlerThread extends Thread {
           xtn = attachName.substring(period + 1);
         }
         if (!ncs.isExcludedExtension(xtn.toLowerCase())) {
-          boolean success = createAttachmentDoc(crawlDoc, srcDoc,
+          String docId = createAttachmentDoc(crawlDoc, srcDoc,
               attachName, ncs.getMimeType(xtn));
-          if (success) {
+          if (docId != null) {
             attachItems.appendToTextList(attachName);
+            docIds.add(docId);
+          } else {
+            LOGGER.log(Level.FINER,
+                "Attachment document was not created for {0}", attachName);
           }
         } else {
           LOGGER.logp(Level.FINER, CLASS_NAME, METHOD,
@@ -606,6 +612,8 @@ public class NotesCrawlerThread extends Thread {
         }
       }
       crawlDoc.replaceItemValue(NCCONST.ITM_GMETAALLATTACHMENTS, va);
+      crawlDoc.replaceItemValue(NCCONST.ITM_GMETAATTACHMENTDOCIDS, docIds);
+
       // Get our content after processing attachments
       // We don't want the document content in the attachment docs
       // Our content must be stored as non-summary rich text to
@@ -628,8 +636,22 @@ public class NotesCrawlerThread extends Thread {
     }
   }
 
-  // This function creates a document for an attachment
-  public boolean createAttachmentDoc(NotesDocument crawlDoc,
+  /**
+   * Creates a document for an attachment in the GSA Configuration database.  If
+   * the file size is exceeding the limit or the MIME type is not supported,
+   * only metadata and the attachment file name will be indexed.
+   * 
+   * @param crawlDoc document being crawled in the Crawl Queue view
+   * @param srcDoc source document where the attachment is located
+   * @param AttachmentName string file name without encoding
+   * @param MimeType string MIME type computed from file extension
+   * @return attachment document ID string if the attachment document is created
+   *         and its content will be indexed.
+   *         null string if the attachment document is not created and its
+   *         content will not be indexed.
+   * @throws RepositoryException if embedded object is not accessible
+   */
+  public String createAttachmentDoc(NotesDocument crawlDoc,
       NotesDocument srcDoc, String AttachmentName, String MimeType)
       throws RepositoryException {
     final String METHOD = "createAttachmentDoc";
@@ -642,18 +664,18 @@ public class NotesCrawlerThread extends Thread {
       // Error access the attachment
       eo = srcDoc.getAttachment(AttachmentName);
 
+      if (eo == null) {
+        LOGGER.log(Level.FINER, "Attachment could not be accessed {0}",
+            AttachmentName);
+        return null;
+      }
+
       if (eo.getType() != NotesEmbeddedObject.EMBED_ATTACHMENT) {
         // The object is not an attachment - could be an OLE object or link
         LOGGER.logp(Level.FINER, CLASS_NAME, METHOD,
             "Ignoring embedded object " + AttachmentName);
         eo.recycle();
-        return false;
-      }
-
-      if (null == eo) {
-        LOGGER.logp(Level.FINER, CLASS_NAME, METHOD,
-            "Attachment could not be accessed " + AttachmentName);
-        return false;
+        return null;
       }
 
       // Don't send attachments larger than the limit
@@ -665,27 +687,36 @@ public class NotesCrawlerThread extends Thread {
 
       attachDoc = cdb.createDocument();
       crawlDoc.copyAllItems(attachDoc, true);
-      crawlDoc.replaceItemValue(NCCONST.ITM_GMETAATTACHMENTS, AttachmentName);
+
       // Store the filename of this attachment in the attachment crawl doc.
       attachDoc.replaceItemValue(NCCONST.ITM_GMETAATTACHMENTFILENAME,
           AttachmentName);
+      attachDoc.save();
 
       String encodedAttachmentName = null;
       try {
-        encodedAttachmentName = java.net.URLEncoder.encode(
-            AttachmentName, "UTF-8");
+        encodedAttachmentName = URLEncoder.encode(AttachmentName, "UTF-8");
       } catch (Exception e) {
         attachDoc.recycle();
         eo.recycle();
-        return false;
+        return null;
       }
-      AttachmentURL = String.format("%s/$File/%s?OpenElement",
-          this.getHTTPURL(crawlDoc), encodedAttachmentName);
-      attachDoc.replaceItemValue(NCCONST.ITM_DOCID, AttachmentURL);
+      AttachmentURL = String.format(NCCONST.SITM_ATTACHMENTDISPLAYURL,
+          getHTTPURL(crawlDoc), encodedAttachmentName);
+      attachDoc.replaceItemValue(NCCONST.ITM_DISPLAYURL, AttachmentURL);
+      LOGGER.log(Level.FINEST, "Attachment display url: {0}", AttachmentURL);
 
-      // Only if we have a supported mime type do we send the content.
-      if ((0 != MimeType.length()) ||
-          (eo.getFileSize() > ncs.getMaxFileSize())) {
+      String unid = attachDoc.getUniversalID();
+      String docURL = String.format(NCCONST.SITM_ATTACHMENTDOCID,
+          getHTTPURL(crawlDoc), unid);
+      attachDoc.replaceItemValue(NCCONST.ITM_DOCID, docURL);
+      LOGGER.log(Level.FINEST, "Attachment document docid: {0}", docURL);
+
+      // Only if we have a supported mime type and file size is not exceeding
+      // the limit do we send the content, or only metadata and file name will
+      // be sent.
+      if ((0 != MimeType.length()) &&
+          eo.getFileSize() <= ncs.getMaxFileSize()) {
         attachDoc.replaceItemValue(NCCONST.ITM_MIMETYPE, MimeType);
         String attachmentPath = getAttachmentFilePath(crawlDoc,
             encodedAttachmentName);
@@ -709,7 +740,7 @@ public class NotesCrawlerThread extends Thread {
       attachDoc.save();
       attachDoc.recycle();
       LOGGER.exiting(CLASS_NAME, METHOD);
-      return true;
+      return unid;
     } catch (Exception e) {
       LOGGER.logp(Level.SEVERE, CLASS_NAME, METHOD,
           "Error pre-fetching attachment: " + AttachmentName +
@@ -722,7 +753,7 @@ public class NotesCrawlerThread extends Thread {
         attachDoc.save();
         attachDoc.recycle();
       }
-      return false;
+      return null;
     }
   }
 

@@ -127,7 +127,7 @@ class NotesUserGroupManager {
       NotesUserGroupManager.class.getName();
   private static final Logger LOGGER = Logger.getLogger(CLASS_NAME);
 
-  private NotesConnectorSession connectorSession;
+  private final NotesConnectorSession connectorSession;
   private NotesSession notesSession;
   private NotesDatabase connectorDatabase;
   private NotesDatabase directoryDatabase;
@@ -518,10 +518,11 @@ class NotesUserGroupManager {
    *
    * @param force if true, force an update
    */
-  public void updateUsersGroups(boolean force) {
+  public synchronized void updateUsersGroups(boolean force) {
     final String METHOD = "updateUsersGroups";
     LOGGER.entering(CLASS_NAME, METHOD);
     try {
+      LOGGER.fine("Forcing cache update: " + force);
       if (!setUpResources(force)) {
         return;
       }
@@ -557,7 +558,8 @@ class NotesUserGroupManager {
   }
 
   @VisibleForTesting
-  boolean setUpResources(boolean force) throws RepositoryException {
+  synchronized boolean setUpResources(boolean force)
+      throws RepositoryException {
     notesSession = connectorSession.createNotesSession();
     connectorDatabase = notesSession.getDatabase(
         connectorSession.getServer(), connectorSession.getDatabase());
@@ -584,7 +586,7 @@ class NotesUserGroupManager {
     return true;
   }
 
-  void releaseResources() {
+  synchronized void releaseResources() {
     final String METHOD = "releaseResources";
     Util.recycle(peopleGroupsView);
     peopleGroupsView = null;
@@ -1452,10 +1454,13 @@ class NotesUserGroupManager {
     }
   }
 
-  void updateRoles(NotesDatabase db) throws RepositoryException {
-    setUpResources(true);
-    updateRolesForDatabase(db, db.getReplicaID());
-    releaseResources();
+  synchronized void updateRoles(NotesDatabase db) throws RepositoryException {
+    try {
+      setUpResources(true);
+      updateRolesForDatabase(db, db.getReplicaID());
+    } finally {
+      releaseResources();
+    }
   }
 
   private void updateRolesForDatabase(NotesDatabase crawlDatabase,

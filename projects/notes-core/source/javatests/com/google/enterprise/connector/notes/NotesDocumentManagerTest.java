@@ -180,14 +180,14 @@ public class NotesDocumentManagerTest extends TestCase{
       String unid = doc.getItemValueString(NCCONST.NCITM_UNID);
       String repid = doc.getItemValueString(NCCONST.NCITM_REPLICAID);
       
-      Vector attachmentNames = new Vector();
+      Vector<String> attachmentNames = new Vector<String>();
       attachmentNames.add("attachment1.doc");
       attachmentNames.add("attachment2.doc");
-      doc.replaceItemValue(NCCONST.ITM_GMETAALLATTACHMENTS, attachmentNames);
+      doc.replaceItemValue(NCCONST.ITM_GMETAATTACHMENTDOCIDS, attachmentNames);
       
       notesDocManager.addIndexedDocument(doc, conn);
       Set<String> fileNames =
-          notesDocManager.getDocumentAttachmentNames(conn, unid, repid);
+          notesDocManager.getAttachmentUnids(conn, unid, repid);
 
       assertEquals(attachmentNames.size(), fileNames.size());
       for (Object filename : attachmentNames) {
@@ -195,7 +195,7 @@ public class NotesDocumentManagerTest extends TestCase{
       }
 
       notesDocManager.deleteDocument(unid, repid);
-      fileNames = notesDocManager.getDocumentAttachmentNames(conn, unid, repid);
+      fileNames = notesDocManager.getAttachmentUnids(conn, unid, repid);
       assertEquals(0, fileNames.size());
     } catch (SQLException e) {
       throw new RepositoryException(e);

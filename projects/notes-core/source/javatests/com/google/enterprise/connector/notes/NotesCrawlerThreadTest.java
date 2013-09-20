@@ -373,5 +373,13 @@ public class NotesCrawlerThreadTest extends TestCase {
     content = crawlerThread.getContentFields(srcDoc);
     assertEquals("\nvalue for field 2", content);
   }
+
+  public void testNullAttachment() throws Exception {
+    NotesDocumentMock docSrc = new NotesDocumentMock();
+    NotesCrawlerThread crawlerThread = new NotesCrawlerThread(null, null);
+    assertNull("Attachment is not null",
+        crawlerThread.createAttachmentDoc(null, docSrc, "nonexistent-file.doc",
+        null));
+  }
 }
 
