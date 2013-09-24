@@ -1856,6 +1856,10 @@ class NotesUserGroupManager {
           continue;
         }
         try {
+          if (Util.isCanonical(groupName)) {
+            NotesName notesGroupName = notesSession.createName(groupName);
+            groupName = notesGroupName.getAbbreviated();
+          }
           NotesDocument notesGroupDoc = groupView.getDocumentByKey(groupName);
           if (notesGroupDoc == null) {
             // This group no longer exists.
