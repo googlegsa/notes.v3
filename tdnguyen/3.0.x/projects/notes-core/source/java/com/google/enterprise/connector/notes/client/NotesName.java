@@ -16,8 +16,6 @@ package com.google.enterprise.connector.notes.client;
 
 import com.google.enterprise.connector.spi.RepositoryException;
 
-import java.util.Vector;
-
 public interface NotesName extends NotesBase {
 
   /**
@@ -27,5 +25,13 @@ public interface NotesName extends NotesBase {
    * @return the name
    * @throws RepositoryException
    */
-  public String getCanonical() throws RepositoryException;
+  String getCanonical() throws RepositoryException;
+
+  /**
+   * Return abbreviated name based on the canonical format.
+   * 
+   * @return abbreviated name
+   * @throws RepositoryException
+   */
+  String getAbbreviated() throws RepositoryException;
 }

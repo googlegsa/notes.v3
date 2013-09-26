@@ -119,6 +119,24 @@ class Util {
     }
   }
 
+  static boolean isCanonical(String name) {
+    if (name == null) {
+      return false;
+    }
+    return name.toLowerCase().startsWith("cn=");
+  }
+
+  static void invokeGC() {
+    Runtime rt = Runtime.getRuntime();
+    LOGGER.log(Level.FINEST, "Memory free [before GC invocation]: " +
+        (rt.freeMemory() / 1024) + "kb" + ", Total: " +
+        (rt.totalMemory() / 1024) + "kb");
+    rt.gc();
+    LOGGER.log(Level.FINEST, "Memory free [after GC invocation ]: " +
+        (rt.freeMemory() / 1024) + "kb" + ", Total: " +
+        (rt.totalMemory() / 1024) + "kb");
+  }
+
   static String buildString(String...args) {
     StringBuilder buf = new StringBuilder();
     for (String arg : args) {
