@@ -307,6 +307,7 @@ public class NotesCrawlerThread extends Thread {
     String NotesURL = srcDoc.getNotesURL();
     String HttpURL = getHTTPURL(crawlDoc);
     crawlDoc.replaceItemValue(NCCONST.ITM_DOCID, HttpURL);
+    crawlDoc.replaceItemValue(NCCONST.ITM_DISPLAYURL, HttpURL);
     crawlDoc.replaceItemValue(NCCONST.ITM_GMETAFORM,
         srcDoc.getItemValueString(NCCONST.ITMFORM));
     crawlDoc.replaceItemValue(NCCONST.ITM_LASTMODIFIED,
@@ -338,10 +339,6 @@ public class NotesCrawlerThread extends Thread {
     evaluateField(crawlDoc, srcDoc, formula, NCCONST.ITM_GMETADESCRIPTION, "");
     LOGGER.exiting(CLASS_NAME, METHOD);
 
-    // Don't map these here -> just do it in the document properties
-    // crawlDoc.replaceItemValue(NCCONST.ITM_DISPLAYURL, HttpURL);
-    // crawlDoc.replaceItemValue(NCCONST.ITM_GMETATOPIC,
-    //     VecSearchTitle.elementAt(0));
     // DO NOT MAP THIS FIELD - it will force the GSA to try and crawl this URL
     // crawlDoc.replaceItemValue(NCCONST.ITM_SEARCHURL, HttpURL);
   }
@@ -730,9 +727,6 @@ public class NotesCrawlerThread extends Thread {
             NCCONST.DEFAULT_MIMETYPE);
       }
       eo.recycle();
-
-      // DO NOT MAP THESE FIELDS
-      // attachDoc.replaceItemValue(NCCONST.ITM_DISPLAYURL, AttachmentURL);
 
       // Set the state of this document to be fetched
       attachDoc.replaceItemValue(NCCONST.ITM_ACTION, ActionType.ADD.toString());

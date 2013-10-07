@@ -241,15 +241,25 @@ public class NotesConnectorDocumentTest extends TestCase {
     assertNull(document.findProperty(SpiConstants.PROPNAME_ACLGROUPS));
   }
 
+  public void testDocumentDisplayURL() throws Exception {
+    NotesDocumentMock crawlDoc = getAttachmentDoc();
+    NotesConnectorDocument document = new NotesConnectorDocument(
+        connectorSession, session, connectorDatabase);
+    document.setCrawlDoc("unid123", crawlDoc);
+    Property displayUrl =
+        document.findProperty(SpiConstants.PROPNAME_DISPLAYURL);
+    assertNotNull(displayUrl);
+  }
+
   public void testAttachmentURLs() throws Exception {
     NotesDocumentMock crawlDoc = getAttachmentDoc();
     NotesConnectorDocument document = new NotesConnectorDocument(
         connectorSession, session, connectorDatabase);
     document.setCrawlDoc("unid123", crawlDoc);
-    assertPropertyEquals("http://host:42/replicaid/0/docid",
+    assertPropertyEquals("http://host:42/replicaid/0/unid/$File/attachmentUnid",
         document, SpiConstants.PROPNAME_DOCID);
     assertPropertyEquals(
-        "http://host:42/replicaid/0/unid/$file/filename.doc?openelement",
+        "http://host:42/replicaid/0/unid/$File/filename.doc?OpenElement",
         document, SpiConstants.PROPNAME_DISPLAYURL);
   }
 
@@ -538,8 +548,12 @@ public class NotesConnectorDocumentTest extends TestCase {
 
   private NotesDocumentMock getAttachmentDoc() throws Exception {
     NotesDocumentMock crawlDoc = getCrawlDoc(false);
+    crawlDoc.replaceItemValue(NCCONST.ITM_DOCID,
+        String.format(NCCONST.SITM_ATTACHMENTDOCID,
+        "http://host:42/replicaid/0/unid", "attachmentUnid"));
     crawlDoc.replaceItemValue(NCCONST.ITM_DISPLAYURL,
-        "http://host:42/replicaid/0/unid/$file/filename.doc?openelement");
+        String.format(NCCONST.SITM_ATTACHMENTDISPLAYURL,
+        "http://host:42/replicaid/0/unid", "filename.doc"));
     return crawlDoc;
   }
 

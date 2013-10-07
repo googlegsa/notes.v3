@@ -14,8 +14,6 @@
 
 package com.google.enterprise.connector.notes;
 
-import com.google.enterprise.connector.notes.NotesConnector;
-import com.google.enterprise.connector.notes.NotesConnectorSession;
 import com.google.enterprise.connector.notes.client.NotesDatabase;
 import com.google.enterprise.connector.notes.client.NotesDocument;
 import com.google.enterprise.connector.notes.client.NotesItem;
@@ -25,20 +23,19 @@ import com.google.enterprise.connector.notes.client.mock.NotesDatabaseMock;
 import com.google.enterprise.connector.notes.client.mock.NotesDocumentMock;
 import com.google.enterprise.connector.notes.client.mock.NotesItemMock;
 import com.google.enterprise.connector.notes.client.mock.SessionFactoryMock;
-import com.google.enterprise.connector.spi.Session;
 
 import junit.framework.TestCase;
 
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.Date;
 import java.util.Vector;
 
 public class NotesCrawlerThreadTest extends TestCase {
 
   private NotesConnector connector;
   private SessionFactoryMock factory;
+  private NotesConnectorSession connectorSession;
+  private NotesSession session;
 
   public NotesCrawlerThreadTest() {
     super();
@@ -49,6 +46,21 @@ public class NotesCrawlerThreadTest extends TestCase {
     connector = NotesConnectorTest.getConnector();
     factory = (SessionFactoryMock) connector.getSessionFactory();
     NotesConnectorSessionTest.configureFactoryForSession(factory);
+    connectorSession = (NotesConnectorSession) connector.login();
+    session = connectorSession.createNotesSession();
+    
+    NotesDatabaseMock dbConfigMock =
+        (NotesDatabaseMock) session.getDatabase("testserver", "testconfig.nsf");
+    NotesDocumentMock docTemplateMock = new NotesDocumentMock();
+    docTemplateMock.addItem(new NotesItemMock("name",
+        NCCONST.TITM_TEMPLATENAME, "type", NotesItem.TEXT, "values",
+        "Discussion"));
+    docTemplateMock.addItem(new NotesItemMock("name",
+        NCCONST.TITM_SEARCHRESULTSFIELDS, "type", NotesItem.TEXT, "values",
+        "@True"));
+    dbConfigMock.addDocument(docTemplateMock, NCCONST.VIEWTEMPLATES);
+    dbConfigMock.setViewFields(NCCONST.VIEWTEMPLATES,
+        NCCONST.TITM_TEMPLATENAME);
   }
 
   protected void tearDown() {
@@ -77,6 +89,38 @@ public class NotesCrawlerThreadTest extends TestCase {
       assertEquals("field", v[2], mf.getFieldName());
       assertEquals("meta", v[3], mf.getMetaName());
     }
+  }
+
+  public void testMapFields() throws Exception {
+    NotesCrawlerThread crawler =
+        new NotesCrawlerThread(connector, connectorSession);
+    crawler.connectQueue();
+    crawler.loadTemplateDoc("Discussion");
+
+    NotesDocumentMock crawlDoc = new NotesDocumentMock();
+    crawlDoc.addItem(new NotesItemMock("name", NCCONST.NCITM_SERVER, "type",
+        NotesItem.TEXT, "values", "testserver"));
+    crawlDoc.addItem(new NotesItemMock("name", NCCONST.NCITM_REPLICAID, "type",
+        NotesItem.TEXT, "values", "replicaid"));
+    crawlDoc.addItem(new NotesItemMock("name", NCCONST.NCITM_UNID, "type",
+        NotesItem.TEXT, "values", "unid"));
+    crawlDoc.addItem(new NotesItemMock("name", NCCONST.NCITM_TEMPLATE, "type",
+        NotesItem.TEXT, "values", "Discussion"));
+
+    NotesDocumentMock sourceDoc = new NotesDocumentMock();
+    sourceDoc.addItem(new NotesItemMock("name", NCCONST.ITM_GMETAFORM, "type",
+        NotesItem.TEXT, "values", "Main Topic"));
+    sourceDoc.addItem(new NotesItemMock("name", NCCONST.ITM_LASTMODIFIED,
+        "type", NotesItem.DATETIMES, "values", new Date()));
+    sourceDoc.addItem(new NotesItemMock("name", NCCONST.ITM_GMETAWRITERNAME,
+        "type", NotesItem.TEXT, "values", "Mickey Mouse"));
+    sourceDoc.addItem(new NotesItemMock("name", NCCONST.ITM_GMETALASTUPDATE,
+        "type", NotesItem.DATETIMES, "values", new Date()));
+    sourceDoc.addItem(new NotesItemMock("name", NCCONST.ITM_GMETACREATEDATE,
+        "type", NotesItem.DATETIMES, "values", new Date()));
+
+    crawler.mapFields(crawlDoc, sourceDoc);
+    assertNotNull(crawlDoc.getItemValueString(NCCONST.ITM_DISPLAYURL));
   }
 
   /**
