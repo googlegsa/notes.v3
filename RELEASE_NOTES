@@ -10,6 +10,32 @@ documentation.
 Web Site: http://code.google.com/p/google-enterprise-connector-notes/
 
 
+Release 3.2.0, October 2013
+===========================
+
+This is an upgrade release with performance enhancements and bug fixes.
+Users of version 2.8.4 through 3.0.8 are encouraged to upgrade.
+
+Summary of Changes:
+------------------
+  * Fix issue 7541432: Remove document attachments from the GSA when
+    its parent document is deleted in Notes database.
+  * Fix issue 7734727: When ACLs are sent to the GSA, they are dependent on
+    the user and group cache being built, so incorrect ACLs are sent.
+  * Fix out of memory issue: Invoke Garbage Collector on the maintenance
+    thread in every 1000 documents when it traverses a large directory.
+  * Fix issue 10101254: Fix NullPointerException thrown by missing attachment.
+  * Fix issue 10212771: Lotus Notes connector fails to look up abbreviated
+    name when group name is in canonical format.
+
+Version Compatibility
+---------------------
+Connector instances created using versions 3.0.0 through 3.0.8 may be used with
+this version.  For earlier versions, see upgrade instructions in version 3.0.8
+below.  This version works with Connector Manager version 3.0.0 or later.
+
+
+
 Release 3.0.8, May 2013
 =======================
 
