@@ -119,6 +119,13 @@ class Util {
     }
   }
 
+  static boolean isCanonical(String name) {
+    if (name == null) {
+      return false;
+    }
+    return name.toLowerCase().startsWith("cn=");
+  }
+
   static void invokeGC() {
     Runtime rt = Runtime.getRuntime();
     LOGGER.log(Level.FINEST, "Memory free [before GC invocation]: " +

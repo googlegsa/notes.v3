@@ -15,6 +15,7 @@
 package com.google.enterprise.connector.notes.client.notes;
 
 import com.google.enterprise.connector.notes.client.NotesName;
+import com.google.enterprise.connector.spi.RepositoryException;
 
 import lotus.domino.Name;
 import lotus.domino.NotesException;
@@ -29,6 +30,16 @@ class NotesNameImpl extends NotesBaseImpl<Name> implements NotesName {
   public String getCanonical() throws NotesConnectorExceptionImpl {
     try {
       return getNotesObject().getCanonical();
+    } catch (NotesException e) {
+      throw new NotesConnectorExceptionImpl(e);
+    }
+  }
+
+  /** {@inheritDoc} */
+  @Override
+  public String getAbbreviated() throws RepositoryException {
+    try {
+      return getNotesObject().getAbbreviated();
     } catch (NotesException e) {
       throw new NotesConnectorExceptionImpl(e);
     }

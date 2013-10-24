@@ -120,8 +120,9 @@ public class NotesUserGroupManagerTest extends TestCase {
             "cn=echo/ou=tests/o=tests");
         addNotesGroup(namesDatabase, "Good Guys", "Jedi", "Senators", "Clones");
         addNotesGroup(namesDatabase, "Bad Guys", "Separatists",
-          "cn=chancellor palpatine/ou=tests/o=tests");
-
+            "cn=chancellor palpatine/ou=tests/o=tests");
+        addNotesGroup(namesDatabase, "cn=west coast/ou=west/o=test",
+            "cn=chancellor palpatine/ou=tests/o=tests");
 
         // Create some databases with ACLs to be crawled.
 
@@ -386,7 +387,7 @@ public class NotesUserGroupManagerTest extends TestCase {
 
   public void testUpdateGroups() throws Exception {
     setUpGroups();
-    assertEquals(groups.toString(), groupCount + 1, groups.size());
+    assertEquals(groups.toString(), groupCount + 2, groups.size());
     HashSet<Long> children = groupChildren.get(groups.get("good guys"));
     assertEquals(6, children.size());
     assertGroupHasChild("good guys", "jedi");
@@ -502,6 +503,12 @@ public class NotesUserGroupManagerTest extends TestCase {
     NotesDocumentMock doc = (NotesDocumentMock) nameView.getDocumentByKey(
         "jedi");
     assertNotNull("No jedi", doc);
+
+    // Test group with canonical name
+    NotesDocumentMock doc2 = (NotesDocumentMock) nameView.getDocumentByKey(
+        "cn=west coast/ou=west/o=test");
+    assertNotNull("cn=west coast/ou=west/o=test", doc2);
+
     try {
       // Get the current user/group data and verify that the group is there.
       getGroupData();
@@ -514,10 +521,12 @@ public class NotesUserGroupManagerTest extends TestCase {
       // checkGroupDeletions and verify that the group was removed
       // from the group cache.
       doc.remove(true);
+      doc2.remove(true);
       userGroupManager.checkGroupDeletions();
       getGroupData();
       getUserData();
       assertGroupDoesNotExist("jedi");
+      assertGroupDoesNotExist("cn=west coast/ou=west/o=test");
       assertNull("group still has child groups", groupChildren.get(id));
       for (Long userId : userGroups.keySet()) {
         HashSet<Long> g = userGroups.get(userId);
