@@ -26,9 +26,15 @@ import com.google.enterprise.connector.notes.client.NotesView;
 import com.google.enterprise.connector.spi.RepositoryException;
 import com.google.enterprise.connector.spi.SpiConstants.ActionType;
 
+import java.io.IOException;
 import java.net.URLEncoder;
+import java.security.NoSuchAlgorithmException;
+import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -40,7 +46,6 @@ public class NotesCrawlerThread extends Thread {
   private static final Logger LOGGER = Logger.getLogger(CLASS_NAME);
   static final String META_FIELDS_PREFIX = "x.";
 
-  private String attachRoot = null;
   private NotesConnector nc = null;
   private NotesConnectorSession ncs = null;
   private NotesSession ns = null;
@@ -624,6 +629,13 @@ public class NotesCrawlerThread extends Thread {
       // Update the status of the document to be fetched.
       crawlDoc.replaceItemValue(NCCONST.ITM_ACTION, ActionType.ADD.toString());
       srcDoc.recycle();
+
+      // Check attachments against H2 database and create delete requests for
+      // attachments which no longer exist in source document.
+      NotesDocId notesDocId =
+          new NotesDocId(crawlDoc.getItemValueString(NCCONST.ITM_DOCID));
+      enqueue(notesDocId, docIds);
+
       return true;
     } catch (Exception e) {
       LOGGER.log(Level.SEVERE, CLASS_NAME, e);
@@ -631,6 +643,62 @@ public class NotesCrawlerThread extends Thread {
     } finally {
       LOGGER.exiting(CLASS_NAME, METHOD);
     }
+  }
+
+  /**
+   * Create delete requests for attachments which no longer exist in the
+   * source document.
+   * 
+   * @param notesId google:docid of the parent document
+   * @param attachIds hashes of current attachment names
+   */
+  void enqueue(NotesDocId notesId, Vector<String> attachIds) {
+    LOGGER.log(Level.FINEST, "Send delete requests for attachments which "
+        + "no longer exist in source document [UNID: {0}]", notesId);
+    Set<String> curAttachIds = new HashSet<String>(attachIds);
+
+    NotesDocumentManager docMgr = ncs.getNotesDocumentManager();
+    Connection conn = null;
+    try {
+      conn = docMgr.getDatabaseConnection();
+      Set<String> allAttachIds = docMgr.getAttachmentIds(conn,
+          notesId.getDocId(), notesId.getReplicaId());
+      for (String attachId : allAttachIds) {
+        if (!curAttachIds.contains(attachId)) {
+          LOGGER.log(Level.FINEST, "{0} attachment is in cache but not in "
+              + "source document, send delete request to GSA", attachId);
+          try {
+            // Send deletion for each attachment
+            String attachmentUrl = String.format(NCCONST.SITM_ATTACHMENTDOCID,
+                notesId.toString(), attachId);
+            createDeleteRequest(attachmentUrl);
+          } catch (RepositoryException e) {
+            LOGGER.log(Level.WARNING,
+                "Failed to create delete request for attachment: " + attachId);
+          }
+        }
+      }
+    } catch (SQLException e) {
+      LOGGER.log(Level.SEVERE, "Unable to connect to H2 database", e);
+    } finally {
+      if (conn != null) {
+        docMgr.releaseDatabaseConnection(conn);
+      }
+    }
+  }
+
+  private void createDeleteRequest(String googleDocId)
+      throws RepositoryException {
+    LOGGER.log(Level.FINEST, "Send deletion request to GSA for {0}",
+        googleDocId);
+    NotesDocument deleteReq = cdb.createDocument();
+    deleteReq.appendItemValue(NCCONST.ITMFORM, NCCONST.FORMCRAWLREQUEST);
+    deleteReq.replaceItemValue(NCCONST.ITM_ACTION,
+        ActionType.DELETE.toString());
+    deleteReq.replaceItemValue(NCCONST.ITM_DOCID, googleDocId);
+    deleteReq.replaceItemValue(NCCONST.NCITM_STATE, NCCONST.STATEFETCHED);
+    deleteReq.save(true);
+    deleteReq.recycle();
   }
 
   /**
@@ -690,6 +758,7 @@ public class NotesCrawlerThread extends Thread {
           AttachmentName);
       attachDoc.save();
 
+      // Compute display URL
       String encodedAttachmentName = null;
       try {
         encodedAttachmentName = URLEncoder.encode(AttachmentName, "UTF-8");
@@ -703,12 +772,16 @@ public class NotesCrawlerThread extends Thread {
       attachDoc.replaceItemValue(NCCONST.ITM_DISPLAYURL, AttachmentURL);
       LOGGER.log(Level.FINEST, "Attachment display url: {0}", AttachmentURL);
 
-      String unid = attachDoc.getUniversalID();
+      // Compute docid
+      String attachNameHash = Util.hash(AttachmentName);
+      if (attachNameHash == null) {
+        return null;
+      }
       String docURL = String.format(NCCONST.SITM_ATTACHMENTDOCID,
-          getHTTPURL(crawlDoc), unid);
+          getHTTPURL(crawlDoc), attachNameHash);
       attachDoc.replaceItemValue(NCCONST.ITM_DOCID, docURL);
       LOGGER.log(Level.FINEST, "Attachment document docid: {0}", docURL);
-
+      
       // Only if we have a supported mime type and file size is not exceeding
       // the limit do we send the content, or only metadata and file name will
       // be sent.
@@ -734,7 +807,7 @@ public class NotesCrawlerThread extends Thread {
       attachDoc.save();
       attachDoc.recycle();
       LOGGER.exiting(CLASS_NAME, METHOD);
-      return unid;
+      return attachNameHash;
     } catch (Exception e) {
       LOGGER.logp(Level.SEVERE, CLASS_NAME, METHOD,
           "Error pre-fetching attachment: " + AttachmentName +

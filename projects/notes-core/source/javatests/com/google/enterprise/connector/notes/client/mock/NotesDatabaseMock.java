@@ -24,10 +24,12 @@ import com.google.enterprise.connector.notes.client.NotesView;
 import com.google.enterprise.connector.spi.RepositoryException;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Vector;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class NotesDatabaseMock extends NotesBaseMock
@@ -74,6 +76,32 @@ public class NotesDatabaseMock extends NotesBaseMock
 
   void setSession(NotesSessionMock session) {
     this.session = session;
+  }
+
+  public List<NotesDocumentMock> getDocumentsByField(String fieldName,
+      String fieldValue) {
+    List<NotesDocumentMock> doclist = new ArrayList<NotesDocumentMock>();
+    for (NotesDocumentMock doc : documents) {
+      try {
+        if (fieldValue.equalsIgnoreCase(doc.getItemValueString(fieldName))) {
+          doclist.add(doc);
+        }
+      } catch (RepositoryException e) {
+        String unid = null;
+        try {
+          unid = doc.getUniversalID();
+        } catch (RepositoryException e2) {
+          LOGGER.log(Level.WARNING, "Unable to look up document universal ID",
+              e2);
+        } finally {
+          LOGGER.log(Level.WARNING, "Unable to look up " + fieldName
+              + " field for " + fieldValue + " value in document [UNID: "
+              + unid + "]", e);
+        }
+        
+      }
+    }
+    return doclist;
   }
 
   public void addDocument(NotesDocumentMock document,

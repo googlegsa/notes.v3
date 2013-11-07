@@ -112,8 +112,10 @@ class NotesConnectorDocumentList implements DocumentList {
         prevDoc.remove(true);
       }
       deleteDoc.remove(true);
-      this.ncs.getNotesDocumentManager().deleteDocument(
-          notesId.getDocId(), notesId.getReplicaId(), databaseConnection);
+      if (!Util.isAttachment(docid)) {
+        ncs.getNotesDocumentManager().deleteDocument(
+            notesId.getDocId(), notesId.getReplicaId(), databaseConnection);
+      }
     } catch (MalformedURLException e) {
       LOGGER.severe("Invalid google docid: " + docid);
     }
