@@ -492,21 +492,20 @@ public class NotesMaintenanceThread extends Thread {
     Connection conn = null;
     try {
       conn = docMgr.getDatabaseConnection();
-      Set<String> attachmentSet = docMgr.getAttachmentUnids(conn,
+      Set<String> attachmentSet = docMgr.getAttachmentIds(conn,
           notesId.getDocId(), notesId.getReplicaId());
-      for (String attachmentUnid : attachmentSet) {
+      for (String attachmentId : attachmentSet) {
         String attachmentUrl = String.format(NCCONST.SITM_ATTACHMENTDOCID,
-            notesId.toString(), attachmentUnid);
+            notesId.toString(), attachmentId);
         try {
           createDeleteRequest(attachmentUrl);
-        } catch (RepositoryException e) {
-          LOGGER.log(Level.WARNING, "Failed to remove attachment: " +
-              attachmentUrl);
+        } catch (RepositoryException re) {
+          LOGGER.log(Level.WARNING, "Failed to create delete request for "
+              + attachmentUrl, re);
         }
       }
     } catch (SQLException e) {
-      throw new RepositoryException("Failed to create delete request for " +
-          notesId.toString() + " attachments", e);
+      LOGGER.log(Level.SEVERE, "Unable to connect to H2 database", e);
     } finally {
       if (conn != null) {
         docMgr.releaseDatabaseConnection(conn);

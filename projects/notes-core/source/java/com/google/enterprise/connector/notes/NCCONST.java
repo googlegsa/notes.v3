@@ -321,7 +321,7 @@ public class NCCONST {
   public static final String TABLE_INDEXED_PREFIX = "NCIndexed_";
   public static final String TABLE_READERS_PREFIX = "NCIndexedReaders_";
   public static final String TABLE_ATTACHMENTS_PREFIX = "NCIndexedAttachments_";
-  public static final int COLUMN_SIZE_UNID = 32;
+  public static final int COLUMN_SIZE_UNID = 40;
   public static final int COLUMN_SIZE_REPLICAID = 16;
   public static final int COLUMN_SIZE_READER = 100;
   public static final int COLUMN_SIZE_SERVER = 100;

@@ -187,7 +187,7 @@ public class NotesDocumentManagerTest extends TestCase{
       
       notesDocManager.addIndexedDocument(doc, conn);
       Set<String> fileNames =
-          notesDocManager.getAttachmentUnids(conn, unid, repid);
+          notesDocManager.getAttachmentIds(conn, unid, repid);
 
       assertEquals(attachmentNames.size(), fileNames.size());
       for (Object filename : attachmentNames) {
@@ -195,7 +195,7 @@ public class NotesDocumentManagerTest extends TestCase{
       }
 
       notesDocManager.deleteDocument(unid, repid);
-      fileNames = notesDocManager.getAttachmentUnids(conn, unid, repid);
+      fileNames = notesDocManager.getAttachmentIds(conn, unid, repid);
       assertEquals(0, fileNames.size());
     } catch (SQLException e) {
       throw new RepositoryException(e);

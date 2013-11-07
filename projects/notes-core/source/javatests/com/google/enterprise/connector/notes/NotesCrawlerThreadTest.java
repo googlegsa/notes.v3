@@ -26,8 +26,11 @@ import com.google.enterprise.connector.notes.client.mock.SessionFactoryMock;
 
 import junit.framework.TestCase;
 
+import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
+import java.util.Set;
 import java.util.Vector;
 
 public class NotesCrawlerThreadTest extends TestCase {
@@ -36,6 +39,7 @@ public class NotesCrawlerThreadTest extends TestCase {
   private SessionFactoryMock factory;
   private NotesConnectorSession connectorSession;
   private NotesSession session;
+  private NotesDatabaseMock dbConfigMock;
 
   public NotesCrawlerThreadTest() {
     super();
@@ -48,8 +52,8 @@ public class NotesCrawlerThreadTest extends TestCase {
     NotesConnectorSessionTest.configureFactoryForSession(factory);
     connectorSession = (NotesConnectorSession) connector.login();
     session = connectorSession.createNotesSession();
-    
-    NotesDatabaseMock dbConfigMock =
+
+    dbConfigMock =
         (NotesDatabaseMock) session.getDatabase("testserver", "testconfig.nsf");
     NotesDocumentMock docTemplateMock = new NotesDocumentMock();
     docTemplateMock.addItem(new NotesItemMock("name",
@@ -424,6 +428,67 @@ public class NotesCrawlerThreadTest extends TestCase {
     assertNull("Attachment is not null",
         crawlerThread.createAttachmentDoc(null, docSrc, "nonexistent-file.doc",
         null));
+  }
+
+  public void testSendDeleteRequests() throws Exception {
+    NotesDocId notesId = new NotesDocId("http://testserver/replicaid/0/unid");
+    
+    NotesDocumentMock crawlDoc = new NotesDocumentMock();
+    crawlDoc.replaceItemValue(NCCONST.NCITM_SERVER, notesId.getServer());
+    crawlDoc.replaceItemValue(NCCONST.NCITM_REPLICAID, notesId.getReplicaId());
+    crawlDoc.replaceItemValue(NCCONST.NCITM_UNID, notesId.getDocId());
+    crawlDoc.replaceItemValue(NCCONST.ITM_DOCID, notesId.toString());
+    
+    Vector<String> attachmentNames = new Vector<String>();
+    attachmentNames.add("attachment1.doc");
+    attachmentNames.add("attachment2.doc");
+    crawlDoc.replaceItemValue(NCCONST.ITM_GMETAATTACHMENTDOCIDS,
+        attachmentNames);
+
+    NotesDocumentManager docMgr = connectorSession.getNotesDocumentManager();
+
+    Connection conn = docMgr.getDatabaseConnection();
+    try {
+      docMgr.addIndexedDocument(crawlDoc, conn);
+      Set<String> attachUnids = docMgr.getAttachmentIds(conn,
+          notesId.getDocId(), notesId.getReplicaId());
+      assertEquals(2, attachUnids.size());
+
+      NotesCrawlerThread crawlerThread = new NotesCrawlerThread(connector,
+          connectorSession);
+      crawlerThread.connectQueue();
+
+      // Replace attachment
+      attachmentNames.set(0, "attachmentX.doc");
+      crawlerThread.enqueue(notesId, attachmentNames);
+      String expectedReplaceId = String.format(NCCONST.SITM_ATTACHMENTDOCID,
+          notesId.toString(), "attachment1.doc");
+      List<NotesDocumentMock> doclist1 = dbConfigMock.getDocumentsByField(
+          NCCONST.ITM_DOCID, expectedReplaceId);
+      assertEquals("No delete request is created for replaced attachment", 1,
+          doclist1.size());
+      NotesDocument deleteReq = doclist1.get(0);
+      assertEquals("Action is not equal delete", "delete",
+          deleteReq.getItemValueString(NCCONST.ITM_ACTION));
+      crawlDoc.replaceItemValue(NCCONST.ITM_GMETAATTACHMENTDOCIDS,
+          attachmentNames);
+      docMgr.addIndexedDocument(crawlDoc, conn);
+
+      // Remove attachment
+      String expectedRemoveId = String.format(NCCONST.SITM_ATTACHMENTDOCID,
+          notesId.toString(), attachmentNames.get(0));
+      attachmentNames.remove(0);
+      crawlerThread.enqueue(notesId, attachmentNames);
+      List<NotesDocumentMock> doclist2 =
+          dbConfigMock.getDocumentsByField(NCCONST.ITM_DOCID, expectedRemoveId);
+      assertEquals("No delete request is created for removed attachment", 1,
+          doclist2.size());
+      NotesDocument deleteReq2 = doclist2.get(0);
+      assertEquals("Action is not equal delete", "delete",
+          deleteReq2.getItemValueString(NCCONST.ITM_ACTION));
+    } finally {
+      docMgr.releaseDatabaseConnection(conn);
+    }
   }
 }
 

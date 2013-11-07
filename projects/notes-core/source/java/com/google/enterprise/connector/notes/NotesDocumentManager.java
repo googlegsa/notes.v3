@@ -140,7 +140,7 @@ public class NotesDocumentManager {
     attachmentsDDL.append(") not null, ").append("docid long not null");
     attachmentsDDL.append(", foreign key(docid) references ");
     attachmentsDDL.append(indexedTableName).append("(docid))");
-    
+
     jdbcDatabase.verifyTableExists(attachmentsTableName,
         new String[]{attachmentsDDL.toString()});
     LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
@@ -285,21 +285,21 @@ public class NotesDocumentManager {
         pstmt.close();
         
         // Insert attachment names
-        NotesItem itemAttachmentUnid =
+        NotesItem itemAttachmentIds =
             docIndexed.getFirstItem(NCCONST.ITM_GMETAATTACHMENTDOCIDS);
-        if (itemAttachmentUnid != null) {
-          Vector attachmentUnids = itemAttachmentUnid.getValues();
-          if (attachmentUnids != null && attachmentUnids.size() > 0) {
+        if (itemAttachmentIds != null) {
+          Vector attachmentIds = itemAttachmentIds.getValues();
+          if (attachmentIds != null && attachmentIds.size() > 0) {
             pstmt = connection.prepareStatement(
                 "insert into " + attachmentsTableName
                 + "(attachment_unid, docid) values(?,?)");
-            for (int i = 0; i < attachmentUnids.size(); i++) {
-              String attachmentUnid = (String) attachmentUnids.get(i);
-              pstmt.setString(1, attachmentUnid);
+            for (int i = 0; i < attachmentIds.size(); i++) {
+              String attachmentId = (String) attachmentIds.get(i);
+              pstmt.setString(1, attachmentId);
               pstmt.setLong(2, docid);
               pstmt.addBatch();
               LOGGER.log(Level.FINEST,
-                  "Insert attachment UNID: {0}", attachmentUnid);
+                  "Insert attachment: {0}", attachmentId);
             }
             pstmt.executeBatch();
             pstmt.close();
@@ -479,7 +479,7 @@ public class NotesDocumentManager {
     return hasItem;
   }
 
-  Set<String> getAttachmentUnids(Connection conn, String unid,
+  Set<String> getAttachmentIds(Connection conn, String unid,
       String replicaid) {
     LOGGER.log(Level.FINE,
         "Get attachment names for document [UNID: {0}, REPLICAID: {1}]",
