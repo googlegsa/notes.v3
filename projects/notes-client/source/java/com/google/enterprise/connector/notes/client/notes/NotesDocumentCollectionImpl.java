@@ -34,7 +34,7 @@ class NotesDocumentCollectionImpl extends NotesBaseImpl<DocumentCollection>
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public NotesDocument getFirstDocument() throws NotesConnectorExceptionImpl {
     try {
       Document doc = getNotesObject().getFirstDocument();
@@ -48,7 +48,7 @@ class NotesDocumentCollectionImpl extends NotesBaseImpl<DocumentCollection>
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public NotesDocument getNextDocument() throws NotesConnectorExceptionImpl {
     try {
       Document doc = getNotesObject().getNextDocument();
@@ -62,7 +62,7 @@ class NotesDocumentCollectionImpl extends NotesBaseImpl<DocumentCollection>
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public NotesDocument getNextDocument(NotesDocument document)
       throws NotesConnectorExceptionImpl {
     try {
@@ -78,7 +78,7 @@ class NotesDocumentCollectionImpl extends NotesBaseImpl<DocumentCollection>
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public int getCount() throws NotesConnectorExceptionImpl {
     try {
       return getNotesObject().getCount();

@@ -36,7 +36,7 @@ class NotesDatabaseImpl extends NotesBaseImpl<Database>
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public NotesView getView(String view) throws NotesConnectorExceptionImpl {
     try {
       View viewObj = getNotesObject().getView(view);
@@ -50,7 +50,7 @@ class NotesDatabaseImpl extends NotesBaseImpl<Database>
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public boolean openByReplicaID(String server, String replicaId)
       throws NotesConnectorExceptionImpl {
     try {
@@ -61,7 +61,7 @@ class NotesDatabaseImpl extends NotesBaseImpl<Database>
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   /* Throws an exception if the UNID isn't found. */
   public NotesDocument getDocumentByUNID(String unid)
       throws NotesConnectorExceptionImpl {
@@ -73,7 +73,7 @@ class NotesDatabaseImpl extends NotesBaseImpl<Database>
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public NotesDocument createDocument() throws NotesConnectorExceptionImpl {
     try {
       return new NotesDocumentImpl(getNotesObject().createDocument());
@@ -83,7 +83,7 @@ class NotesDatabaseImpl extends NotesBaseImpl<Database>
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public String getReplicaID() throws NotesConnectorExceptionImpl {
     try {
       return getNotesObject().getReplicaID();
@@ -93,7 +93,7 @@ class NotesDatabaseImpl extends NotesBaseImpl<Database>
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public String getFilePath() throws NotesConnectorExceptionImpl {
     try {
       return getNotesObject().getFilePath();
@@ -103,7 +103,7 @@ class NotesDatabaseImpl extends NotesBaseImpl<Database>
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public NotesDocumentCollection search(String formula)
       throws NotesConnectorExceptionImpl {
     try {
@@ -115,7 +115,7 @@ class NotesDatabaseImpl extends NotesBaseImpl<Database>
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public NotesDocumentCollection search(String formula, NotesDateTime startDate)
       throws NotesConnectorExceptionImpl {
     try {
@@ -128,7 +128,7 @@ class NotesDatabaseImpl extends NotesBaseImpl<Database>
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public NotesDocumentCollection search(String formula, NotesDateTime startDate,
       int maxDocs) throws NotesConnectorExceptionImpl {
     try {
@@ -145,7 +145,7 @@ class NotesDatabaseImpl extends NotesBaseImpl<Database>
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public NotesACL getACL() throws NotesConnectorExceptionImpl {
     try {
       return new NotesACLImpl(getNotesObject().getACL());
@@ -155,7 +155,7 @@ class NotesDatabaseImpl extends NotesBaseImpl<Database>
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public Vector getACLActivityLog() throws NotesConnectorExceptionImpl {
     try {
       return getNotesObject().getACLActivityLog();
@@ -165,7 +165,7 @@ class NotesDatabaseImpl extends NotesBaseImpl<Database>
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public boolean isOpen() throws NotesConnectorExceptionImpl {
     try {
       return getNotesObject().isOpen();

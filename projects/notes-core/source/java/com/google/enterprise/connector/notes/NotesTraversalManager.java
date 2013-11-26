@@ -55,14 +55,14 @@ public class NotesTraversalManager implements TraversalManager,
     return traversalContext;
   }
 
-  /* @Override */
+  @Override
   public void setBatchHint(int hint) {
     final String METHOD = "setBatchHint";
     LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD, "batchHint set to : " + hint);
     batchHint = hint;
   }
 
-  /* @Override */
+  @Override
   public DocumentList startTraversal() {
     final String METHOD = "startTraversal";
     LOGGER.info("Start traversal");
@@ -71,7 +71,7 @@ public class NotesTraversalManager implements TraversalManager,
     return traverse("0");
   }
 
-  /* @Override */
+  @Override
   public DocumentList resumeTraversal(String checkpoint) {
     return traverse(checkpoint);
   }

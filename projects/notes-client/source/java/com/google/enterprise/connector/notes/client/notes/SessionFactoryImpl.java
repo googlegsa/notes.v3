@@ -27,7 +27,7 @@ public class SessionFactoryImpl implements SessionFactory {
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public NotesSession createSessionWithFullAccess(String password)
       throws NotesConnectorExceptionImpl {
     try {
@@ -39,7 +39,7 @@ public class SessionFactoryImpl implements SessionFactory {
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public NotesThread getNotesThread() {
     return new NotesThreadImpl();
   }

@@ -30,7 +30,7 @@ class NotesDateTimeImpl extends NotesBaseImpl<DateTime>
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public Date toJavaDate() throws NotesConnectorExceptionImpl {
     try {
       return getNotesObject().toJavaDate();
@@ -40,7 +40,7 @@ class NotesDateTimeImpl extends NotesBaseImpl<DateTime>
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public void setNow() throws NotesConnectorExceptionImpl {
     try {
       getNotesObject().setNow();
@@ -50,7 +50,7 @@ class NotesDateTimeImpl extends NotesBaseImpl<DateTime>
   }
   
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public void setAnyTime() throws NotesConnectorExceptionImpl {
     try {
       getNotesObject().setAnyTime();
@@ -60,7 +60,7 @@ class NotesDateTimeImpl extends NotesBaseImpl<DateTime>
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public int timeDifference(NotesDateTime otherDateTime)
       throws NotesConnectorExceptionImpl {
     try {

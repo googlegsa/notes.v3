@@ -35,7 +35,7 @@ class NotesSessionImpl extends NotesBaseImpl<Session>
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public String getPlatform() throws NotesConnectorExceptionImpl {
     try {
       return getNotesObject().getPlatform();
@@ -45,7 +45,7 @@ class NotesSessionImpl extends NotesBaseImpl<Session>
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public String getCommonUserName() throws NotesConnectorExceptionImpl {
     try {
       return getNotesObject().getCommonUserName();
@@ -55,7 +55,7 @@ class NotesSessionImpl extends NotesBaseImpl<Session>
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public boolean verifyPassword(String password, String hashedPassword)
       throws NotesConnectorExceptionImpl {
     try {
@@ -66,7 +66,7 @@ class NotesSessionImpl extends NotesBaseImpl<Session>
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public String getEnvironmentString(String name, boolean isSystem)
       throws NotesConnectorExceptionImpl {
     try {
@@ -77,7 +77,7 @@ class NotesSessionImpl extends NotesBaseImpl<Session>
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public NotesDatabase getDatabase(String server, String database)
       throws NotesConnectorExceptionImpl {
     try {
@@ -92,7 +92,7 @@ class NotesSessionImpl extends NotesBaseImpl<Session>
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public Vector evaluate(String formula) throws NotesConnectorExceptionImpl {
     try {
       return TypeConverter.toConnectorValues(
@@ -103,7 +103,7 @@ class NotesSessionImpl extends NotesBaseImpl<Session>
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public Vector evaluate(String formula, NotesDocument document)
       throws NotesConnectorExceptionImpl {
     try {
@@ -116,7 +116,7 @@ class NotesSessionImpl extends NotesBaseImpl<Session>
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public NotesDateTime createDateTime(String date)
       throws NotesConnectorExceptionImpl {
     try {
@@ -127,7 +127,7 @@ class NotesSessionImpl extends NotesBaseImpl<Session>
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public NotesName createName(String name)
       throws NotesConnectorExceptionImpl {
     try {

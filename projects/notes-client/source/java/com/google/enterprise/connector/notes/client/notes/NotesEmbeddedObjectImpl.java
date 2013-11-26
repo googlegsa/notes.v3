@@ -35,7 +35,7 @@ class NotesEmbeddedObjectImpl extends NotesBaseImpl<EmbeddedObject>
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public int getType() throws NotesConnectorExceptionImpl {
     try {
       return getNotesObject().getType();
@@ -45,7 +45,7 @@ class NotesEmbeddedObjectImpl extends NotesBaseImpl<EmbeddedObject>
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public int getFileSize() throws NotesConnectorExceptionImpl {
     try {
       return getNotesObject().getFileSize();
@@ -55,7 +55,7 @@ class NotesEmbeddedObjectImpl extends NotesBaseImpl<EmbeddedObject>
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public void extractFile(String path) throws NotesConnectorExceptionImpl {
     try {
       getNotesObject().extractFile(path);

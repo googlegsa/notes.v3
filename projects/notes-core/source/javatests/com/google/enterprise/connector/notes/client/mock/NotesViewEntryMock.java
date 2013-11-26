@@ -39,7 +39,7 @@ class NotesViewEntryMock extends NotesBaseMock
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public Vector getColumnValues() throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "getColumnValues");
     Vector<Object> values = new Vector<Object>();
@@ -51,7 +51,7 @@ class NotesViewEntryMock extends NotesBaseMock
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public NotesDocument getDocument() throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "getDocument");
     return document;

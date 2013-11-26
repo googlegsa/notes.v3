@@ -41,14 +41,14 @@ class NotesViewNavigatorMock extends NotesBaseMock
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public int getCount() throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "getCount");
     return view.getEntryCount();
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public NotesViewEntry getFirst() throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "getFirst");
     currentDoc = view.getFirstDocument();
@@ -59,7 +59,7 @@ class NotesViewNavigatorMock extends NotesBaseMock
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public NotesViewEntry getNext() throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "getNext");
     currentDoc = view.getNextDocument(currentDoc);
@@ -70,7 +70,7 @@ class NotesViewNavigatorMock extends NotesBaseMock
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public NotesViewEntry getNext(NotesViewEntry previousEntry)
       throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "getNext(prev)");
@@ -78,7 +78,7 @@ class NotesViewNavigatorMock extends NotesBaseMock
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public NotesViewEntry getFirstDocument() throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "getFirstDocument");
     return getFirst();
