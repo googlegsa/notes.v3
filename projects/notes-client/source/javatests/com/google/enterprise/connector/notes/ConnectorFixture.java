@@ -21,7 +21,6 @@ import com.google.enterprise.connector.spi.ConnectorPersistentStore;
 import com.google.enterprise.connector.spi.Document;
 import com.google.enterprise.connector.spi.DocumentList;
 import com.google.enterprise.connector.spi.LocalDatabase;
-import com.google.enterprise.connector.spi.LocalDocumentStore;
 import com.google.enterprise.connector.spi.RepositoryException;
 import com.google.enterprise.connector.spi.RepositoryLoginException;
 import com.google.enterprise.connector.spi.Session;
@@ -103,7 +102,9 @@ public class ConnectorFixture extends TestCase {
 
     connector.setGoogleConnectorName("notestest");
     connector.setDatabaseAccess(new ConnectorPersistentStore() {
-        public LocalDocumentStore getLocalDocumentStore() {
+        @Deprecated
+        public com.google.enterprise.connector.spi.LocalDocumentStore
+            getLocalDocumentStore() {
           return null;
         }
         public LocalDatabase getLocalDatabase() {
