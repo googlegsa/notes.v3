@@ -514,6 +514,10 @@ class NotesUserGroupManager {
     List<String> unidList = new LinkedList<String>();
     NotesView view = null;
     try {
+      if (!db.isOpen()) {
+        LOGGER.warning("Cannot open database: " + getDatabaseFilePath(db));
+        return unidList;
+      }
       LOGGER.log(Level.FINEST,
           "Initialize UNID cache for {0} view in database {1}",
           new Object[] {viewName, db.getFilePath()});
@@ -672,41 +676,36 @@ class NotesUserGroupManager {
     LOGGER.entering(CLASS_NAME, METHOD);
 
     long timeStart = System.currentTimeMillis();
-    try {
-      int count = 0;
-      for (String unid : groupUnids) {
-        if (count++ % NCCONST.GC_INVOCATION_INTERVAL == 0) {
-          Util.invokeGC();
-        }
-        NotesDocument groupDoc = directoryDatabase.getDocumentByUNID(unid);
-        if (groupDoc == null) {
-          LOGGER.log(Level.FINEST, "Group document [{0}] is not found", unid);
-        } else {
-          String groupName = null;
-          try {
-            groupName = groupDoc.getItemValueString(NCCONST.GITM_LISTNAME);
-            if (Strings.isNullOrEmpty(groupName)) {
-              continue;
-            }
-            // Only process groups
-            if (!isAccessControlGroup(groupDoc)) {
-              LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD,
-                  "Not a group/access control group: '" + groupName + "'");
-              continue;
-            }
-            updateGroup(groupDoc, groupName);
-          } catch (Exception e) {
-            LOGGER.logp(Level.WARNING, CLASS_NAME, METHOD,
-                "Failed to update group cache" +
-                (groupName != null ? " for " + groupName : ""), e);
-          } finally {
-            Util.recycle(groupDoc);
+    int count = 0;
+    for (String unid : groupUnids) {
+      if (count++ % NCCONST.GC_INVOCATION_INTERVAL == 0) {
+        Util.invokeGC();
+      }
+      NotesDocument groupDoc = getDocumentByUnid(directoryDatabase, unid);
+      if (groupDoc == null) {
+        LOGGER.log(Level.FINEST, "Group document [{0}] is not found", unid);
+      } else {
+        String groupName = null;
+        try {
+          groupName = groupDoc.getItemValueString(NCCONST.GITM_LISTNAME);
+          if (Strings.isNullOrEmpty(groupName)) {
+            continue;
           }
+          // Only process groups
+          if (!isAccessControlGroup(groupDoc)) {
+            LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD,
+                "Not a group/access control group: '" + groupName + "'");
+            continue;
+          }
+          updateGroup(groupDoc, groupName);
+        } catch (RepositoryException e) {
+          LOGGER.logp(Level.WARNING, CLASS_NAME, METHOD,
+              "Failed to update group cache" +
+              (groupName != null ? " for " + groupName : ""), e);
+        } finally {
+          Util.recycle(groupDoc);
         }
       }
-    } catch (Exception e) {
-      LOGGER.logp(Level.WARNING, CLASS_NAME, METHOD,
-          "Error updating group cache", e);
     }
     long timeFinish = System.currentTimeMillis();
     LOGGER.log(Level.FINE, "Update groups: " + (timeFinish - timeStart) + "ms");
@@ -833,46 +832,66 @@ class NotesUserGroupManager {
     long timeStart = System.currentTimeMillis();
 
     int count = 0;
-    try {
-      for (String unid : userUnids) {
-        if (count++ % NCCONST.GC_INVOCATION_INTERVAL == 0) {
-          Util.invokeGC();
-        }
+    for (String unid : userUnids) {
+      if (count++ % NCCONST.GC_INVOCATION_INTERVAL == 0) {
+        Util.invokeGC();
+      }
 
-        NotesDocument doc = directoryDatabase.getDocumentByUNID(unid);
-        if (doc == null) {
-          LOGGER.log(Level.FINEST,
-              "Document [{0}] is not found in {1} database",
-              new Object[] {unid, directoryDatabase.getFilePath()});
-        } else {
-          try {
-            Vector fullNames = doc.getItemValue(NCCONST.PITM_FULLNAME);
-            if (fullNames.size() == 0) {
-              continue;
-            }
-            // Create domains/OUs as groups in H2 if not existed and 
-            // update domain cache
-            List<String> canonicalOUs = notesDomainNames
-                .computeExpandedWildcardDomainNames((String) fullNames.get(0));
-            verifyMultiDomainsExist(canonicalOUs, true);
-          } catch (RepositoryException re) {
-            LOGGER.log(Level.WARNING, 
-                "Failed to update Notes domain names for person document ["
-                + unid + "]", re);
-          } finally {
-            Util.recycle(doc);
+      NotesDocument doc = getDocumentByUnid(directoryDatabase, unid);
+      if (doc == null) {
+        LOGGER.log(Level.FINEST,
+            "Document [{0}] is not found in {1} database",
+            new Object[] {unid, getDatabaseFilePath(directoryDatabase)});
+      } else {
+        try {
+          Vector fullNames = doc.getItemValue(NCCONST.PITM_FULLNAME);
+          if (fullNames.size() == 0) {
+            continue;
           }
+          // Create domains/OUs as groups in H2 if not existed and 
+          // update domain cache
+          List<String> canonicalOUs = notesDomainNames
+              .computeExpandedWildcardDomainNames((String) fullNames.get(0));
+          verifyMultiDomainsExist(canonicalOUs, true);
+        } catch (RepositoryException re) {
+          LOGGER.log(Level.WARNING, 
+              "Failed to update Notes domain names for person document ["
+              + unid + "]", re);
+        } finally {
+          Util.recycle(doc);
         }
       }
-    } catch (RepositoryException e) {
-      LOGGER.log(Level.WARNING,
-          "Unable to open database or to look up document by UNID", e);
     }
 
     long timeFinish = System.currentTimeMillis();
     LOGGER.log(Level.FINEST, "Update Notes domain cache [{0}ms]: {1}",
         new Object[] {(timeFinish - timeStart), notesDomainNames.toString()});
     LOGGER.exiting(CLASS_NAME, METHOD);
+  }
+
+  /*
+   * Helper method to lookup document by UNID.
+   */
+  private NotesDocument getDocumentByUnid(NotesDatabase db, String unid) {
+    try {
+      return db.getDocumentByUNID(unid);
+    } catch (RepositoryException e) {
+      LOGGER.warning("Cannot find document [" + unid + "] in "
+          + getDatabaseFilePath(db) + " database");
+      return null;
+    }
+  }
+
+  /*
+   * Helper method to lookup database's file path.
+   */
+  private String getDatabaseFilePath(NotesDatabase db) {
+    try {
+      return db.getFilePath();
+    } catch (RepositoryException ex) {
+      LOGGER.log(Level.WARNING, "Unable to retrieve database's file path", ex);
+      return null;
+    }
   }
 
   public Set<String> getSubDomains(String domainName) {
@@ -1015,7 +1034,7 @@ class NotesUserGroupManager {
 
       int count = 0;
       for (String unid : userUnids) {
-        NotesDocument personDoc = directoryDatabase.getDocumentByUNID(unid);
+        NotesDocument personDoc = getDocumentByUnid(directoryDatabase, unid);
         if (personDoc == null) {
           LOGGER.log(Level.FINEST, "Person document [{0}] is not found", unid);
         } else {

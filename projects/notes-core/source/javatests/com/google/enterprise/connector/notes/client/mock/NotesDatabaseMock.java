@@ -196,7 +196,7 @@ public class NotesDatabaseMock extends NotesBaseMock
         return doc;
       }
     }
-    return null;
+    throw new RepositoryException(unid + " document is not found");
   }
 
   /** {@inheritDoc} */

@@ -17,6 +17,7 @@ package com.google.enterprise.connector.notes;
 import com.google.common.collect.Lists;
 import com.google.enterprise.connector.notes.client.NotesACL;
 import com.google.enterprise.connector.notes.client.NotesACLEntry;
+import com.google.enterprise.connector.notes.client.NotesDocument;
 import com.google.enterprise.connector.notes.client.NotesItem;
 import com.google.enterprise.connector.notes.client.NotesSession;
 import com.google.enterprise.connector.notes.client.NotesView;
@@ -27,6 +28,7 @@ import com.google.enterprise.connector.notes.client.mock.NotesDocumentMock;
 import com.google.enterprise.connector.notes.client.mock.NotesItemMock;
 import com.google.enterprise.connector.notes.client.mock.NotesSessionMock;
 import com.google.enterprise.connector.notes.client.mock.SessionFactoryMock;
+import com.google.enterprise.connector.spi.RepositoryException;
 import com.google.enterprise.connector.util.database.JdbcDatabase;
 
 import junit.extensions.TestSetup;
@@ -400,6 +402,28 @@ public class NotesUserGroupManagerTest extends TestCase {
     assertGroupHasChild("jedi", "padawan learners");
   }
 
+  public void testSkipUpdateGroups() throws Exception {
+    String nonExistentId = "group123";
+    assertTrue(groupUnids.size() > 1);
+    groupUnids.add(2, nonExistentId);
+
+    assertEquals("Groups' map is not empty", 0, groups.size());
+    setUpGroups();
+    assertTrue("Groups are not populated from groupUnids", groups.size() > 0);
+
+    for (String unid : groupUnids) {
+      NotesDocument doc;
+      try {
+        doc = namesDatabase.getDocumentByUNID(unid);
+        assertEquals(doc.getItemValueString(NCCONST.NCITM_UNID), unid);
+        String groupName = doc.getItemValueString(NCCONST.GITM_LISTNAME);
+        assertGroupExists(groupName.toLowerCase());
+      } catch (RepositoryException e) {
+        assertTrue(e.getMessage().contains(nonExistentId));
+      }
+    }
+  }
+
   public void testUpdateUsers() throws Exception {
     setUpUsers();
     assertEquals(userCount, notesUserNames.size());
@@ -411,6 +435,30 @@ public class NotesUserGroupManagerTest extends TestCase {
     assertUserHasGroup("palpatine", "bad guys");
     assertUserHasGroup("palpatine", "ou=tests/o=tests");
     assertUserHasGroup("palpatine", "o=tests");
+  }
+
+  public void testSkipUpdateUsers() throws Exception {
+    String nonExistentId = "user123";
+    assertTrue(userUnids.size() > 1);
+    userUnids.add(2, nonExistentId);
+
+    assertEquals("Users'map is not empty", 0, notesUserNames.size());
+    setUpUsers();
+    assertTrue("Users are not populated from userUnids",
+        notesUserNames.size() > 0);
+
+    for (String unid : userUnids) {
+      NotesDocument doc;
+      try {
+        doc = namesDatabase.getDocumentByUNID(unid);
+        assertEquals(doc.getItemValueString(NCCONST.NCITM_UNID), unid);
+        String notesName = doc.getItemValueString(NCCONST.PITM_FULLNAME);
+        assertTrue(notesName + " user doesn't exist",
+            notesUserNames.containsKey(notesName.toLowerCase()));
+      } catch (RepositoryException e) {
+        assertTrue(e.getMessage().contains(nonExistentId));
+      }
+    }
   }
 
   public void testUpdateRoles() throws Exception {

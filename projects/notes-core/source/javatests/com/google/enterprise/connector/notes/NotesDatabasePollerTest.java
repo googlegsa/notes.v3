@@ -174,7 +174,7 @@ public class NotesDatabasePollerTest extends TestCase {
     assertFalse(databaseDocument.hasItem(NCCONST.NCITM_DBPERMITGROUPS));
     assertFalse(databaseDocument.hasItem(NCCONST.NCITM_DBNOACCESSUSERS));
     assertFalse(databaseDocument.hasItem(NCCONST.NCITM_DBNOACCESSGROUPS));
-    assertNull(connectorDatabase.getDocumentByUNID("replica_id_16chr"));
+    assertNull(getDocumentByUnid(connectorDatabase, "replica_id_16chr"));
 
     poller.processACL(session, connectorDatabase,
         sourceDatabase, databaseDocument);
@@ -185,7 +185,7 @@ public class NotesDatabasePollerTest extends TestCase {
     assertTrue(databaseDocument.hasItem(NCCONST.NCITM_DBNOACCESSGROUPS));
 
     NotesDocument aclCrawlDoc =
-        connectorDatabase.getDocumentByUNID("replica_id_16chr");
+        getDocumentByUnid(connectorDatabase, "replica_id_16chr");
     if (supportsInheritedAcls) {
       assertNotNull(aclCrawlDoc);
       assertEquals("true",
@@ -196,6 +196,15 @@ public class NotesDatabasePollerTest extends TestCase {
     } else {
       assertTrue(poller.calledUpdateGsaPolicyAcl);
       assertNull(aclCrawlDoc);
+    }
+  }
+
+  private NotesDocument getDocumentByUnid(NotesDatabase db, String replicaId) {
+    try {
+      return db.getDocumentByUNID(replicaId);
+    } catch (RepositoryException e) {
+      assertTrue(e.getMessage().contains(replicaId));
+      return null;
     }
   }
 }
