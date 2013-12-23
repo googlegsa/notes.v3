@@ -27,7 +27,7 @@ class NotesRichTextItemImpl extends NotesItemImpl
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public void appendText(String text) throws NotesConnectorExceptionImpl {
     try {
       // RichTextItem extends NotesItem extends NotesBase.

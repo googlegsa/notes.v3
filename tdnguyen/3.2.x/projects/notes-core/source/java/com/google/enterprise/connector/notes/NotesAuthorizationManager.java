@@ -79,7 +79,7 @@ class NotesAuthorizationManager implements AuthorizationManager {
   // Explain Lotus Notes Authorization Rules
 
   // TODO: Add LRU Cache for ALLOW/DENY
-  /* @Override */
+  @Override
   @SuppressWarnings("unchecked")
   public Collection<AuthorizationResponse> authorizeDocids(
       Collection<String> docIds, AuthenticationIdentity id) {

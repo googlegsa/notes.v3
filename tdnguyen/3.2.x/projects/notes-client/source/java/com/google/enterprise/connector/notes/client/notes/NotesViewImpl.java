@@ -34,7 +34,7 @@ class NotesViewImpl extends NotesBaseImpl<View> implements NotesView {
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public int getEntryCount() throws NotesConnectorExceptionImpl {
     try {
       return getNotesObject().getEntryCount();
@@ -44,7 +44,7 @@ class NotesViewImpl extends NotesBaseImpl<View> implements NotesView {
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public NotesDocument getFirstDocument()
       throws NotesConnectorExceptionImpl {
     try {
@@ -59,7 +59,7 @@ class NotesViewImpl extends NotesBaseImpl<View> implements NotesView {
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public NotesDocument getNextDocument(NotesDocument previousDocument)
       throws NotesConnectorExceptionImpl {
     try {
@@ -75,7 +75,7 @@ class NotesViewImpl extends NotesBaseImpl<View> implements NotesView {
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public NotesDocument getDocumentByKey(Object key)
       throws NotesConnectorExceptionImpl {
     try {
@@ -90,7 +90,7 @@ class NotesViewImpl extends NotesBaseImpl<View> implements NotesView {
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public NotesDocument getDocumentByKey(Vector key)
       throws NotesConnectorExceptionImpl {
     try {
@@ -106,7 +106,7 @@ class NotesViewImpl extends NotesBaseImpl<View> implements NotesView {
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public NotesDocument getDocumentByKey(Object key, boolean exact)
       throws NotesConnectorExceptionImpl {
     try {
@@ -121,7 +121,7 @@ class NotesViewImpl extends NotesBaseImpl<View> implements NotesView {
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public NotesDocument getDocumentByKey(Vector key, boolean exact)
       throws NotesConnectorExceptionImpl {
     try {
@@ -137,7 +137,7 @@ class NotesViewImpl extends NotesBaseImpl<View> implements NotesView {
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public NotesViewNavigator createViewNavFromCategory(String category)
       throws NotesConnectorExceptionImpl {
     try {
@@ -148,7 +148,7 @@ class NotesViewImpl extends NotesBaseImpl<View> implements NotesView {
     }
   }
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public NotesViewNavigator createViewNav()
       throws NotesConnectorExceptionImpl {
     try {
@@ -159,7 +159,7 @@ class NotesViewImpl extends NotesBaseImpl<View> implements NotesView {
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public void refresh() throws NotesConnectorExceptionImpl {
     try {
       getNotesObject().refresh();
@@ -169,7 +169,7 @@ class NotesViewImpl extends NotesBaseImpl<View> implements NotesView {
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public NotesViewEntryCollection getAllEntries() 
       throws NotesConnectorExceptionImpl {
     try {
@@ -181,7 +181,7 @@ class NotesViewImpl extends NotesBaseImpl<View> implements NotesView {
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public NotesViewEntryCollection getAllEntriesByKey(Vector keys)
       throws NotesConnectorExceptionImpl {
     try {
@@ -194,7 +194,7 @@ class NotesViewImpl extends NotesBaseImpl<View> implements NotesView {
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public NotesViewEntryCollection getAllEntriesByKey(Object key)
       throws NotesConnectorExceptionImpl {
     try {
@@ -207,7 +207,7 @@ class NotesViewImpl extends NotesBaseImpl<View> implements NotesView {
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public NotesViewEntryCollection getAllEntriesByKey(Vector keys, boolean exact)
       throws NotesConnectorExceptionImpl {
     try {
@@ -220,7 +220,7 @@ class NotesViewImpl extends NotesBaseImpl<View> implements NotesView {
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public NotesViewEntryCollection getAllEntriesByKey(Object key, boolean exact)
       throws NotesConnectorExceptionImpl {
     try {

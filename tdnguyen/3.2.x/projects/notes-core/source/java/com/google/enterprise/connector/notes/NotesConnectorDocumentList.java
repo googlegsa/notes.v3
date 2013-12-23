@@ -60,7 +60,7 @@ class NotesConnectorDocumentList implements DocumentList {
     this.ncs = doclistncs;
   }
 
-  /* @Override */
+  @Override
   public Document nextDocument() {
     final String METHOD = "nextDocument";
     LOGGER.entering(CLASS_NAME, METHOD);
@@ -204,7 +204,7 @@ class NotesConnectorDocumentList implements DocumentList {
     LOGGER.exiting(CLASS_NAME, METHOD);
   }
 
-  /* @Override */
+  @Override
   public String checkpoint() throws RepositoryException {
     final String METHOD = "checkpoint";
     String checkPointUnid = null;

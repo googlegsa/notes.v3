@@ -20,8 +20,8 @@ build.connector.manager.home = ${user.home}/gsa/google-enterprise-connector-mana
 # Optional; used to copy the connector to an existing Connector Manager.
 connector.manager.webapp.dir = /Tomcat/webapps/connector-manager
 
-# JDK 1.5 bootclasspath.
-build.bootclasspath = /System/Library/Frameworks/JavaVM.framework/Versions/1.5.0/Classes/classes.jar:/System/Library/Frameworks/JavaVM.framework/Versions/1.5.0/Classes/jsse.jar
+# JDK 1.6 bootclasspath.
+build.bootclasspath = /System/Library/Frameworks/JavaVM.framework/Versions/1.6.0/Classes/classes.jar:/System/Library/Frameworks/JavaVM.framework/Versions/1.6.0/Classes/jsse.jar
 
 
 ## Test framework properties

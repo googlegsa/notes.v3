@@ -61,7 +61,7 @@ class NotesItemImpl extends NotesBaseImpl<Item> implements NotesItem {
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public NotesDateTime getDateTimeValue() throws NotesConnectorExceptionImpl {
     try {
       return new NotesDateTimeImpl(getNotesObject().getDateTimeValue());
@@ -71,7 +71,7 @@ class NotesItemImpl extends NotesBaseImpl<Item> implements NotesItem {
   }
   
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public String getName() throws NotesConnectorExceptionImpl {
     try {
       return getNotesObject().getName();
@@ -81,7 +81,7 @@ class NotesItemImpl extends NotesBaseImpl<Item> implements NotesItem {
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public int getType() throws NotesConnectorExceptionImpl {
     try {
       return getNotesObject().getType();
@@ -91,7 +91,7 @@ class NotesItemImpl extends NotesBaseImpl<Item> implements NotesItem {
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public String getText(int maxlen) throws NotesConnectorExceptionImpl {
     try {
       return getNotesObject().getText(maxlen);
@@ -101,7 +101,7 @@ class NotesItemImpl extends NotesBaseImpl<Item> implements NotesItem {
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public boolean isReaders() throws NotesConnectorExceptionImpl {
     try {
       return getNotesObject().isReaders();
@@ -111,7 +111,7 @@ class NotesItemImpl extends NotesBaseImpl<Item> implements NotesItem {
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public boolean isAuthors() throws NotesConnectorExceptionImpl {
     try {
       return getNotesObject().isAuthors();
@@ -121,7 +121,7 @@ class NotesItemImpl extends NotesBaseImpl<Item> implements NotesItem {
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public Vector getValues() throws NotesConnectorExceptionImpl {
     try {
       return TypeConverter.toConnectorValues(getNotesObject().getValues());
@@ -131,7 +131,7 @@ class NotesItemImpl extends NotesBaseImpl<Item> implements NotesItem {
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public void appendToTextList(String value)
       throws NotesConnectorExceptionImpl {
     try {
@@ -142,7 +142,7 @@ class NotesItemImpl extends NotesBaseImpl<Item> implements NotesItem {
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public void appendToTextList(Vector values)
       throws NotesConnectorExceptionImpl {
     try {
@@ -153,7 +153,7 @@ class NotesItemImpl extends NotesBaseImpl<Item> implements NotesItem {
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public void setSummary(boolean summary) throws NotesConnectorExceptionImpl {
     try {
       getNotesObject().setSummary(summary);

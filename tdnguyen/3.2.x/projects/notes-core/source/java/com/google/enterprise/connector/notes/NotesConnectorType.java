@@ -295,7 +295,7 @@ public class NotesConnectorType implements ConnectorType {
     return buf.toString();
   }
 
-  /* @Override */
+  @Override
   public ConfigureResponse getConfigForm(Locale locale) {
     try {
       ConfigureResponse result = new ConfigureResponse("",
@@ -307,7 +307,7 @@ public class NotesConnectorType implements ConnectorType {
     }
   }
 
-  /* @Override */
+  @Override
   public ConfigureResponse validateConfig(Map<String, String> configData,
       Locale locale, ConnectorFactory connectorFactory) {
     try {
@@ -329,7 +329,7 @@ public class NotesConnectorType implements ConnectorType {
     }
   }
 
-  /* @Override */
+  @Override
   public ConfigureResponse getPopulatedConfigForm(
       Map<String, String> configMap, Locale locale) {
     try {

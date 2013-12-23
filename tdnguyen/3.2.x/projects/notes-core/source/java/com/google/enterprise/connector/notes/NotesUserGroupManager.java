@@ -44,6 +44,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -507,6 +508,42 @@ class NotesUserGroupManager {
     return null;
   }
 
+  @VisibleForTesting
+  List<String> getViewUnids(NotesDatabase db, String viewName) {
+    long timeStart = System.currentTimeMillis();
+    List<String> unidList = new LinkedList<String>();
+    NotesView view = null;
+    try {
+      if (!db.isOpen()) {
+        LOGGER.warning("Cannot open database: " + getDatabaseFilePath(db));
+        return unidList;
+      }
+      LOGGER.log(Level.FINEST,
+          "Initialize UNID cache for {0} view in database {1}",
+          new Object[] {viewName, db.getFilePath()});
+      view = db.getView(viewName);
+      view.refresh();
+
+      NotesDocument doc = view.getFirstDocument();
+      while (doc != null) {
+        unidList.add(doc.getUniversalID());
+        NotesDocument docNext = view.getNextDocument(doc);
+        doc.recycle();
+        doc = docNext;
+      }
+    } catch (RepositoryException e) {
+      LOGGER.log(Level.WARNING, "Unable to build the UNID cache for "
+          + viewName + " view", e);
+    } finally {
+      Util.recycle(view);
+    }
+    LOGGER.log(Level.FINEST,
+        "UNID cache is initialized for {0} view [{1}]: {2}ms",
+        new Object[] {viewName, unidList.size(),
+            (System.currentTimeMillis() - timeStart)});
+    return unidList;
+  }
+
   public void updateUsersGroups() {
     updateUsersGroups(!isCacheInitialized());
   }
@@ -528,13 +565,17 @@ class NotesUserGroupManager {
       }
 
       // Pass 0 - Reset domain cache
-      updateNotesDomainNames();
+      List<String> userUnids =
+          getViewUnids(directoryDatabase, NCCONST.DIRVIEW_VIMUSERS);
+      updateNotesDomainNames(userUnids);
 
       // Pass 1 - Update groups
-      updateGroups();
+      List<String> groupUnids =
+          getViewUnids(directoryDatabase, NCCONST.DIRVIEW_VIMGROUPS);
+      updateGroups(groupUnids);
 
       // Pass 2 - Update people
-      updateUsers();
+      updateUsers(userUnids);
 
       // Pass 3 - Update roles
       // Role update is moved from the maintenance thread to the traversal
@@ -630,23 +671,20 @@ class NotesUserGroupManager {
    * via 0 or more intermediate groups).
    */
   @VisibleForTesting
-  void updateGroups() {
+  void updateGroups(List<String> groupUnids) {
     final String METHOD = "updateGroups";
     LOGGER.entering(CLASS_NAME, METHOD);
 
     long timeStart = System.currentTimeMillis();
-    NotesView groupsView = null;
-    NotesDocument groupDoc = null;
-    try {
-      groupsView = directoryDatabase.getView(NCCONST.DIRVIEW_VIMGROUPS);
-      groupsView.refresh();
-      int count = 0;
-      for (groupDoc = groupsView.getFirstDocument();
-           groupDoc != null;
-           groupDoc = getNextDocument(groupsView, groupDoc)) {
-        if (count++ % NCCONST.GC_INVOCATION_INTERVAL == 0) {
-          Util.invokeGC();
-        }
+    int count = 0;
+    for (String unid : groupUnids) {
+      if (count++ % NCCONST.GC_INVOCATION_INTERVAL == 0) {
+        Util.invokeGC();
+      }
+      NotesDocument groupDoc = getDocumentByUnid(directoryDatabase, unid);
+      if (groupDoc == null) {
+        LOGGER.log(Level.FINEST, "Group document [{0}] is not found", unid);
+      } else {
         String groupName = null;
         try {
           groupName = groupDoc.getItemValueString(NCCONST.GITM_LISTNAME);
@@ -660,18 +698,14 @@ class NotesUserGroupManager {
             continue;
           }
           updateGroup(groupDoc, groupName);
-        } catch (Exception e) {
+        } catch (RepositoryException e) {
           LOGGER.logp(Level.WARNING, CLASS_NAME, METHOD,
               "Failed to update group cache" +
               (groupName != null ? " for " + groupName : ""), e);
+        } finally {
+          Util.recycle(groupDoc);
         }
       }
-    } catch (Exception e) {
-      LOGGER.logp(Level.WARNING, CLASS_NAME, METHOD,
-          "Error updating group cache", e);
-    } finally {
-      Util.recycle(groupDoc);
-      Util.recycle(groupsView);
     }
     long timeFinish = System.currentTimeMillis();
     LOGGER.log(Level.FINE, "Update groups: " + (timeFinish - timeStart) + "ms");
@@ -791,63 +825,73 @@ class NotesUserGroupManager {
   /**
    * Store all wildcard domains in H2 and build a domain cache.
    */
-  private void updateNotesDomainNames() {
+  private void updateNotesDomainNames(List<String> userUnids) {
     final String METHOD = "updateNotesDomainNames";
     LOGGER.entering(CLASS_NAME, METHOD);
 
     long timeStart = System.currentTimeMillis();
-    NotesSession ns = null;
-    NotesDatabase nab = null;
-    NotesView peopleView = null;
-    try {
-      ns = connectorSession.createNotesSession();
-      LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
-          Util.buildString("Open Notes directory: ",
-              connectorSession.getServer(), "!!",
-              connectorSession.getDirectory()));
-      nab = ns.getDatabase(connectorSession.getServer(),
-          connectorSession.getDirectory());
-      peopleView = nab.getView(NCCONST.DIRVIEW_VIMUSERS);
-      peopleView.refresh();
-      NotesDocument docNext = null;
-      NotesDocument doc = peopleView.getFirstDocument();
-      int count = 0;
-      while (doc != null) {
-        if (count++ % NCCONST.GC_INVOCATION_INTERVAL == 0) {
-          Util.invokeGC();
-        }
-        Vector fullNames = doc.getItemValue(NCCONST.PITM_FULLNAME);
-        if (fullNames.size() == 0) {
-          docNext = peopleView.getNextDocument(doc);
-          doc.recycle();
-          doc = docNext;
-          continue;
-        }
-        // Create domains/OUs as groups in H2 if not existed and 
-        // update domain cache
-        List<String> canonicalOUs = notesDomainNames
-            .computeExpandedWildcardDomainNames((String) fullNames.get(0));
-        verifyMultiDomainsExist(canonicalOUs, true);
-        docNext = peopleView.getNextDocument(doc);
-        doc.recycle();
-        doc = docNext;
+
+    int count = 0;
+    for (String unid : userUnids) {
+      if (count++ % NCCONST.GC_INVOCATION_INTERVAL == 0) {
+        Util.invokeGC();
       }
-      if (LOGGER.isLoggable(Level.FINEST)) {
-        LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD, "Domain cache: " + 
-            notesDomainNames.toString());
+
+      NotesDocument doc = getDocumentByUnid(directoryDatabase, unid);
+      if (doc == null) {
+        LOGGER.log(Level.FINEST,
+            "Document [{0}] is not found in {1} database",
+            new Object[] {unid, getDatabaseFilePath(directoryDatabase)});
+      } else {
+        try {
+          Vector fullNames = doc.getItemValue(NCCONST.PITM_FULLNAME);
+          if (fullNames.size() == 0) {
+            continue;
+          }
+          // Create domains/OUs as groups in H2 if not existed and 
+          // update domain cache
+          List<String> canonicalOUs = notesDomainNames
+              .computeExpandedWildcardDomainNames((String) fullNames.get(0));
+          verifyMultiDomainsExist(canonicalOUs, true);
+        } catch (RepositoryException re) {
+          LOGGER.log(Level.WARNING, 
+              "Failed to update Notes domain names for person document ["
+              + unid + "]", re);
+        } finally {
+          Util.recycle(doc);
+        }
       }
-    } catch (RepositoryException e) {
-      LOGGER.logp(Level.WARNING, CLASS_NAME, METHOD, 
-          "Failed to update Notes domain names", e);
-    } finally {
-      Util.recycle(peopleView);
-      Util.recycle(nab);
-      Util.recycle(ns);
     }
+
     long timeFinish = System.currentTimeMillis();
-    LOGGER.log(Level.FINE, "Update Notes domain names: "
-        + (timeFinish - timeStart) + "ms");
+    LOGGER.log(Level.FINEST, "Update Notes domain cache [{0}ms]: {1}",
+        new Object[] {(timeFinish - timeStart), notesDomainNames.toString()});
     LOGGER.exiting(CLASS_NAME, METHOD);
+  }
+
+  /*
+   * Helper method to lookup document by UNID.
+   */
+  private NotesDocument getDocumentByUnid(NotesDatabase db, String unid) {
+    try {
+      return db.getDocumentByUNID(unid);
+    } catch (RepositoryException e) {
+      LOGGER.warning("Cannot find document [" + unid + "] in "
+          + getDatabaseFilePath(db) + " database");
+      return null;
+    }
+  }
+
+  /*
+   * Helper method to lookup database's file path.
+   */
+  private String getDatabaseFilePath(NotesDatabase db) {
+    try {
+      return db.getFilePath();
+    } catch (RepositoryException ex) {
+      LOGGER.log(Level.WARNING, "Unable to retrieve database's file path", ex);
+      return null;
+    }
   }
 
   public Set<String> getSubDomains(String domainName) {
@@ -970,14 +1014,12 @@ class NotesUserGroupManager {
    * records.
    */
   @VisibleForTesting
-  void updateUsers() {
+  void updateUsers(List<String> userUnids) {
     final String METHOD = "updateUsers";
     LOGGER.entering(CLASS_NAME, METHOD);
 
     long timeStart = System.currentTimeMillis();
     NotesView serverAccessView = null;
-    NotesView peopleView = null;
-    NotesDocument personDoc = null;
     try {
       String userSelectionFormula = connectorSession.getUserSelectionFormula();
       String userNameFormula = connectorSession.getUserNameFormula();
@@ -990,81 +1032,82 @@ class NotesUserGroupManager {
           NCCONST.DIRVIEW_SERVERACCESS);
       serverAccessView.refresh();
 
-      peopleView = directoryDatabase.getView(NCCONST.DIRVIEW_VIMUSERS);
-      peopleView.refresh();
       int count = 0;
-      for (personDoc = peopleView.getFirstDocument();
-           personDoc != null;
-           personDoc = getNextDocument(peopleView, personDoc)) {
-        String notesName = null;
-        try {
-          if (count++ % NCCONST.GC_INVOCATION_INTERVAL == 0) {
-            Util.invokeGC();
-          }
-          if (!personDoc.getItemValueString(NCCONST.ITMFORM).contentEquals(
-                  NCCONST.DIRFORM_PERSON)) {
-            continue;
-          }
-          // The first value in this field is the Notes name; other
-          // names may be present.
-          Vector nameVector = personDoc.getItemValue(NCCONST.PITM_FULLNAME);
-          if (nameVector.size() == 0) {
-            continue;
-          }
-          String storedName = nameVector.firstElement().toString();
-          notesName = notesSession.createName(storedName)
-              .getCanonical().toLowerCase();
-          if (LOGGER.isLoggable(Level.FINEST)) {
-            LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD,
-                "Processing user: " + notesName + "; name from directory was: "
-                + storedName);
-          }
-          // Get their PVI
-          String pvi = evaluatePvi(userNameFormula, personDoc);
-          if (0 == pvi.length()) {
-            LOGGER.logp(Level.WARNING, CLASS_NAME, METHOD,
-                "Could not evaluate PVI username for: " + notesName);
-            continue;
-          }
-          if (LOGGER.isLoggable(Level.FINEST)) {
-            LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD, "PVI: " + pvi);
-          }
-          // Does this person match the selection formula?
-          boolean selected = checkPersonSelectionFormula(userSelectionFormula,
-              personDoc);
-          if (!selected) {
+      for (String unid : userUnids) {
+        NotesDocument personDoc = getDocumentByUnid(directoryDatabase, unid);
+        if (personDoc == null) {
+          LOGGER.log(Level.FINEST, "Person document [{0}] is not found", unid);
+        } else {
+          String notesName = null;
+          try {
+            if (count++ % NCCONST.GC_INVOCATION_INTERVAL == 0) {
+              Util.invokeGC();
+            }
+            if (!personDoc.getItemValueString(NCCONST.ITMFORM).contentEquals(
+                    NCCONST.DIRFORM_PERSON)) {
+              continue;
+            }
+            // The first value in this field is the Notes name; other
+            // names may be present.
+            Vector nameVector = personDoc.getItemValue(NCCONST.PITM_FULLNAME);
+            if (nameVector.size() == 0) {
+              continue;
+            }
+            String storedName = nameVector.firstElement().toString();
+            notesName = notesSession.createName(storedName)
+                .getCanonical().toLowerCase();
             if (LOGGER.isLoggable(Level.FINEST)) {
               LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD,
-                  "User not selected: " + notesName);
+                  "Processing user: " + notesName + "; name from directory was: "
+                  + storedName);
             }
-            continue;
-          }
-          updateUser(personDoc, notesName, pvi, serverAccessView);
-          // Log user info
-          if (LOGGER.isLoggable(Level.FINE)) {
-            String delim = "";
-            User user = getUser("gsaname", pvi);
-            Collection<String> userGroups = user.getGroups();
-            StringBuilder buf = new StringBuilder();
-            buf.append("All groups for ").append(user).append(": ");
-            for (String grpName : userGroups) {
-              buf.append(delim).append(grpName);
-              delim = ", ";
+            // Get their PVI
+            String pvi = evaluatePvi(userNameFormula, personDoc);
+            if (0 == pvi.length()) {
+              LOGGER.logp(Level.WARNING, CLASS_NAME, METHOD,
+                  "Could not evaluate PVI username for: " + notesName);
+              continue;
             }
-            LOGGER.logp(Level.FINE, CLASS_NAME, METHOD, buf.toString());
+            if (LOGGER.isLoggable(Level.FINEST)) {
+              LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD, "PVI: " + pvi);
+            }
+            // Does this person match the selection formula?
+            boolean selected = checkPersonSelectionFormula(userSelectionFormula,
+                personDoc);
+            if (!selected) {
+              if (LOGGER.isLoggable(Level.FINEST)) {
+                LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD,
+                    "User not selected: " + notesName);
+              }
+              continue;
+            }
+            updateUser(personDoc, notesName, pvi, serverAccessView);
+            // Log user info
+            if (LOGGER.isLoggable(Level.FINE)) {
+              String delim = "";
+              User user = getUser("gsaname", pvi);
+              Collection<String> userGroups = user.getGroups();
+              StringBuilder buf = new StringBuilder();
+              buf.append("All groups for ").append(user).append(": ");
+              for (String grpName : userGroups) {
+                buf.append(delim).append(grpName);
+                delim = ", ";
+              }
+              LOGGER.logp(Level.FINE, CLASS_NAME, METHOD, buf.toString());
+            }
+          } catch (Exception e) {
+            LOGGER.logp(Level.WARNING, CLASS_NAME, METHOD,
+                "Failed to update user cache" +
+                (notesName != null ? " for " + notesName : ""), e);
+          } finally {
+            Util.recycle(personDoc);
           }
-        } catch (Exception e) {
-          LOGGER.logp(Level.WARNING, CLASS_NAME, METHOD,
-              "Failed to update user cache" +
-              (notesName != null ? " for " + notesName : ""), e);
         }
       }
     } catch (Exception e) {
       LOGGER.logp(Level.WARNING, CLASS_NAME, METHOD,
           "Error processing users", e);
     } finally {
-      Util.recycle(personDoc);
-      Util.recycle(peopleView);
       Util.recycle(serverAccessView);
       LOGGER.exiting(CLASS_NAME, METHOD);
     }

@@ -42,7 +42,7 @@ public class NotesDocumentCollectionMock extends NotesBaseMock
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public NotesDocument getFirstDocument() throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "getFirstDocument");
     if (documents.size() == 0) {
@@ -53,7 +53,7 @@ public class NotesDocumentCollectionMock extends NotesBaseMock
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public NotesDocument getNextDocument() throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "getNextDocument");
     if (lastReturned + 1 < documents.size()) {
@@ -64,7 +64,7 @@ public class NotesDocumentCollectionMock extends NotesBaseMock
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public NotesDocument getNextDocument(NotesDocument document)
       throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "getNextDocument");
@@ -85,7 +85,7 @@ public class NotesDocumentCollectionMock extends NotesBaseMock
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public int getCount() throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "getCount");
     return documents.size();

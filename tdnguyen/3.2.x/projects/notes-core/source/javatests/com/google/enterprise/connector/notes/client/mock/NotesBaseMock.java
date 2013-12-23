@@ -25,12 +25,12 @@ class NotesBaseMock implements NotesBase {
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public void recycle() throws RepositoryException {
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public void recycle(Vector objects) throws RepositoryException {
   }
 }

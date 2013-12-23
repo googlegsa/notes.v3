@@ -52,7 +52,7 @@ class NotesAuthenticationManager implements AuthenticationManager {
     LOGGER.exiting(CLASS_NAME, METHOD);
   }
 
-  /* @Override */
+  @Override
   @SuppressWarnings("unchecked")
   public AuthenticationResponse authenticate(AuthenticationIdentity id) {
     final String METHOD = "authenticate";

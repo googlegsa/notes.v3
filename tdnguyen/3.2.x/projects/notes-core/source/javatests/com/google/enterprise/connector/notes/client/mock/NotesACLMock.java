@@ -41,7 +41,7 @@ public class NotesACLMock extends NotesBaseMock implements NotesACL {
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public NotesACLEntry getFirstEntry() throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "getFirstEntry");
     if (entries.size() == 0) {
@@ -52,7 +52,7 @@ public class NotesACLMock extends NotesBaseMock implements NotesACL {
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public NotesACLEntry getNextEntry() throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "getNextEntry");
     if (index < entries.size()) {
@@ -64,7 +64,7 @@ public class NotesACLMock extends NotesBaseMock implements NotesACL {
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public NotesACLEntry getNextEntry(NotesACLEntry previousEntry)
       throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "getNextEntry(prev)");
@@ -81,7 +81,7 @@ public class NotesACLMock extends NotesBaseMock implements NotesACL {
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public Vector getRoles() throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "getRoles)");
     return new Vector();

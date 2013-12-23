@@ -55,14 +55,14 @@ public class NotesViewMock extends NotesBaseMock implements NotesView {
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public int getEntryCount() throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "getEntryCount");
     return documents.size();
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public NotesDocument getFirstDocument()
       throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "getFirstDocument");
@@ -73,7 +73,7 @@ public class NotesViewMock extends NotesBaseMock implements NotesView {
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public NotesDocument getNextDocument(NotesDocument previousDocument)
       throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "getNextDocument");
@@ -89,7 +89,7 @@ public class NotesViewMock extends NotesBaseMock implements NotesView {
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   /* For tests, assume that the key field is the first configured
    * field in the view. */
   public NotesDocument getDocumentByKey(Object key)
@@ -99,7 +99,7 @@ public class NotesViewMock extends NotesBaseMock implements NotesView {
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public NotesDocument getDocumentByKey(Vector key)
       throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "getDocumentByKey(Vector)");
@@ -107,7 +107,7 @@ public class NotesViewMock extends NotesBaseMock implements NotesView {
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public NotesDocument getDocumentByKey(Object key, boolean exact)
       throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "getDocumentByKey " + key);
@@ -133,7 +133,7 @@ public class NotesViewMock extends NotesBaseMock implements NotesView {
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public NotesDocument getDocumentByKey(Vector key, boolean exact)
       throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "getDocumentByKey(Vector)");
@@ -141,7 +141,7 @@ public class NotesViewMock extends NotesBaseMock implements NotesView {
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public NotesViewNavigator createViewNavFromCategory(String category)
       throws RepositoryException {
     if (null != viewNavFromCategoryCreator) {
@@ -160,7 +160,7 @@ public class NotesViewMock extends NotesBaseMock implements NotesView {
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public NotesViewNavigator createViewNav()
       throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "createViewNav");
@@ -168,7 +168,7 @@ public class NotesViewMock extends NotesBaseMock implements NotesView {
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public void refresh() throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "refresh");
 
@@ -176,14 +176,14 @@ public class NotesViewMock extends NotesBaseMock implements NotesView {
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public NotesViewEntryCollection getAllEntries() throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "getAllEntries");
     return null;
   }
   
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public NotesViewEntryCollection getAllEntriesByKey(Vector keys)
       throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "getAllEntriesByKey");
@@ -191,7 +191,7 @@ public class NotesViewMock extends NotesBaseMock implements NotesView {
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public NotesViewEntryCollection getAllEntriesByKey(Object key)
       throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "getAllEntriesByKey");
@@ -199,7 +199,7 @@ public class NotesViewMock extends NotesBaseMock implements NotesView {
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public NotesViewEntryCollection getAllEntriesByKey(Vector keys, boolean exact)
       throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "getAllEntriesByKey");
@@ -207,7 +207,7 @@ public class NotesViewMock extends NotesBaseMock implements NotesView {
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public NotesViewEntryCollection getAllEntriesByKey(Object key, boolean exact)
       throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "getAllEntriesByKey");

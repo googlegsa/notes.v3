@@ -569,7 +569,7 @@ public class NotesConnectorDocument implements Document {
     return UNID;
   }
 
-  /* @Override */
+  @Override
   public Property findProperty(String name) throws RepositoryException {
     // Maintain the ability to check docProps directly for testing.
     List<Value> list = docProps.get(name);
@@ -580,7 +580,7 @@ public class NotesConnectorDocument implements Document {
     return prop;
   }
 
-  /* @Override */
+  @Override
   public Set<String> getPropertyNames() throws RepositoryException {
     return docProps.keySet();
   }

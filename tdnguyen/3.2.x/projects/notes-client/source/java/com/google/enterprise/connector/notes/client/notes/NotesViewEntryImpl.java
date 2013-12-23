@@ -31,7 +31,7 @@ class NotesViewEntryImpl extends NotesBaseImpl<ViewEntry>
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public Vector getColumnValues() throws NotesConnectorExceptionImpl {
     try {
       return TypeConverter.toConnectorValues(
@@ -42,7 +42,7 @@ class NotesViewEntryImpl extends NotesBaseImpl<ViewEntry>
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public NotesDocument getDocument() throws NotesConnectorExceptionImpl {
     try {
       Document doc = getNotesObject().getDocument();

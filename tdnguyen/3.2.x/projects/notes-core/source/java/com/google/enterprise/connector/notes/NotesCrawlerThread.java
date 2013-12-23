@@ -916,7 +916,6 @@ public class NotesCrawlerThread extends Thread {
         NotesDocument crawlDoc = null;
         // Only get from the queue if there is more than 300MB in the
         // spool directory
-        // TODO: getFreeSpace is a Java 1.6 method.
         java.io.File spoolDir = new java.io.File(ncs.getSpoolDir());
         LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
             "Spool free space is " + spoolDir.getFreeSpace());

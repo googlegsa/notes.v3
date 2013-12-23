@@ -460,19 +460,19 @@ public class NotesConnectorSession implements Session {
     return notesDocManager;
   }
 
-  /* @Override */
+  @Override
   public AuthenticationManager getAuthenticationManager() {
     //TODO: Should we always return the same AuthenticationManager?
     return new NotesAuthenticationManager(this);
   }
 
-  /* @Override */
+  @Override
   public AuthorizationManager getAuthorizationManager() {
     //TODO: Should we always return the same AuthorizationManager?
     return new NotesAuthorizationManager(this);
   }
 
-  /* @Override */
+  @Override
   public synchronized TraversalManager getTraversalManager() {
     if (traversalManager == null) {
       traversalManager = new NotesTraversalManager(this);

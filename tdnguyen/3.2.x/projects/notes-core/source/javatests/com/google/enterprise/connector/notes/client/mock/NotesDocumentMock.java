@@ -68,14 +68,14 @@ public class NotesDocumentMock extends NotesBaseMock
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public boolean hasItem(String name) throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "hasItem");
     return items.containsKey(name.toLowerCase());
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public String getItemValueString(String name) throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "getItemValueString");
     NotesItemMock item = items.get(name.toLowerCase());
@@ -100,7 +100,7 @@ public class NotesDocumentMock extends NotesBaseMock
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public int getItemValueInteger(String name) throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "getItemValueInteger");
     NotesItemMock item = items.get(name.toLowerCase());
@@ -120,7 +120,7 @@ public class NotesDocumentMock extends NotesBaseMock
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public Vector getItemValue(String name) throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "getItemValue");
     NotesItemMock item = items.get(name.toLowerCase());
@@ -135,21 +135,21 @@ public class NotesDocumentMock extends NotesBaseMock
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public NotesItem getFirstItem(String name) throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "getFirstItem");
     return items.get(name.toLowerCase());
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public Vector getItems() throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "getItems");
     return new Vector<Object>(items.values());
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public Vector getItemValueDateTimeArray(String name)
       throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "getItemValueDateTimeArray");
@@ -171,13 +171,13 @@ public class NotesDocumentMock extends NotesBaseMock
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public void removeItem(String name) throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "removeItem");
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public NotesItem replaceItemValue(String name, Object value)
       throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "replaceItemValue " + name);
@@ -202,7 +202,7 @@ public class NotesDocumentMock extends NotesBaseMock
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public NotesItem appendItemValue(String name, Object value)
       throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "appendItemValue");
@@ -225,21 +225,21 @@ public class NotesDocumentMock extends NotesBaseMock
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public boolean save() throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "save");
     return false;
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public boolean save(boolean force) throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "save");
     return false;
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public boolean remove(boolean force) throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "remove");
     database.removeDocument(this);
@@ -247,14 +247,14 @@ public class NotesDocumentMock extends NotesBaseMock
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public NotesDocumentCollection getResponses() throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "getResponses");
     return new NotesDocumentCollectionMock(responses);
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public NotesEmbeddedObject getAttachment(String filename)
       throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "getAttachment");
@@ -262,28 +262,28 @@ public class NotesDocumentMock extends NotesBaseMock
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public String getNotesURL() throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "getNotesURL");
     return null;
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public String getUniversalID() throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "getUniversalID");
     return getItemValueString("unid");
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public void copyAllItems(NotesDocument doc, boolean replace)
       throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "copyAllItems");
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public NotesRichTextItem createRichTextItem(String name)
       throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "createRichTextItem");
@@ -291,21 +291,21 @@ public class NotesDocumentMock extends NotesBaseMock
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public NotesDateTime getCreated() throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "getCreated");
     return null;
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public NotesDateTime getLastModified() throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "getLastModified");
     return null;
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public Vector getAuthors() throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "getAuthors");
     return null;

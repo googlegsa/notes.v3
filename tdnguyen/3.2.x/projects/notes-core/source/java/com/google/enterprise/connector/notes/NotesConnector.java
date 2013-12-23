@@ -73,7 +73,7 @@ public class NotesConnector implements Connector,
     }
   }
 
-  /* @Override */
+  @Override
   public com.google.enterprise.connector.spi.Session login()
       throws RepositoryException {
     final String METHOD = "login";
@@ -297,7 +297,7 @@ public class NotesConnector implements Connector,
     return peopleCacheLock;
   }
 
-  /* @Override */
+  @Override
   public void delete() {
     final String METHOD = "delete";
     LOGGER.logp(Level.INFO, CLASS_NAME, METHOD,
@@ -312,7 +312,7 @@ public class NotesConnector implements Connector,
     return deleted;
   }
 
-  /* @Override */
+  @Override
   public void shutdown() {
     final String METHOD = "shutdown";
 

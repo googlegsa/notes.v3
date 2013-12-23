@@ -40,14 +40,14 @@ public class SessionFactoryMock implements SessionFactory {
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public NotesSession createSessionWithFullAccess(String password) {
     LOGGER.entering(CLASS_NAME, "createSessionWithFullAccess");
     return new NotesSessionMock(databases, environment);
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public NotesThread getNotesThread() {
     LOGGER.entering(CLASS_NAME, "getNotesThread");
     return new NotesThreadMock();
