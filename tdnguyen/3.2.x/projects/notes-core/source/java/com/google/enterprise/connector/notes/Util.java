@@ -14,10 +14,8 @@
 
 package com.google.enterprise.connector.notes;
 
-import com.google.common.base.Charsets;
 import com.google.enterprise.connector.notes.client.NotesBase;
 import com.google.enterprise.connector.spi.RepositoryException;
-import com.google.enterprise.connector.util.Base16;
 
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -36,6 +34,7 @@ class Util {
   private static final String CLASS_NAME = Util.class.getName();
   private static final Logger LOGGER = Logger.getLogger(CLASS_NAME);
   private static final String DEFAULT_ALGORITHM = "SHA1";
+  private static final char[] HEX_CHARS = "0123456789abcdef".toCharArray();
 
   static void recycle(NotesBase obj) {
     if (null != obj) {
@@ -157,8 +156,7 @@ class Util {
   static String hash(String word) {
     try {
       MessageDigest digest = MessageDigest.getInstance(DEFAULT_ALGORITHM);
-      byte[] hashBytes = digest.digest(word.getBytes(Charsets.UTF_8));
-      String hashStr = Base16.lowerCase().encode(hashBytes);
+      String hashStr = asHex(digest.digest(word.getBytes()));
       LOGGER.log(Level.FINEST, "Create a hash for {0} => {1}",
           new Object[] {word, hashStr});
       return hashStr;
@@ -167,6 +165,22 @@ class Util {
           + " message digest");
       return null;
     }
+  }
+
+  /**
+   * Utility method to convert a byte[] to hex string.  This method is a copy of
+   * Util.asHex method in DB Connector.
+   *
+   * @param buf
+   * @return hex string.
+   */
+  public static String asHex(byte[] buf) {
+    char[] chars = new char[2 * buf.length];
+    for (int i = 0; i < buf.length; ++i) {
+      chars[2 * i] = HEX_CHARS[(buf[i] & 0xF0) >>> 4];
+      chars[2 * i + 1] = HEX_CHARS[buf[i] & 0x0F];
+    }
+    return new String(chars);
   }
 
   /**

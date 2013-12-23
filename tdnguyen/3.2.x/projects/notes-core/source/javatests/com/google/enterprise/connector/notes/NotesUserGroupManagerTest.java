@@ -15,18 +15,25 @@
 package com.google.enterprise.connector.notes;
 
 import com.google.common.collect.Lists;
+import com.google.enterprise.connector.notes.NotesConnector;
+import com.google.enterprise.connector.notes.NotesConnectorSession;
 import com.google.enterprise.connector.notes.client.NotesACL;
 import com.google.enterprise.connector.notes.client.NotesACLEntry;
+import com.google.enterprise.connector.notes.client.NotesDatabase;
+import com.google.enterprise.connector.notes.client.NotesDocument;
 import com.google.enterprise.connector.notes.client.NotesItem;
 import com.google.enterprise.connector.notes.client.NotesSession;
 import com.google.enterprise.connector.notes.client.NotesView;
-import com.google.enterprise.connector.notes.client.mock.NotesACLEntryMock;
 import com.google.enterprise.connector.notes.client.mock.NotesACLMock;
+import com.google.enterprise.connector.notes.client.mock.NotesACLEntryMock;
 import com.google.enterprise.connector.notes.client.mock.NotesDatabaseMock;
 import com.google.enterprise.connector.notes.client.mock.NotesDocumentMock;
 import com.google.enterprise.connector.notes.client.mock.NotesItemMock;
 import com.google.enterprise.connector.notes.client.mock.NotesSessionMock;
 import com.google.enterprise.connector.notes.client.mock.SessionFactoryMock;
+import com.google.enterprise.connector.notes.client.mock.ViewNavFromCategoryCreator;
+import com.google.enterprise.connector.spi.LocalDatabase;
+import com.google.enterprise.connector.spi.Session;
 import com.google.enterprise.connector.util.database.JdbcDatabase;
 
 import junit.extensions.TestSetup;
@@ -37,11 +44,15 @@ import junit.framework.TestSuite;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Vector;
+import javax.sql.DataSource;
 
 public class NotesUserGroupManagerTest extends TestCase {
 
@@ -232,8 +243,6 @@ public class NotesUserGroupManagerTest extends TestCase {
     NotesDocumentMock notesPerson = new NotesDocumentMock();
     notesPerson.addItem(new NotesItemMock("name", "unid",
             "type", NotesItem.TEXT, "values", gsaname));
-    notesPerson.addItem(new NotesItemMock("name", NCCONST.NCITM_UNID,
-            "type", NotesItem.TEXT, "values", gsaname));
     notesPerson.addItem(new NotesItemMock("name", NCCONST.PITM_FULLNAME,
             "type", NotesItem.TEXT, "values", notesname));
     notesPerson.addItem(new NotesItemMock("name", "HTTPPassword",
@@ -257,8 +266,6 @@ public class NotesUserGroupManagerTest extends TestCase {
       String... members) throws Exception {
     NotesDocumentMock notesGroup = new NotesDocumentMock();
     notesGroup.addItem(new NotesItemMock("name", "unid",
-            "type", NotesItem.TEXT, "values", groupName));
-    notesGroup.addItem(new NotesItemMock("name", NCCONST.NCITM_UNID,
             "type", NotesItem.TEXT, "values", groupName));
     notesGroup.addItem(new NotesItemMock("name", NCCONST.GITM_LISTNAME,
             "type", NotesItem.TEXT, "values", groupName));
@@ -291,8 +298,6 @@ public class NotesUserGroupManagerTest extends TestCase {
       new HashMap<Long, HashSet<Long>>();
   private HashMap<Long, HashSet<Long>> groupRoles =
       new HashMap<Long, HashSet<Long>>();
-  private List<String> userUnids;
-  private List<String> groupUnids;
 
   public NotesUserGroupManagerTest() {
     super();
@@ -303,10 +308,6 @@ public class NotesUserGroupManagerTest extends TestCase {
     userGroupManager.setUpResources(true);
     conn = userGroupManager.getConnection();
     userGroupManager.initializeUserCache();
-    userUnids =
-        userGroupManager.getViewUnids(namesDatabase, NCCONST.DIRVIEW_VIMUSERS);
-    groupUnids =
-        userGroupManager.getViewUnids(namesDatabase, NCCONST.DIRVIEW_VIMGROUPS);
   }
 
   protected void tearDown() {
@@ -493,8 +494,8 @@ public class NotesUserGroupManagerTest extends TestCase {
   }
 
   public void testGroupDeletions() throws Exception {
-    userGroupManager.updateGroups(groupUnids);
-    userGroupManager.updateUsers(userUnids);
+    userGroupManager.updateGroups();
+    userGroupManager.updateUsers();
 
     // Find the Notes doc for the group to be deleted.
     // Use a group with children.
@@ -537,8 +538,8 @@ public class NotesUserGroupManagerTest extends TestCase {
   }
 
   public void testUserNoLongerSelected() throws Exception {
-    userGroupManager.updateGroups(groupUnids);
-    userGroupManager.updateUsers(userUnids);
+    userGroupManager.updateGroups();
+    userGroupManager.updateUsers();
 
     // Find the Notes doc for the user to be deleted.
     NotesView nameView = namesDatabase.getView("notesnamelookup");
@@ -752,13 +753,13 @@ public class NotesUserGroupManagerTest extends TestCase {
   }
 
   private void setUpGroups() throws Exception {
-    userGroupManager.updateGroups(groupUnids);
+    userGroupManager.updateGroups();
     getGroupData();
   }
 
   private void setUpUsers() throws Exception {
-    userGroupManager.updateGroups(groupUnids);
-    userGroupManager.updateUsers(userUnids);
+    userGroupManager.updateGroups();
+    userGroupManager.updateUsers();
     getGroupData(); // Must be done after updateUsers
     getUserData();
   }
