@@ -14,7 +14,5 @@
 
 package com.google.enterprise.connector.notes.client;
 
-import com.google.enterprise.connector.spi.RepositoryException;
-
 public interface NotesDateRange extends NotesBase {
 }

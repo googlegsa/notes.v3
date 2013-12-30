@@ -19,8 +19,6 @@ import com.google.enterprise.connector.notes.client.NotesEmbeddedObject;
 import lotus.domino.EmbeddedObject;
 import lotus.domino.NotesException;
 
-import java.util.Date;
-
 class NotesEmbeddedObjectImpl extends NotesBaseImpl<EmbeddedObject>
     implements NotesEmbeddedObject {
 

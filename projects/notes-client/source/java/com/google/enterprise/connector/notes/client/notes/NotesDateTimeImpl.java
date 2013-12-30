@@ -20,7 +20,6 @@ import lotus.domino.DateTime;
 import lotus.domino.NotesException;
 
 import java.util.Date;
-import java.util.Vector;
 
 class NotesDateTimeImpl extends NotesBaseImpl<DateTime>
     implements NotesDateTime {

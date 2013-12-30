@@ -22,8 +22,6 @@ import lotus.domino.NotesException;
 import lotus.domino.ViewEntry;
 import lotus.domino.ViewEntryCollection;
 
-import java.util.logging.Logger;
-
 class NotesViewEntryCollectionImpl extends NotesBaseImpl<ViewEntryCollection>
     implements NotesViewEntryCollection {
 

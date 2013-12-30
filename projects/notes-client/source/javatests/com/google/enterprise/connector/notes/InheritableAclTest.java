@@ -22,7 +22,6 @@ import com.google.enterprise.connector.notes.client.NotesView;
 import com.google.enterprise.connector.spi.Document;
 import com.google.enterprise.connector.spi.Property;
 import com.google.enterprise.connector.spi.SpiConstants;
-import com.google.enterprise.connector.spi.Session;
 import com.google.enterprise.connector.spi.Value;
 
 import junit.extensions.TestSetup;
@@ -32,8 +31,6 @@ import junit.framework.TestSuite;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Vector;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class InheritableAclTest extends TestCase {

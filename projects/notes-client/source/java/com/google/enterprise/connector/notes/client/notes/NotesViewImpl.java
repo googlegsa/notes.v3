@@ -18,7 +18,6 @@ import com.google.enterprise.connector.notes.client.NotesDocument;
 import com.google.enterprise.connector.notes.client.NotesView;
 import com.google.enterprise.connector.notes.client.NotesViewEntryCollection;
 import com.google.enterprise.connector.notes.client.NotesViewNavigator;
-import com.google.enterprise.connector.spi.RepositoryException;
 
 import lotus.domino.Document;
 import lotus.domino.NotesException;

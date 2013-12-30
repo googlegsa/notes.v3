@@ -20,7 +20,6 @@ import com.google.enterprise.connector.notes.client.NotesDocumentCollection;
 import com.google.enterprise.connector.notes.client.NotesEmbeddedObject;
 import com.google.enterprise.connector.notes.client.NotesItem;
 import com.google.enterprise.connector.notes.client.NotesRichTextItem;
-import com.google.enterprise.connector.notes.client.NotesView;
 import com.google.enterprise.connector.spi.RepositoryException;
 
 import java.util.ArrayList;

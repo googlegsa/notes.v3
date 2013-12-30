@@ -14,16 +14,16 @@
 
 package com.google.enterprise.connector.notes.client.mock;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Vector;
-import java.util.logging.Logger;
-
 import com.google.enterprise.connector.notes.client.NotesDocument;
 import com.google.enterprise.connector.notes.client.NotesView;
 import com.google.enterprise.connector.notes.client.NotesViewEntryCollection;
 import com.google.enterprise.connector.notes.client.NotesViewNavigator;
 import com.google.enterprise.connector.spi.RepositoryException;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Vector;
+import java.util.logging.Logger;
 
 public class NotesViewMock extends NotesBaseMock implements NotesView {
   private static final String CLASS_NAME = NotesViewMock.class.getName();

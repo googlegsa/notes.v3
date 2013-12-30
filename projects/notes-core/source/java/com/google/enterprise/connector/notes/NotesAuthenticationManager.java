@@ -14,15 +14,11 @@
 
 package com.google.enterprise.connector.notes;
 
-import com.google.common.base.Strings;
+import com.google.enterprise.connector.notes.NotesUserGroupManager.User;
 import com.google.enterprise.connector.notes.client.NotesDatabase;
 import com.google.enterprise.connector.notes.client.NotesDocument;
 import com.google.enterprise.connector.notes.client.NotesSession;
-import com.google.enterprise.connector.notes.client.NotesThread;
 import com.google.enterprise.connector.notes.client.NotesView;
-import com.google.enterprise.connector.notes.client.NotesViewEntry;
-import com.google.enterprise.connector.notes.client.NotesViewNavigator;
-import com.google.enterprise.connector.notes.NotesUserGroupManager.User;
 import com.google.enterprise.connector.spi.AuthenticationIdentity;
 import com.google.enterprise.connector.spi.AuthenticationManager;
 import com.google.enterprise.connector.spi.AuthenticationResponse;
@@ -30,11 +26,8 @@ import com.google.enterprise.connector.spi.Principal;
 import com.google.enterprise.connector.spi.SpiConstants.CaseSensitivityType;
 import com.google.enterprise.connector.spi.SpiConstants.PrincipalType;
 
-import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.List;
-import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 

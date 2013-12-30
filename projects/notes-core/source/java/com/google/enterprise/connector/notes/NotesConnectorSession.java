@@ -18,7 +18,6 @@ import com.google.common.base.Strings;
 import com.google.enterprise.connector.notes.client.NotesDatabase;
 import com.google.enterprise.connector.notes.client.NotesDocument;
 import com.google.enterprise.connector.notes.client.NotesSession;
-import com.google.enterprise.connector.notes.client.NotesThread;
 import com.google.enterprise.connector.notes.client.NotesView;
 import com.google.enterprise.connector.notes.client.NotesViewEntry;
 import com.google.enterprise.connector.notes.client.NotesViewNavigator;
@@ -29,7 +28,6 @@ import com.google.enterprise.connector.spi.Session;
 import com.google.enterprise.connector.spi.TraversalManager;
 
 import java.util.HashMap;
-import java.util.Map;
 import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;

@@ -22,26 +22,19 @@ import com.google.enterprise.connector.notes.client.NotesDatabase;
 import com.google.enterprise.connector.notes.client.NotesDocument;
 import com.google.enterprise.connector.notes.client.NotesItem;
 import com.google.enterprise.connector.notes.client.NotesSession;
-import com.google.enterprise.connector.notes.client.NotesView;
-import com.google.enterprise.connector.notes.client.mock.NotesACLMock;
 import com.google.enterprise.connector.notes.client.mock.NotesACLEntryMock;
+import com.google.enterprise.connector.notes.client.mock.NotesACLMock;
 import com.google.enterprise.connector.notes.client.mock.NotesDatabaseMock;
 import com.google.enterprise.connector.notes.client.mock.NotesDocumentMock;
 import com.google.enterprise.connector.notes.client.mock.NotesItemMock;
 import com.google.enterprise.connector.notes.client.mock.SessionFactoryMock;
 import com.google.enterprise.connector.spi.RepositoryException;
-import com.google.enterprise.connector.spi.Session;
 import com.google.enterprise.connector.spi.SimpleTraversalContext;
 
 import junit.framework.TestCase;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Vector;
 
 public class NotesDatabasePollerTest extends TestCase {
 

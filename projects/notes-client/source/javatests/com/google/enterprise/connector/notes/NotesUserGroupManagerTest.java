@@ -14,33 +14,18 @@
 
 package com.google.enterprise.connector.notes;
 
-import com.google.enterprise.connector.notes.NotesConnector;
 import com.google.enterprise.connector.notes.NotesConnectorSession;
-import com.google.enterprise.connector.notes.client.NotesDatabase;
-import com.google.enterprise.connector.notes.client.NotesDocument;
-import com.google.enterprise.connector.notes.client.NotesItem;
 import com.google.enterprise.connector.notes.client.NotesSession;
-import com.google.enterprise.connector.notes.client.NotesView;
-import com.google.enterprise.connector.spi.LocalDatabase;
-import com.google.enterprise.connector.spi.Session;
 import com.google.enterprise.connector.util.database.JdbcDatabase;
 
-import junit.extensions.TestSetup;
 import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Vector;
-import javax.sql.DataSource;
 
 public class NotesUserGroupManagerTest extends ConnectorFixture {
 

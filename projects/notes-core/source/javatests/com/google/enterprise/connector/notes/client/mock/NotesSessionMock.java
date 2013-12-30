@@ -19,7 +19,6 @@ import com.google.enterprise.connector.notes.client.NotesDateTime;
 import com.google.enterprise.connector.notes.client.NotesDocument;
 import com.google.enterprise.connector.notes.client.NotesName;
 import com.google.enterprise.connector.notes.client.NotesSession;
-import com.google.enterprise.connector.notes.client.NotesView;
 import com.google.enterprise.connector.spi.RepositoryException;
 
 import java.text.ParseException;

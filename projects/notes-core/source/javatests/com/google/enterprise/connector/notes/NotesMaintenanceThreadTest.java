@@ -14,11 +14,11 @@
 
 package com.google.enterprise.connector.notes;
 
-import java.util.Map;
+import com.google.enterprise.connector.notes.client.mock.SessionFactoryMock;
 
 import junit.framework.TestCase;
 
-import com.google.enterprise.connector.notes.client.mock.SessionFactoryMock;
+import java.util.Map;
 
 public class NotesMaintenanceThreadTest extends TestCase {
   private NotesConnector connector;

@@ -23,8 +23,8 @@ import com.google.enterprise.connector.notes.client.NotesView;
 
 import lotus.domino.Database;
 import lotus.domino.DateTime;
-import lotus.domino.View;
 import lotus.domino.NotesException;
+import lotus.domino.View;
 
 import java.util.Vector;
 

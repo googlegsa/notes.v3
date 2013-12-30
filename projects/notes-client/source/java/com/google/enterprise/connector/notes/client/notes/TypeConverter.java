@@ -17,7 +17,6 @@ package com.google.enterprise.connector.notes.client.notes;
 import lotus.domino.DateRange;
 import lotus.domino.DateTime;
 import lotus.domino.Item;
-import lotus.domino.NotesException;
 
 import java.util.Vector;
 

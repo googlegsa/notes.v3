@@ -16,8 +16,8 @@ package com.google.enterprise.connector.notes.client.notes;
 
 import com.google.enterprise.connector.notes.client.NotesRichTextItem;
 
-import lotus.domino.RichTextItem;
 import lotus.domino.NotesException;
+import lotus.domino.RichTextItem;
 
 class NotesRichTextItemImpl extends NotesItemImpl
     implements NotesRichTextItem {

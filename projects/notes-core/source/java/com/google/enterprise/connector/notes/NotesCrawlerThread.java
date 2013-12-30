@@ -26,9 +26,7 @@ import com.google.enterprise.connector.notes.client.NotesView;
 import com.google.enterprise.connector.spi.RepositoryException;
 import com.google.enterprise.connector.spi.SpiConstants.ActionType;
 
-import java.io.IOException;
 import java.net.URLEncoder;
-import java.security.NoSuchAlgorithmException;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.ArrayList;

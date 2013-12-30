@@ -14,14 +14,12 @@
 
 package com.google.enterprise.connector.notes.client.notes;
 
-import com.google.enterprise.connector.notes.client.NotesView;
 import com.google.enterprise.connector.notes.client.NotesViewEntry;
 import com.google.enterprise.connector.notes.client.NotesViewNavigator;
-import com.google.enterprise.connector.notes.client.NotesDocument;
 
+import lotus.domino.NotesException;
 import lotus.domino.ViewEntry;
 import lotus.domino.ViewNavigator;
-import lotus.domino.NotesException;
 
 class NotesViewNavigatorImpl extends NotesBaseImpl<ViewNavigator>
     implements NotesViewNavigator {

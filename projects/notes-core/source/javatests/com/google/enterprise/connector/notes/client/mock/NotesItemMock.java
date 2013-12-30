@@ -18,7 +18,6 @@ import com.google.enterprise.connector.notes.client.NotesDateTime;
 import com.google.enterprise.connector.notes.client.NotesItem;
 import com.google.enterprise.connector.spi.RepositoryException;
 
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Vector;

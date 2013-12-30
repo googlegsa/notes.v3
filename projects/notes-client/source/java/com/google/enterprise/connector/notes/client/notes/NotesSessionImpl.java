@@ -19,11 +19,10 @@ import com.google.enterprise.connector.notes.client.NotesDateTime;
 import com.google.enterprise.connector.notes.client.NotesDocument;
 import com.google.enterprise.connector.notes.client.NotesName;
 import com.google.enterprise.connector.notes.client.NotesSession;
-import com.google.enterprise.connector.notes.client.NotesView;
 
 import lotus.domino.Database;
-import lotus.domino.Session;
 import lotus.domino.NotesException;
+import lotus.domino.Session;
 
 import java.util.Vector;
 

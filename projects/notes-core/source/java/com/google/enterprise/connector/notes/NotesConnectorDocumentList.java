@@ -21,15 +21,14 @@ import com.google.enterprise.connector.notes.client.NotesView;
 import com.google.enterprise.connector.spi.Document;
 import com.google.enterprise.connector.spi.DocumentList;
 import com.google.enterprise.connector.spi.RepositoryException;
-import com.google.enterprise.connector.spi.SpiConstants;
 import com.google.enterprise.connector.spi.SpiConstants.ActionType;
 
+import java.net.MalformedURLException;
+import java.sql.Connection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.net.MalformedURLException;
-import java.sql.Connection;
 
 class NotesConnectorDocumentList implements DocumentList {
   private static final String CLASS_NAME =

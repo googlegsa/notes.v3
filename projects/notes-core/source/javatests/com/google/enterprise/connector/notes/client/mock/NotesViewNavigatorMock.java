@@ -14,10 +14,9 @@
 
 package com.google.enterprise.connector.notes.client.mock;
 
-import com.google.enterprise.connector.notes.client.NotesView;
+import com.google.enterprise.connector.notes.client.NotesDocument;
 import com.google.enterprise.connector.notes.client.NotesViewEntry;
 import com.google.enterprise.connector.notes.client.NotesViewNavigator;
-import com.google.enterprise.connector.notes.client.NotesDocument;
 import com.google.enterprise.connector.spi.RepositoryException;
 
 import java.util.logging.Logger;
