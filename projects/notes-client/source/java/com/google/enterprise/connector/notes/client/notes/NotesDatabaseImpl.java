@@ -61,8 +61,8 @@ class NotesDatabaseImpl extends NotesBaseImpl<Database>
   }
 
   /** {@inheritDoc} */
-  @Override
   /* Throws an exception if the UNID isn't found. */
+  @Override
   public NotesDocument getDocumentByUNID(String unid)
       throws NotesConnectorExceptionImpl {
     try {

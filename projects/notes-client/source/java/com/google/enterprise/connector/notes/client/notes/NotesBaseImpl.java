@@ -23,7 +23,7 @@ import java.util.Vector;
 
 class NotesBaseImpl<E extends Base> implements NotesBase {
 
-  private E notesObject;
+  private final E notesObject;
 
   NotesBaseImpl(E notesObject) {
     this.notesObject = notesObject;

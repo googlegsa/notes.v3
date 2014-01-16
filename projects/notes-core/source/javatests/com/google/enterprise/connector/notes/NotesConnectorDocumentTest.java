@@ -63,7 +63,7 @@ public class NotesConnectorDocumentTest extends TestCase {
   public static Test suite() {
     return new TestSetup(
         new TestSuite(NotesConnectorDocumentTest.class)) {
-      protected void setUp() throws Exception {
+      @Override protected void setUp() throws Exception {
         supportsInheritedAcls =
             Boolean.getBoolean("javatest.supportsinheritedacls");
         connector = NotesConnectorTest.getConnector();
@@ -97,7 +97,7 @@ public class NotesConnectorDocumentTest extends TestCase {
         userGroupManager.updateUsersGroups();
       }
 
-      protected void tearDown() throws Exception {
+      @Override protected void tearDown() throws Exception {
         connector.shutdown();
       }
     };

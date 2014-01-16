@@ -44,8 +44,8 @@ public class NotesCrawlerThread extends Thread {
   private static final Logger LOGGER = Logger.getLogger(CLASS_NAME);
   static final String META_FIELDS_PREFIX = "x.";
 
-  private NotesConnector nc = null;
-  private NotesConnectorSession ncs = null;
+  private final NotesConnector nc;
+  private final NotesConnectorSession ncs;
   private NotesSession ns = null;
   private NotesDatabase cdb = null;
   @VisibleForTesting
@@ -1033,6 +1033,7 @@ public class NotesCrawlerThread extends Thread {
       return metaName;
     }
 
+    @Override
     public String toString() {
       return "[form: " + formName + "; field: " + fieldName
           + "; meta: " + metaName + "]";

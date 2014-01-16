@@ -35,7 +35,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.Vector;
 
-public class NotesDocumentManagerTest extends TestCase{
+public class NotesDocumentManagerTest extends TestCase {
   private NotesConnector connector;
   private SessionFactoryMock factory;
   private NotesConnectorSession connectorSession;
@@ -43,9 +43,10 @@ public class NotesDocumentManagerTest extends TestCase{
   private NotesDocumentManager notesDocManager;
   
   private List<NotesDocument> docs;
-  private static int NUM_OF_DOCS = 1000;
-  
-  public void setUp() throws Exception {
+  private static final int NUM_OF_DOCS = 1000;
+
+  @Override
+  protected void setUp() throws Exception {
     super.setUp();
     connector = NotesConnectorTest.getConnector();
     factory = (SessionFactoryMock) connector.getSessionFactory();
@@ -57,7 +58,8 @@ public class NotesDocumentManagerTest extends TestCase{
     updateSearchIndex();
   }
 
-  public void tearDown() throws Exception {
+  @Override
+  protected void tearDown() throws Exception {
     docs.clear();
   }
 

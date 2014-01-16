@@ -38,16 +38,17 @@ public class NotesConnectorSession implements Session {
 
   private TraversalManager traversalManager;
   private NotesUserGroupManager userGroupManager;
-  private String server = null;
-  private String database = null;
-  private String password = "";
-  private NotesConnector connector = null;
+  private final String server;
+  private final String database;
+  private final String password;
+  private final NotesConnector connector;
   private Vector<String> ExcludedExtns = null;
   private int MaxFileSize;
   private String SpoolDir = null;
   private HashMap<String,String> MimeTypeMap = null;
-  HashMap<String, String> serverDomainMap = new HashMap<String, String>();
-  private NotesPollerNotifier npn = null;
+  private final HashMap<String, String> serverDomainMap =
+      new HashMap<String, String>();
+  private final NotesPollerNotifier npn;
   private int maxCrawlQDepth;
   private int deletionBatchSize;
   private int numCrawlerThreads;

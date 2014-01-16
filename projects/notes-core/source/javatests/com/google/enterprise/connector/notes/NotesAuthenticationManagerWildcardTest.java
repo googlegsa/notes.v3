@@ -66,7 +66,7 @@ public class NotesAuthenticationManagerWildcardTest extends TestCase {
   public static Test suite() {
     return new TestSetup(
         new TestSuite(NotesAuthenticationManagerWildcardTest.class)) {
-      protected void setUp() throws Exception {
+      @Override protected void setUp() throws Exception {
         connector = NotesConnectorTest.getConnector();
         factory = (SessionFactoryMock) connector.getSessionFactory();
         NotesConnectorSessionTest.configureFactoryForSession(factory);
@@ -119,6 +119,7 @@ public class NotesAuthenticationManagerWildcardTest extends TestCase {
     super();
   }
 
+  @Override
   protected void setUp() throws Exception {
     super.setUp();
     authenticationManager = connectorSession.getAuthenticationManager();

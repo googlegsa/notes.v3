@@ -86,6 +86,7 @@ public class NotesDatabasePollerTest extends TestCase {
     super();
   }
 
+  @Override
   protected void setUp() throws Exception {
     super.setUp();
     // TODO: handle both versions of acl support within the tests
@@ -104,6 +105,7 @@ public class NotesDatabasePollerTest extends TestCase {
     poller = new DatabasePollerTestable(connectorSession);
   }
 
+  @Override
   protected void tearDown() {
     if (null != connector) {
       connector.shutdown();

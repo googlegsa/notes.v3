@@ -23,6 +23,7 @@ class NotesDateRangeMock extends NotesBaseMock
   }
 
   /* TODO: implement getText.
+  @Override
   public String toString() {
     try {
       return getText();

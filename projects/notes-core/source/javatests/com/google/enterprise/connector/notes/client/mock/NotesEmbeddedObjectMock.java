@@ -52,6 +52,7 @@ class NotesEmbeddedObjectMock extends NotesBaseMock
  }
 
   /* TODO: implement getName.
+  @Override
   public String toString() {
     try {
       return getName();

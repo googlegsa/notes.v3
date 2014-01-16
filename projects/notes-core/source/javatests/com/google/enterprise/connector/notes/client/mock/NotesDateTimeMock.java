@@ -74,6 +74,7 @@ public class NotesDateTimeMock extends NotesBaseMock
   }
 
   /* TODO: implement getLocalTime.
+  @Override
   public String toString() {
     try {
       return getLocalTime();

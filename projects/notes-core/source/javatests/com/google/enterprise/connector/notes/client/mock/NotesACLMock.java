@@ -30,7 +30,8 @@ public class NotesACLMock extends NotesBaseMock implements NotesACL {
   private static final Logger LOGGER =
       Logger.getLogger(CLASS_NAME);
 
-  private List<NotesACLEntryMock> entries = new ArrayList<NotesACLEntryMock>();
+  private final List<NotesACLEntryMock> entries =
+      new ArrayList<NotesACLEntryMock>();
   private int index = 0;
 
   public NotesACLMock() {

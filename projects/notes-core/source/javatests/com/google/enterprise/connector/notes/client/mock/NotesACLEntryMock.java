@@ -91,6 +91,7 @@ public class NotesACLEntryMock extends NotesBaseMock
     return roles;
   }
 
+  @Override
   public String toString() {
     try {
       return getName();

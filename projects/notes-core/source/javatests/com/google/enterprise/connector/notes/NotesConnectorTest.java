@@ -39,11 +39,12 @@ public class NotesConnectorTest extends TestCase {
     connector.maintThread = new NotesMaintenanceThread();
     connector.setGoogleConnectorName("notestest");
     connector.setDatabaseAccess(new ConnectorPersistentStore() {
-        @Deprecated
+        @Deprecated @Override
         public com.google.enterprise.connector.spi.LocalDocumentStore
             getLocalDocumentStore() {
           return null;
         }
+        @Override
         public LocalDatabase getLocalDatabase() {
           // TODO: update resource directory when resources are implemented
           return new TestLocalDatabase("Lotus_Notes", null);

@@ -36,7 +36,7 @@ class NotesAuthenticationManager implements AuthenticationManager {
       NotesAuthenticationManager.class.getName();
   private static final Logger LOGGER = Logger.getLogger(CLASS_NAME);
 
-  private NotesConnectorSession connectorSession;
+  private final NotesConnectorSession connectorSession;
 
   public NotesAuthenticationManager(NotesConnectorSession connectorSession) {
     final String METHOD = "<init>";

@@ -20,9 +20,11 @@ class NotesThreadMock implements NotesThread {
   NotesThreadMock() {
   }
 
+  @Override
   public void sinitThread() {
   }
 
+  @Override
   public void stermThread() {
   }
 }

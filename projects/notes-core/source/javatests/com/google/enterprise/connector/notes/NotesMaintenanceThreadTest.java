@@ -28,8 +28,9 @@ public class NotesMaintenanceThreadTest extends TestCase {
   private NotesDocumentManagerTest notesDocMgrDbTest;
   
   private static int BATCH_SIZE = 500;
-  
-  public void setUp() throws Exception {
+
+  @Override
+  protected void setUp() throws Exception {
     super.setUp();
     connector = NotesConnectorTest.getConnector();
     factory = (SessionFactoryMock) connector.getSessionFactory();
@@ -41,9 +42,6 @@ public class NotesMaintenanceThreadTest extends TestCase {
     notesDocMgrDbTest.setUp();
   }
 
-  public void tearDown() throws Exception {
-  }
-  
   public void testCheckForDeletions() throws Exception {
     Map<String,NotesDocId> docs = 
         notesDocMgrDbTest.getIndexedDocument(null, null, 1);

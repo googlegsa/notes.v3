@@ -2498,7 +2498,8 @@ class NotesUserGroupManager {
       both.addAll(roles);
       return both;
     }
-    
+
+    @Override
     public String toString() {
       StringBuilder buf = new StringBuilder();
       buf.append(notesName).append(" [").append(gsaName).append("]");

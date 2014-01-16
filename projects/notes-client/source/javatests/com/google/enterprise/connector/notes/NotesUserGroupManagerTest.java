@@ -53,6 +53,7 @@ public class NotesUserGroupManagerTest extends ConnectorFixture {
     super();
   }
 
+  @Override
   protected void setUp() throws Exception {
     super.setUp();
     connectorSession = (NotesConnectorSession) connector.login();
@@ -61,6 +62,7 @@ public class NotesUserGroupManagerTest extends ConnectorFixture {
     conn = userGroupManager.getConnection();
   }
 
+  @Override
   protected void tearDown() throws Exception {
     userGroupManager.releaseResources();
     super.tearDown();

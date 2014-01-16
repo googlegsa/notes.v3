@@ -40,10 +40,10 @@ public class NotesDocumentMock extends NotesBaseMock
 
   private NotesDatabaseMock database;
 
-  private Map<String, NotesItemMock> items =
+  private final Map<String, NotesItemMock> items =
       new HashMap<String, NotesItemMock>();
 
-  private List<NotesDocumentMock> responses =
+  private final List<NotesDocumentMock> responses =
       new ArrayList<NotesDocumentMock>();
 
   /* The constructor's currently public for testing. At some
@@ -310,6 +310,7 @@ public class NotesDocumentMock extends NotesBaseMock
     return null;
   }
 
+  @Override
   public String toString() {
     StringBuilder buf = new StringBuilder();
     try {

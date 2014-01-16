@@ -45,6 +45,7 @@ public class NotesCrawlerThreadTest extends TestCase {
     super();
   }
 
+  @Override
   protected void setUp() throws Exception {
     super.setUp();
     connector = NotesConnectorTest.getConnector();
@@ -67,6 +68,7 @@ public class NotesCrawlerThreadTest extends TestCase {
         NCCONST.TITM_TEMPLATENAME);
   }
 
+  @Override
   protected void tearDown() {
     if (null != connector) {
       connector.shutdown();

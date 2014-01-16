@@ -32,9 +32,9 @@ public class SessionFactoryMock implements SessionFactory {
   private static final Logger LOGGER =
       Logger.getLogger(CLASS_NAME);
 
-  private List<NotesDatabaseMock> databases =
+  private final List<NotesDatabaseMock> databases =
       new ArrayList<NotesDatabaseMock>();
-  private Map<String, String> environment = new HashMap<String, String>();
+  private final Map<String, String> environment = new HashMap<String, String>();
 
   public SessionFactoryMock() {
   }

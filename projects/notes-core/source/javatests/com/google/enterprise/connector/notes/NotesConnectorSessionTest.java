@@ -43,7 +43,7 @@ public class NotesConnectorSessionTest extends TestCase {
     configDatabase.addViewNavFromCategoryCreator(
         NCCONST.VIEWSECURITY,
         new ViewNavFromCategoryCreator() {
-          public boolean documentIsInCategory(String category,
+          @Override public boolean documentIsInCategory(String category,
               NotesDocumentMock document) {
             try {
               String repId =
@@ -93,7 +93,7 @@ public class NotesConnectorSessionTest extends TestCase {
     namesDatabase.addViewNavFromCategoryCreator(
         NCCONST.DIRVIEW_SERVERACCESS,
         new ViewNavFromCategoryCreator() {
-          public boolean documentIsInCategory(String category,
+          @Override public boolean documentIsInCategory(String category,
               NotesDocumentMock document) {
             try {
               Vector members = document.getItemValue(NCCONST.GITM_MEMBERS);

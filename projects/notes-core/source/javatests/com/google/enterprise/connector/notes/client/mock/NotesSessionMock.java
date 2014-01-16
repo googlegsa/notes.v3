@@ -37,8 +37,8 @@ public class NotesSessionMock extends NotesBaseMock
   private static final Logger LOGGER =
       Logger.getLogger(CLASS_NAME);
 
-  private List<NotesDatabaseMock> databases;
-  private Map<String, String> environment;
+  private final List<NotesDatabaseMock> databases;
+  private final Map<String, String> environment;
 
   NotesSessionMock(List<NotesDatabaseMock> databases,
       Map<String, String> environment) {
@@ -167,6 +167,7 @@ public class NotesSessionMock extends NotesBaseMock
   }
 
   /* TODO: implement getUserName.
+  @Override
   public String toString() {
     try {
       return getUserName();

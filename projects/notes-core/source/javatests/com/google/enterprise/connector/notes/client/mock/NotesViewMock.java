@@ -32,8 +32,8 @@ public class NotesViewMock extends NotesBaseMock implements NotesView {
   private static final Logger LOGGER =
       Logger.getLogger(CLASS_NAME);
 
-  private String viewName;
-  private List<NotesDocumentMock> documents;
+  private final String viewName;
+  private final List<NotesDocumentMock> documents;
   private String[] fields;
   ViewNavFromCategoryCreator viewNavFromCategoryCreator;
 
@@ -215,6 +215,7 @@ public class NotesViewMock extends NotesBaseMock implements NotesView {
   }
 
   /* TODO: implement getName
+  @Override
   public String toString() {
     try {
       return getName();

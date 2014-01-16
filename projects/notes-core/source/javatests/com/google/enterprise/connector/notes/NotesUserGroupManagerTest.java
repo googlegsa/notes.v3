@@ -58,7 +58,7 @@ public class NotesUserGroupManagerTest extends TestCase {
   public static Test suite() {
     return new TestSetup(
         new TestSuite(NotesUserGroupManagerTest.class)) {
-      protected void setUp() throws Exception {
+      @Override protected void setUp() throws Exception {
         connector = NotesConnectorTest.getConnector();
         factory = (SessionFactoryMock) connector.getSessionFactory();
         NotesConnectorSessionTest.configureFactoryForSession(factory);
@@ -214,7 +214,7 @@ public class NotesUserGroupManagerTest extends TestCase {
         }
       }
 
-      protected void tearDown() throws Exception {
+      @Override protected void tearDown() throws Exception {
         connector.shutdown();
       }
     };
@@ -300,6 +300,7 @@ public class NotesUserGroupManagerTest extends TestCase {
     super();
   }
 
+  @Override
   protected void setUp() throws Exception {
     userGroupManager = new NotesUserGroupManager(connectorSession);
     userGroupManager.setUpResources(true);
@@ -311,6 +312,7 @@ public class NotesUserGroupManagerTest extends TestCase {
         userGroupManager.getViewUnids(namesDatabase, NCCONST.DIRVIEW_VIMGROUPS);
   }
 
+  @Override
   protected void tearDown() {
     userGroupManager.clearTables(conn);
     userGroupManager.releaseResources();

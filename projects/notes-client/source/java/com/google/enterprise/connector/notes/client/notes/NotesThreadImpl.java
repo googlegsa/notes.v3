@@ -20,10 +20,12 @@ class NotesThreadImpl implements NotesThread {
   NotesThreadImpl() {
   }
 
+  @Override
   public void sinitThread() {
     lotus.domino.NotesThread.sinitThread();
   }
 
+  @Override
   public void stermThread() {
     lotus.domino.NotesThread.stermThread();
   }

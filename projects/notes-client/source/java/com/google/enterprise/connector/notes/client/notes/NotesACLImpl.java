@@ -40,8 +40,8 @@ class NotesACLImpl extends NotesBaseImpl<ACL> implements NotesACL {
   }
 
   /** {@inheritDoc} */
-  @Override
   /* Apparently never returns null. */
+  @Override
   public NotesACLEntry getFirstEntry() throws NotesConnectorExceptionImpl {
     try {
       return new NotesACLEntryImpl(getNotesObject().getFirstEntry());

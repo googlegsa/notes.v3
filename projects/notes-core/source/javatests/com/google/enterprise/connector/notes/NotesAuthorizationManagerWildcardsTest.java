@@ -79,7 +79,7 @@ private static HashMap<String, User> users = new HashMap<String, User>();
   public static Test suite() {
     return new TestSetup(new TestSuite(
             NotesAuthorizationManagerWildcardsTest.class)) {
-      protected void setUp() throws Exception {
+      @Override protected void setUp() throws Exception {
         connector = NotesConnectorTest.getConnector();
         factory = (SessionFactoryMock) connector.getSessionFactory();
         NotesConnectorSessionTest.configureFactoryForSession(factory);
@@ -183,12 +183,14 @@ private static HashMap<String, User> users = new HashMap<String, User>();
     super();
   }
 
+  @Override
   protected void setUp() throws Exception {
     super.setUp();
     authorizationManager = (NotesAuthorizationManager) connectorSession
         .getAuthorizationManager();
   }
 
+  @Override
   protected void tearDown() throws Exception {
     // Clean up database document permit/deny so each test can
     // start with what it wants to test.

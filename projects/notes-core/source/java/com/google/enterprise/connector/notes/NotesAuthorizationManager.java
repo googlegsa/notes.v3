@@ -38,7 +38,7 @@ class NotesAuthorizationManager implements AuthorizationManager {
       NotesAuthorizationManager.class.getName();
   private static final Logger LOGGER = Logger.getLogger(CLASS_NAME);
 
-  private NotesConnectorSession ncs = null;
+  private final NotesConnectorSession ncs;
 
   public NotesAuthorizationManager(NotesConnectorSession session) {
     final String METHOD = "NotesAuthorizationManager";

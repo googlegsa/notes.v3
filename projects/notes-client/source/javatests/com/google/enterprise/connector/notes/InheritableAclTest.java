@@ -45,7 +45,7 @@ public class InheritableAclTest extends TestCase {
   public static Test suite() {
     if (Boolean.getBoolean("javatest.supportsinheritedacls")) {
       return new TestSetup(new TestSuite(InheritableAclTest.class)) {
-        protected void setUp() throws Exception {
+        @Override protected void setUp() throws Exception {
           connector = ConnectorFixture.getConnector(false, true);
           connectorSession = (NotesConnectorSession) connector.login();
           NotesUserGroupManager userGroupManager =
@@ -54,7 +54,7 @@ public class InheritableAclTest extends TestCase {
           documents = ConnectorFixture.traverseAll(connectorSession);
         }
 
-        protected void tearDown() throws Exception {
+        @Override protected void tearDown() throws Exception {
           connector.shutdown();
         }
       };

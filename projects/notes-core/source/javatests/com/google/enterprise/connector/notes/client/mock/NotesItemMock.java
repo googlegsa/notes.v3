@@ -30,7 +30,7 @@ public class NotesItemMock extends NotesBaseMock implements NotesItem {
   private static final Logger LOGGER =
       Logger.getLogger(CLASS_NAME);
 
-  private Map<String, Object> properties = new HashMap<String, Object>();
+  private final Map<String, Object> properties = new HashMap<String, Object>();
   private boolean isReaders = false;
   private boolean isAuthors = false;
 
@@ -180,6 +180,7 @@ public class NotesItemMock extends NotesBaseMock implements NotesItem {
     LOGGER.entering(CLASS_NAME, "setSummary");
   }
 
+  @Override
   public String toString() {
     try {
       return getName() + " = " + getText(256);

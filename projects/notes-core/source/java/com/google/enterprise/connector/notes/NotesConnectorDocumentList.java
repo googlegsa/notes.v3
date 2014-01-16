@@ -34,9 +34,9 @@ class NotesConnectorDocumentList implements DocumentList {
   private static final String CLASS_NAME =
       NotesConnectorDocumentList.class.getName();
   private static final Logger LOGGER = Logger.getLogger(CLASS_NAME);
-  private Iterator<String> iterator;
+  private final Iterator<String> iterator;
   private NotesConnectorDocument ncdoc = null;
-  private NotesConnectorSession ncs;
+  private final NotesConnectorSession ncs;
   private NotesSession ns = null;
 
   /** The connector database */
@@ -47,7 +47,7 @@ class NotesConnectorDocumentList implements DocumentList {
   private NotesDocument crawldoc = null;
 
   /** The list of UNIDs included in this document list */
-  private List<String> unidList = null;
+  private final List<String> unidList;
 
   public NotesConnectorDocumentList(NotesConnectorSession doclistncs,
       List<String> documents) {
@@ -294,6 +294,7 @@ class NotesConnectorDocumentList implements DocumentList {
     return checkPointUnid;
   }
 
+  @Override
   public String toString() {
     return unidList.toString();
   }

@@ -26,21 +26,21 @@ import java.util.logging.Logger;
 public class NotesDomainNames {
   private static final String CLASS_NAME = NotesDomainNames.class.getName();
   private static final Logger LOGGER = Logger.getLogger(CLASS_NAME);
-  
+
   private final SortedMap<String, Long> domainTree;
-  
+
   public NotesDomainNames() {
     domainTree = Collections.synchronizedSortedMap(new TreeMap<String, Long>());
   }
-  
+
   public void add(String name, Long id) {
     domainTree.put(reverse(name.toLowerCase()), id);
   }
-  
+
   public Long get(String name) {
     return domainTree.get(reverse(name.toLowerCase()));
   }
-  
+
   public LinkedHashMap<String, Long> getSubDomainNames(
       String domainName) {
     final String METHOD = "getSubDomainNames";
@@ -56,11 +56,11 @@ public class NotesDomainNames {
         domainName + ": " + lmap.keySet().toString());
     return lmap;
   }
-  
+
   public int size() {
     return domainTree.size();
   }
-  
+
   /**
    * Reverse canonical or abbreviated name
    * @param canonical or abbreviated name
@@ -75,15 +75,16 @@ public class NotesDomainNames {
     }
     return buf.deleteCharAt(buf.length() - 1).toString();
   }
-  
+
   private String reverse(String name) {
     return reverse(name, "/");
   }
-  
+
+  @Override
   public String toString() {
     return domainTree.toString();
   }
-  
+
   /**
    * Compute person's expanded domain hierarchies.
    */

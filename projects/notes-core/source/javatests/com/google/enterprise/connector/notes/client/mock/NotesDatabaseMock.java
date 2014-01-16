@@ -97,7 +97,6 @@ public class NotesDatabaseMock extends NotesBaseMock
               + " field for " + fieldValue + " value in document [UNID: "
               + unid + "]", e);
         }
-        
       }
     }
     return doclist;
@@ -269,6 +268,7 @@ public class NotesDatabaseMock extends NotesBaseMock
     return true;
   }
 
+  @Override
   public String toString() {
     try {
       return getFilePath();

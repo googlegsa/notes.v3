@@ -37,7 +37,7 @@ public class NotesTraversalManager implements TraversalManager,
   private static final Logger LOGGER = Logger.getLogger(CLASS_NAME);
 
   private int batchHint = 10;
-  private NotesConnectorSession ncs = null;
+  private final NotesConnectorSession ncs;
   private TraversalContext traversalContext;
 
   public NotesTraversalManager(NotesConnectorSession session) {
@@ -45,6 +45,7 @@ public class NotesTraversalManager implements TraversalManager,
   }
 
   /** {@inheritDoc} */
+  @Override
   public void setTraversalContext(TraversalContext traversalContext) {
     this.traversalContext = traversalContext;
     LOGGER.info("Got traversal context. Supports ACLs? "
