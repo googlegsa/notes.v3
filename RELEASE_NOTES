@@ -10,6 +10,25 @@ documentation.
 Web Site: http://code.google.com/p/google-enterprise-connector-notes/
 
 
+Release 3.2.4, January 2014
+===========================
+This is an upgrade release with bug fixes.  Users of version 2.8.4 through
+3.2.0 are encouraged to upgrade.
+
+Issues Fixed Since 3.2.0
+------------------------
+8761274  - The connector encounters "NotesException: Object has been removed or
+           recycled" error when traversing a large Names and Address Book
+           database to update user and group caches.
+11084322 - The connector does not update or delete attachments in the GSA when
+           they are renamed, replaced or deleted from Notes document.
+
+Version Compatibility
+---------------------
+Connector instances from version 3.0.0 through 3.2.0 may be used with this
+version.  This version works with Connector Manager version 3.2.4 or later.
+
+
 Release 3.2.0, October 2013
 ===========================
 
