@@ -27,6 +27,7 @@ class NotesNameImpl extends NotesBaseImpl<Name> implements NotesName {
   }
 
   /** {@inheritDoc} */
+  @Override
   public String getCanonical() throws NotesConnectorExceptionImpl {
     try {
       return getNotesObject().getCanonical();

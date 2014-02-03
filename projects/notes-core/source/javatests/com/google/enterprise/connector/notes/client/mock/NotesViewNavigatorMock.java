@@ -14,10 +14,9 @@
 
 package com.google.enterprise.connector.notes.client.mock;
 
-import com.google.enterprise.connector.notes.client.NotesView;
+import com.google.enterprise.connector.notes.client.NotesDocument;
 import com.google.enterprise.connector.notes.client.NotesViewEntry;
 import com.google.enterprise.connector.notes.client.NotesViewNavigator;
-import com.google.enterprise.connector.notes.client.NotesDocument;
 import com.google.enterprise.connector.spi.RepositoryException;
 
 import java.util.logging.Logger;
@@ -41,14 +40,14 @@ class NotesViewNavigatorMock extends NotesBaseMock
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public int getCount() throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "getCount");
     return view.getEntryCount();
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public NotesViewEntry getFirst() throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "getFirst");
     currentDoc = view.getFirstDocument();
@@ -59,7 +58,7 @@ class NotesViewNavigatorMock extends NotesBaseMock
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public NotesViewEntry getNext() throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "getNext");
     currentDoc = view.getNextDocument(currentDoc);
@@ -70,7 +69,7 @@ class NotesViewNavigatorMock extends NotesBaseMock
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public NotesViewEntry getNext(NotesViewEntry previousEntry)
       throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "getNext(prev)");
@@ -78,7 +77,7 @@ class NotesViewNavigatorMock extends NotesBaseMock
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public NotesViewEntry getFirstDocument() throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "getFirstDocument");
     return getFirst();

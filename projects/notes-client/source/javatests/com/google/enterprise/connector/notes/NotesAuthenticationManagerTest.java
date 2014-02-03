@@ -14,20 +14,13 @@
 
 package com.google.enterprise.connector.notes;
 
-import com.google.enterprise.connector.notes.NotesConnector;
 import com.google.enterprise.connector.notes.NotesConnectorSession;
-import com.google.enterprise.connector.notes.NotesTraversalManager;
 import com.google.enterprise.connector.spi.AuthenticationManager;
 import com.google.enterprise.connector.spi.AuthenticationResponse;
-import com.google.enterprise.connector.spi.Connector;
-import com.google.enterprise.connector.spi.Document;
-import com.google.enterprise.connector.spi.DocumentList;
 import com.google.enterprise.connector.spi.Principal;
 import com.google.enterprise.connector.spi.RepositoryException;
-import com.google.enterprise.connector.spi.RepositoryLoginException;
 import com.google.enterprise.connector.spi.Session;
 import com.google.enterprise.connector.spi.SimpleAuthenticationIdentity;
-import com.google.enterprise.connector.spi.SpiConstants;
 
 import java.util.Collection;
 

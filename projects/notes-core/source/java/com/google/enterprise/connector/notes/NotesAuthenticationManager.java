@@ -14,15 +14,11 @@
 
 package com.google.enterprise.connector.notes;
 
-import com.google.common.base.Strings;
+import com.google.enterprise.connector.notes.NotesUserGroupManager.User;
 import com.google.enterprise.connector.notes.client.NotesDatabase;
 import com.google.enterprise.connector.notes.client.NotesDocument;
 import com.google.enterprise.connector.notes.client.NotesSession;
-import com.google.enterprise.connector.notes.client.NotesThread;
 import com.google.enterprise.connector.notes.client.NotesView;
-import com.google.enterprise.connector.notes.client.NotesViewEntry;
-import com.google.enterprise.connector.notes.client.NotesViewNavigator;
-import com.google.enterprise.connector.notes.NotesUserGroupManager.User;
 import com.google.enterprise.connector.spi.AuthenticationIdentity;
 import com.google.enterprise.connector.spi.AuthenticationManager;
 import com.google.enterprise.connector.spi.AuthenticationResponse;
@@ -30,11 +26,8 @@ import com.google.enterprise.connector.spi.Principal;
 import com.google.enterprise.connector.spi.SpiConstants.CaseSensitivityType;
 import com.google.enterprise.connector.spi.SpiConstants.PrincipalType;
 
-import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.List;
-import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -43,7 +36,7 @@ class NotesAuthenticationManager implements AuthenticationManager {
       NotesAuthenticationManager.class.getName();
   private static final Logger LOGGER = Logger.getLogger(CLASS_NAME);
 
-  private NotesConnectorSession connectorSession;
+  private final NotesConnectorSession connectorSession;
 
   public NotesAuthenticationManager(NotesConnectorSession connectorSession) {
     final String METHOD = "<init>";
@@ -52,7 +45,7 @@ class NotesAuthenticationManager implements AuthenticationManager {
     LOGGER.exiting(CLASS_NAME, METHOD);
   }
 
-  /* @Override */
+  @Override
   @SuppressWarnings("unchecked")
   public AuthenticationResponse authenticate(AuthenticationIdentity id) {
     final String METHOD = "authenticate";

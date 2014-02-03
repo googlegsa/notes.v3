@@ -16,8 +16,8 @@ package com.google.enterprise.connector.notes.client.notes;
 
 import com.google.enterprise.connector.notes.client.NotesRichTextItem;
 
-import lotus.domino.RichTextItem;
 import lotus.domino.NotesException;
+import lotus.domino.RichTextItem;
 
 class NotesRichTextItemImpl extends NotesItemImpl
     implements NotesRichTextItem {
@@ -27,7 +27,7 @@ class NotesRichTextItemImpl extends NotesItemImpl
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public void appendText(String text) throws NotesConnectorExceptionImpl {
     try {
       // RichTextItem extends NotesItem extends NotesBase.

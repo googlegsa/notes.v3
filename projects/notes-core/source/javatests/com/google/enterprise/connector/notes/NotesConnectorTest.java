@@ -18,9 +18,7 @@ import com.google.enterprise.connector.notes.NotesConnector;
 import com.google.enterprise.connector.notes.client.mock.SessionFactoryMock;
 import com.google.enterprise.connector.spi.ConnectorPersistentStore;
 import com.google.enterprise.connector.spi.LocalDatabase;
-import com.google.enterprise.connector.spi.LocalDocumentStore;
 import com.google.enterprise.connector.spi.Session;
-import com.google.enterprise.connector.util.database.testing.TestJdbcDatabase;
 import com.google.enterprise.connector.util.database.testing.TestLocalDatabase;
 
 import junit.framework.TestCase;
@@ -41,9 +39,12 @@ public class NotesConnectorTest extends TestCase {
     connector.maintThread = new NotesMaintenanceThread();
     connector.setGoogleConnectorName("notestest");
     connector.setDatabaseAccess(new ConnectorPersistentStore() {
-        public LocalDocumentStore getLocalDocumentStore() {
+        @Deprecated @Override
+        public com.google.enterprise.connector.spi.LocalDocumentStore
+            getLocalDocumentStore() {
           return null;
         }
+        @Override
         public LocalDatabase getLocalDatabase() {
           // TODO: update resource directory when resources are implemented
           return new TestLocalDatabase("Lotus_Notes", null);

@@ -22,26 +22,19 @@ import com.google.enterprise.connector.notes.client.NotesDatabase;
 import com.google.enterprise.connector.notes.client.NotesDocument;
 import com.google.enterprise.connector.notes.client.NotesItem;
 import com.google.enterprise.connector.notes.client.NotesSession;
-import com.google.enterprise.connector.notes.client.NotesView;
-import com.google.enterprise.connector.notes.client.mock.NotesACLMock;
 import com.google.enterprise.connector.notes.client.mock.NotesACLEntryMock;
+import com.google.enterprise.connector.notes.client.mock.NotesACLMock;
 import com.google.enterprise.connector.notes.client.mock.NotesDatabaseMock;
 import com.google.enterprise.connector.notes.client.mock.NotesDocumentMock;
 import com.google.enterprise.connector.notes.client.mock.NotesItemMock;
 import com.google.enterprise.connector.notes.client.mock.SessionFactoryMock;
 import com.google.enterprise.connector.spi.RepositoryException;
-import com.google.enterprise.connector.spi.Session;
 import com.google.enterprise.connector.spi.SimpleTraversalContext;
 
 import junit.framework.TestCase;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Vector;
 
 public class NotesDatabasePollerTest extends TestCase {
 
@@ -93,6 +86,7 @@ public class NotesDatabasePollerTest extends TestCase {
     super();
   }
 
+  @Override
   protected void setUp() throws Exception {
     super.setUp();
     // TODO: handle both versions of acl support within the tests
@@ -111,6 +105,7 @@ public class NotesDatabasePollerTest extends TestCase {
     poller = new DatabasePollerTestable(connectorSession);
   }
 
+  @Override
   protected void tearDown() {
     if (null != connector) {
       connector.shutdown();
@@ -174,7 +169,7 @@ public class NotesDatabasePollerTest extends TestCase {
     assertFalse(databaseDocument.hasItem(NCCONST.NCITM_DBPERMITGROUPS));
     assertFalse(databaseDocument.hasItem(NCCONST.NCITM_DBNOACCESSUSERS));
     assertFalse(databaseDocument.hasItem(NCCONST.NCITM_DBNOACCESSGROUPS));
-    assertNull(connectorDatabase.getDocumentByUNID("replica_id_16chr"));
+    assertNull(getDocumentByUnid(connectorDatabase, "replica_id_16chr"));
 
     poller.processACL(session, connectorDatabase,
         sourceDatabase, databaseDocument);
@@ -185,7 +180,7 @@ public class NotesDatabasePollerTest extends TestCase {
     assertTrue(databaseDocument.hasItem(NCCONST.NCITM_DBNOACCESSGROUPS));
 
     NotesDocument aclCrawlDoc =
-        connectorDatabase.getDocumentByUNID("replica_id_16chr");
+        getDocumentByUnid(connectorDatabase, "replica_id_16chr");
     if (supportsInheritedAcls) {
       assertNotNull(aclCrawlDoc);
       assertEquals("true",
@@ -196,6 +191,15 @@ public class NotesDatabasePollerTest extends TestCase {
     } else {
       assertTrue(poller.calledUpdateGsaPolicyAcl);
       assertNull(aclCrawlDoc);
+    }
+  }
+
+  private NotesDocument getDocumentByUnid(NotesDatabase db, String replicaId) {
+    try {
+      return db.getDocumentByUNID(replicaId);
+    } catch (RepositoryException e) {
+      assertTrue(e.getMessage().contains(replicaId));
+      return null;
     }
   }
 }

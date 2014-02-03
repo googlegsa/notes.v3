@@ -39,7 +39,7 @@ class NotesACLEntryImpl extends NotesBaseImpl<ACLEntry>
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public int getUserType() throws NotesConnectorExceptionImpl {
     try {
       return getNotesObject().getUserType();
@@ -49,7 +49,7 @@ class NotesACLEntryImpl extends NotesBaseImpl<ACLEntry>
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public int getLevel() throws NotesConnectorExceptionImpl {
     try {
       return getNotesObject().getLevel();
@@ -59,7 +59,7 @@ class NotesACLEntryImpl extends NotesBaseImpl<ACLEntry>
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public boolean isRoleEnabled(String role)
       throws NotesConnectorExceptionImpl {
     try {
@@ -70,7 +70,7 @@ class NotesACLEntryImpl extends NotesBaseImpl<ACLEntry>
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public String getName() throws NotesConnectorExceptionImpl {
     try {
       return getNotesObject().getName();
@@ -80,7 +80,7 @@ class NotesACLEntryImpl extends NotesBaseImpl<ACLEntry>
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public NotesName getNameObject() throws NotesConnectorExceptionImpl {
     try {
       return new NotesNameImpl(getNotesObject().getNameObject());
@@ -90,7 +90,7 @@ class NotesACLEntryImpl extends NotesBaseImpl<ACLEntry>
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public Vector getRoles() throws NotesConnectorExceptionImpl {
     try {
       return TypeConverter.toConnectorValues(getNotesObject().getRoles());

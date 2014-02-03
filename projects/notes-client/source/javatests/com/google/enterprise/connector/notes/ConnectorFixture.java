@@ -15,19 +15,15 @@
 package com.google.enterprise.connector.notes;
 
 import com.google.enterprise.connector.notes.NotesConnector;
-
 import com.google.enterprise.connector.notes.NotesConnectorDocument;
 import com.google.enterprise.connector.spi.ConnectorPersistentStore;
 import com.google.enterprise.connector.spi.Document;
 import com.google.enterprise.connector.spi.DocumentList;
 import com.google.enterprise.connector.spi.LocalDatabase;
-import com.google.enterprise.connector.spi.LocalDocumentStore;
 import com.google.enterprise.connector.spi.RepositoryException;
 import com.google.enterprise.connector.spi.RepositoryLoginException;
-import com.google.enterprise.connector.spi.Session;
 import com.google.enterprise.connector.spi.SimpleTraversalContext;
 import com.google.enterprise.connector.spi.TraversalManager;
-import com.google.enterprise.connector.util.database.testing.TestJdbcDatabase;
 import com.google.enterprise.connector.util.database.testing.TestLocalDatabase;
 
 import junit.framework.TestCase;
@@ -35,7 +31,6 @@ import junit.framework.TestCase;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Vector;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 // TODO: We need a method to remove all crawl docs from the
@@ -103,9 +98,12 @@ public class ConnectorFixture extends TestCase {
 
     connector.setGoogleConnectorName("notestest");
     connector.setDatabaseAccess(new ConnectorPersistentStore() {
-        public LocalDocumentStore getLocalDocumentStore() {
+        @Deprecated @Override
+        public com.google.enterprise.connector.spi.LocalDocumentStore
+            getLocalDocumentStore() {
           return null;
         }
+        @Override
         public LocalDatabase getLocalDatabase() {
           // TODO: update resource directory when resources are implemented
           return new TestLocalDatabase("Lotus_Notes", null);

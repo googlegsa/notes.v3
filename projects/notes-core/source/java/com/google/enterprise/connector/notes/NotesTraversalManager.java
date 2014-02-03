@@ -37,7 +37,7 @@ public class NotesTraversalManager implements TraversalManager,
   private static final Logger LOGGER = Logger.getLogger(CLASS_NAME);
 
   private int batchHint = 10;
-  private NotesConnectorSession ncs = null;
+  private final NotesConnectorSession ncs;
   private TraversalContext traversalContext;
 
   public NotesTraversalManager(NotesConnectorSession session) {
@@ -45,6 +45,7 @@ public class NotesTraversalManager implements TraversalManager,
   }
 
   /** {@inheritDoc} */
+  @Override
   public void setTraversalContext(TraversalContext traversalContext) {
     this.traversalContext = traversalContext;
     LOGGER.info("Got traversal context. Supports ACLs? "
@@ -55,14 +56,14 @@ public class NotesTraversalManager implements TraversalManager,
     return traversalContext;
   }
 
-  /* @Override */
+  @Override
   public void setBatchHint(int hint) {
     final String METHOD = "setBatchHint";
     LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD, "batchHint set to : " + hint);
     batchHint = hint;
   }
 
-  /* @Override */
+  @Override
   public DocumentList startTraversal() {
     final String METHOD = "startTraversal";
     LOGGER.info("Start traversal");
@@ -71,7 +72,7 @@ public class NotesTraversalManager implements TraversalManager,
     return traverse("0");
   }
 
-  /* @Override */
+  @Override
   public DocumentList resumeTraversal(String checkpoint) {
     return traverse(checkpoint);
   }

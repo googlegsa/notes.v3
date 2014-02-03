@@ -14,9 +14,6 @@
 
 package com.google.enterprise.connector.notes;
 
-import com.google.enterprise.connector.notes.client.NotesDatabase;
-import com.google.enterprise.connector.notes.client.NotesSession;
-import com.google.enterprise.connector.spi.Connector;
 import com.google.enterprise.connector.spi.Document;
 import com.google.enterprise.connector.spi.DocumentList;
 import com.google.enterprise.connector.spi.RepositoryException;

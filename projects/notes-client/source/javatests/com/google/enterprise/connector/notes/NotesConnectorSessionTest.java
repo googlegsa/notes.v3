@@ -16,20 +16,9 @@ package com.google.enterprise.connector.notes;
 
 import com.google.enterprise.connector.notes.NotesConnector;
 import com.google.enterprise.connector.notes.NotesConnectorSession;
-import com.google.enterprise.connector.notes.NotesTraversalManager;
 import com.google.enterprise.connector.spi.Connector;
-import com.google.enterprise.connector.spi.Document;
-import com.google.enterprise.connector.spi.DocumentList;
 import com.google.enterprise.connector.spi.RepositoryException;
 import com.google.enterprise.connector.spi.RepositoryLoginException;
-import com.google.enterprise.connector.spi.Session;
-import com.google.enterprise.connector.spi.SpiConstants;
-import com.google.enterprise.connector.spi.TraversalManager;
-
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
 
 public class NotesConnectorSessionTest extends ConnectorFixture {
 

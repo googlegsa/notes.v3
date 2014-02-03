@@ -32,7 +32,7 @@ class NotesRichTextItemMock extends NotesItemMock
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public void appendText(String text) throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "appendText");
   }

@@ -51,46 +51,47 @@ public class NotesACLEntryMock extends NotesBaseMock
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public int getUserType() throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "getUserType");
     return userType;
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public int getLevel() throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "getLevel");
     return level;
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public boolean isRoleEnabled(String role) throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "isRoleEnabled");
     return true;
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public String getName() throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "getName");
     return name;
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public NotesName getNameObject() throws RepositoryException {
     return new NotesNameMock(name);
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public Vector getRoles() throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "getRoles");
     return roles;
   }
 
+  @Override
   public String toString() {
     try {
       return getName();

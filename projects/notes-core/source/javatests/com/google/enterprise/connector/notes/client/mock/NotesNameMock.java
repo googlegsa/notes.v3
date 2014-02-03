@@ -26,7 +26,7 @@ public class NotesNameMock extends NotesBaseMock implements NotesName {
   /** The logger for this class. */
   private static final Logger LOGGER = Logger.getLogger(CLASS_NAME);
 
-  private String canonicalName;
+  private final String canonicalName;
   private String shortName;
   private String abbreviatedName;
   private String commonName;
@@ -47,6 +47,7 @@ public class NotesNameMock extends NotesBaseMock implements NotesName {
   }
 
   /** {@inheritDoc} */
+  @Override
   public String getCanonical() {
     return this.canonicalName;
   }
@@ -55,6 +56,7 @@ public class NotesNameMock extends NotesBaseMock implements NotesName {
     return this.shortName;
   }
   
+  @Override
   public String getAbbreviated() {
     return this.abbreviatedName;
   }
@@ -134,7 +136,8 @@ public class NotesNameMock extends NotesBaseMock implements NotesName {
       this.flatName = buf.toString();
     }
   }
-  
+
+  @Override
   public String toString() {
     return this.canonicalName;
   }

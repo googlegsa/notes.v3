@@ -25,17 +25,13 @@ import com.google.enterprise.connector.spi.Document;
 import com.google.enterprise.connector.spi.Principal;
 import com.google.enterprise.connector.spi.Property;
 import com.google.enterprise.connector.spi.RepositoryException;
-import com.google.enterprise.connector.spi.SecureDocument;
-import com.google.enterprise.connector.spi.SimpleDocument;
 import com.google.enterprise.connector.spi.SimpleProperty;
-import com.google.enterprise.connector.spi.SpiConstants.AclAccess;
+import com.google.enterprise.connector.spi.SpiConstants;
 import com.google.enterprise.connector.spi.SpiConstants.AclInheritanceType;
-import com.google.enterprise.connector.spi.SpiConstants.AclScope;
 import com.google.enterprise.connector.spi.SpiConstants.ActionType;
 import com.google.enterprise.connector.spi.SpiConstants.CaseSensitivityType;
 import com.google.enterprise.connector.spi.SpiConstants.DocumentType;
 import com.google.enterprise.connector.spi.SpiConstants.PrincipalType;
-import com.google.enterprise.connector.spi.SpiConstants;
 import com.google.enterprise.connector.spi.Value;
 
 import java.io.FileInputStream;
@@ -569,7 +565,7 @@ public class NotesConnectorDocument implements Document {
     return UNID;
   }
 
-  /* @Override */
+  @Override
   public Property findProperty(String name) throws RepositoryException {
     // Maintain the ability to check docProps directly for testing.
     List<Value> list = docProps.get(name);
@@ -580,7 +576,7 @@ public class NotesConnectorDocument implements Document {
     return prop;
   }
 
-  /* @Override */
+  @Override
   public Set<String> getPropertyNames() throws RepositoryException {
     return docProps.keySet();
   }

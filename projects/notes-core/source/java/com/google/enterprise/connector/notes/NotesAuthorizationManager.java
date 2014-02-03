@@ -15,16 +15,13 @@
 package com.google.enterprise.connector.notes;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
+import com.google.enterprise.connector.notes.NotesUserGroupManager.User;
 import com.google.enterprise.connector.notes.client.NotesDatabase;
 import com.google.enterprise.connector.notes.client.NotesDocument;
 import com.google.enterprise.connector.notes.client.NotesSession;
-import com.google.enterprise.connector.notes.client.NotesThread;
 import com.google.enterprise.connector.notes.client.NotesView;
-import com.google.enterprise.connector.notes.client.NotesViewEntry;
 import com.google.enterprise.connector.notes.client.NotesViewNavigator;
-import com.google.enterprise.connector.notes.NotesUserGroupManager.User;
 import com.google.enterprise.connector.spi.AuthenticationIdentity;
 import com.google.enterprise.connector.spi.AuthorizationManager;
 import com.google.enterprise.connector.spi.AuthorizationResponse;
@@ -32,7 +29,6 @@ import com.google.enterprise.connector.spi.RepositoryException;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -42,7 +38,7 @@ class NotesAuthorizationManager implements AuthorizationManager {
       NotesAuthorizationManager.class.getName();
   private static final Logger LOGGER = Logger.getLogger(CLASS_NAME);
 
-  private NotesConnectorSession ncs = null;
+  private final NotesConnectorSession ncs;
 
   public NotesAuthorizationManager(NotesConnectorSession session) {
     final String METHOD = "NotesAuthorizationManager";
@@ -79,7 +75,7 @@ class NotesAuthorizationManager implements AuthorizationManager {
   // Explain Lotus Notes Authorization Rules
 
   // TODO: Add LRU Cache for ALLOW/DENY
-  /* @Override */
+  @Override
   @SuppressWarnings("unchecked")
   public Collection<AuthorizationResponse> authorizeDocids(
       Collection<String> docIds, AuthenticationIdentity id) {

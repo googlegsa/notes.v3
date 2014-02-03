@@ -32,26 +32,27 @@ class NotesEmbeddedObjectMock extends NotesBaseMock
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public int getType() throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "getType");
     return -1;
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public int getFileSize() throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "getFileSize");
     return -1;
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public void extractFile(String path) throws RepositoryException {
      LOGGER.entering(CLASS_NAME, "extractFile");
  }
 
   /* TODO: implement getName.
+  @Override
   public String toString() {
     try {
       return getName();

@@ -14,14 +14,12 @@
 
 package com.google.enterprise.connector.notes.client.notes;
 
-import com.google.enterprise.connector.notes.client.NotesView;
 import com.google.enterprise.connector.notes.client.NotesViewEntry;
 import com.google.enterprise.connector.notes.client.NotesViewNavigator;
-import com.google.enterprise.connector.notes.client.NotesDocument;
 
+import lotus.domino.NotesException;
 import lotus.domino.ViewEntry;
 import lotus.domino.ViewNavigator;
-import lotus.domino.NotesException;
 
 class NotesViewNavigatorImpl extends NotesBaseImpl<ViewNavigator>
     implements NotesViewNavigator {
@@ -31,7 +29,7 @@ class NotesViewNavigatorImpl extends NotesBaseImpl<ViewNavigator>
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public int getCount() throws NotesConnectorExceptionImpl {
     try {
       return getNotesObject().getCount();
@@ -41,7 +39,7 @@ class NotesViewNavigatorImpl extends NotesBaseImpl<ViewNavigator>
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public NotesViewEntry getFirst() throws NotesConnectorExceptionImpl {
     try {
       ViewEntry first = getNotesObject().getFirst();
@@ -55,7 +53,7 @@ class NotesViewNavigatorImpl extends NotesBaseImpl<ViewNavigator>
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public NotesViewEntry getNext() throws NotesConnectorExceptionImpl {
     try {
       ViewEntry next = getNotesObject().getNext();
@@ -69,7 +67,7 @@ class NotesViewNavigatorImpl extends NotesBaseImpl<ViewNavigator>
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public NotesViewEntry getNext(NotesViewEntry previousEntry)
       throws NotesConnectorExceptionImpl {
     try {
@@ -85,7 +83,7 @@ class NotesViewNavigatorImpl extends NotesBaseImpl<ViewNavigator>
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public NotesViewEntry getFirstDocument() throws NotesConnectorExceptionImpl {
     try {
       ViewEntry first = getNotesObject().getFirstDocument();

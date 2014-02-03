@@ -24,11 +24,11 @@ import com.google.enterprise.connector.notes.client.mock.SessionFactoryMock;
 import com.google.enterprise.connector.spi.Principal;
 import com.google.enterprise.connector.spi.Property;
 import com.google.enterprise.connector.spi.SimpleTraversalContext;
+import com.google.enterprise.connector.spi.SpiConstants;
 import com.google.enterprise.connector.spi.SpiConstants.ActionType;
 import com.google.enterprise.connector.spi.SpiConstants.CaseSensitivityType;
 import com.google.enterprise.connector.spi.SpiConstants.DocumentType;
 import com.google.enterprise.connector.spi.SpiConstants.PrincipalType;
-import com.google.enterprise.connector.spi.SpiConstants;
 import com.google.enterprise.connector.spi.TraversalContextAware;
 import com.google.enterprise.connector.spi.Value;
 import com.google.enterprise.connector.spiimpl.PrincipalValue;
@@ -38,14 +38,10 @@ import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
 
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.Vector;
 
 public class NotesConnectorDocumentTest extends TestCase {
 
@@ -67,7 +63,7 @@ public class NotesConnectorDocumentTest extends TestCase {
   public static Test suite() {
     return new TestSetup(
         new TestSuite(NotesConnectorDocumentTest.class)) {
-      protected void setUp() throws Exception {
+      @Override protected void setUp() throws Exception {
         supportsInheritedAcls =
             Boolean.getBoolean("javatest.supportsinheritedacls");
         connector = NotesConnectorTest.getConnector();
@@ -101,7 +97,7 @@ public class NotesConnectorDocumentTest extends TestCase {
         userGroupManager.updateUsersGroups();
       }
 
-      protected void tearDown() throws Exception {
+      @Override protected void tearDown() throws Exception {
         connector.shutdown();
       }
     };

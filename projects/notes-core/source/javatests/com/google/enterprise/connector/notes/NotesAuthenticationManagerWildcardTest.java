@@ -14,18 +14,9 @@
 
 package com.google.enterprise.connector.notes;
 
-import com.google.enterprise.connector.notes.client.NotesACL;
-import com.google.enterprise.connector.notes.client.NotesACLEntry;
-import com.google.enterprise.connector.notes.client.NotesItem;
-import com.google.enterprise.connector.notes.client.NotesName;
 import com.google.enterprise.connector.notes.client.NotesSession;
-import com.google.enterprise.connector.notes.client.mock.NotesACLEntryMock;
-import com.google.enterprise.connector.notes.client.mock.NotesACLMock;
 import com.google.enterprise.connector.notes.client.mock.NotesDatabaseMock;
-import com.google.enterprise.connector.notes.client.mock.NotesDocumentMock;
-import com.google.enterprise.connector.notes.client.mock.NotesItemMock;
 import com.google.enterprise.connector.notes.client.mock.NotesNameMock;
-import com.google.enterprise.connector.notes.client.mock.NotesSessionMock;
 import com.google.enterprise.connector.notes.client.mock.SessionFactoryMock;
 import com.google.enterprise.connector.spi.AuthenticationManager;
 import com.google.enterprise.connector.spi.AuthenticationResponse;
@@ -41,7 +32,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Random;
 
 public class NotesAuthenticationManagerWildcardTest extends TestCase {
 
@@ -76,7 +66,7 @@ public class NotesAuthenticationManagerWildcardTest extends TestCase {
   public static Test suite() {
     return new TestSetup(
         new TestSuite(NotesAuthenticationManagerWildcardTest.class)) {
-      protected void setUp() throws Exception {
+      @Override protected void setUp() throws Exception {
         connector = NotesConnectorTest.getConnector();
         factory = (SessionFactoryMock) connector.getSessionFactory();
         NotesConnectorSessionTest.configureFactoryForSession(factory);
@@ -129,6 +119,7 @@ public class NotesAuthenticationManagerWildcardTest extends TestCase {
     super();
   }
 
+  @Override
   protected void setUp() throws Exception {
     super.setUp();
     authenticationManager = connectorSession.getAuthenticationManager();

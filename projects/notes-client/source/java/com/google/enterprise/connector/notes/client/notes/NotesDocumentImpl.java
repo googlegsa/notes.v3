@@ -20,9 +20,7 @@ import com.google.enterprise.connector.notes.client.NotesDocumentCollection;
 import com.google.enterprise.connector.notes.client.NotesEmbeddedObject;
 import com.google.enterprise.connector.notes.client.NotesItem;
 import com.google.enterprise.connector.notes.client.NotesRichTextItem;
-import com.google.enterprise.connector.notes.client.NotesView;
 
-import lotus.domino.DateTime;
 import lotus.domino.Document;
 import lotus.domino.EmbeddedObject;
 import lotus.domino.Item;
@@ -38,7 +36,7 @@ class NotesDocumentImpl extends NotesBaseImpl<Document>
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public boolean hasItem(String name) throws NotesConnectorExceptionImpl {
     try {
       return getNotesObject().hasItem(name);
@@ -48,7 +46,7 @@ class NotesDocumentImpl extends NotesBaseImpl<Document>
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public String getItemValueString(String name)
       throws NotesConnectorExceptionImpl {
     try {
@@ -59,7 +57,7 @@ class NotesDocumentImpl extends NotesBaseImpl<Document>
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public int getItemValueInteger(String name)
       throws NotesConnectorExceptionImpl {
     try {
@@ -70,7 +68,7 @@ class NotesDocumentImpl extends NotesBaseImpl<Document>
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public Vector getItemValue(String name) throws NotesConnectorExceptionImpl {
     try {
       return TypeConverter.toConnectorValues(
@@ -81,7 +79,7 @@ class NotesDocumentImpl extends NotesBaseImpl<Document>
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public NotesItem getFirstItem(String name)
       throws NotesConnectorExceptionImpl {
     try {
@@ -96,7 +94,7 @@ class NotesDocumentImpl extends NotesBaseImpl<Document>
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public Vector getItems() throws NotesConnectorExceptionImpl {
     try {
       return TypeConverter.toConnectorItems(getNotesObject().getItems());
@@ -106,7 +104,7 @@ class NotesDocumentImpl extends NotesBaseImpl<Document>
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public Vector getItemValueDateTimeArray(String name)
       throws NotesConnectorExceptionImpl {
     try {
@@ -118,7 +116,7 @@ class NotesDocumentImpl extends NotesBaseImpl<Document>
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public void removeItem(String name) throws NotesConnectorExceptionImpl {
     try {
       getNotesObject().removeItem(name);
@@ -129,7 +127,7 @@ class NotesDocumentImpl extends NotesBaseImpl<Document>
 
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public NotesItem replaceItemValue(String name, Object value)
       throws NotesConnectorExceptionImpl {
     try {
@@ -145,7 +143,7 @@ class NotesDocumentImpl extends NotesBaseImpl<Document>
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public NotesItem appendItemValue(String name, Object value)
       throws NotesConnectorExceptionImpl {
     try {
@@ -161,7 +159,7 @@ class NotesDocumentImpl extends NotesBaseImpl<Document>
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public boolean save() throws NotesConnectorExceptionImpl {
     try {
       return getNotesObject().save();
@@ -171,7 +169,7 @@ class NotesDocumentImpl extends NotesBaseImpl<Document>
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public boolean save(boolean force) throws NotesConnectorExceptionImpl {
     try {
       return getNotesObject().save(force);
@@ -181,7 +179,7 @@ class NotesDocumentImpl extends NotesBaseImpl<Document>
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public boolean remove(boolean force) throws NotesConnectorExceptionImpl {
     try {
       return getNotesObject().remove(force);
@@ -191,7 +189,7 @@ class NotesDocumentImpl extends NotesBaseImpl<Document>
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public NotesDocumentCollection getResponses()
       throws NotesConnectorExceptionImpl {
     try {
@@ -202,7 +200,7 @@ class NotesDocumentImpl extends NotesBaseImpl<Document>
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public NotesEmbeddedObject getAttachment(String filename)
       throws NotesConnectorExceptionImpl {
     try {
@@ -217,7 +215,7 @@ class NotesDocumentImpl extends NotesBaseImpl<Document>
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public String getNotesURL() throws NotesConnectorExceptionImpl {
     try {
       return getNotesObject().getNotesURL();
@@ -227,7 +225,7 @@ class NotesDocumentImpl extends NotesBaseImpl<Document>
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public String getUniversalID() throws NotesConnectorExceptionImpl {
     try {
       return getNotesObject().getUniversalID();
@@ -237,7 +235,7 @@ class NotesDocumentImpl extends NotesBaseImpl<Document>
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public void copyAllItems(NotesDocument doc, boolean replace)
       throws NotesConnectorExceptionImpl {
     try {
@@ -249,7 +247,7 @@ class NotesDocumentImpl extends NotesBaseImpl<Document>
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public NotesRichTextItem createRichTextItem(String name)
       throws NotesConnectorExceptionImpl {
     try {
@@ -261,7 +259,7 @@ class NotesDocumentImpl extends NotesBaseImpl<Document>
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public NotesDateTime getCreated() throws NotesConnectorExceptionImpl {
     try {
       return new NotesDateTimeImpl(getNotesObject().getCreated());
@@ -271,7 +269,7 @@ class NotesDocumentImpl extends NotesBaseImpl<Document>
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public NotesDateTime getLastModified() throws NotesConnectorExceptionImpl {
     try {
       return new NotesDateTimeImpl(getNotesObject().getLastModified());
@@ -281,7 +279,7 @@ class NotesDocumentImpl extends NotesBaseImpl<Document>
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public Vector getAuthors() throws NotesConnectorExceptionImpl {
     try {
       return getNotesObject().getAuthors();

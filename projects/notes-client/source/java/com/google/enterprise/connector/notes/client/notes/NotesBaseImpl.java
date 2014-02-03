@@ -23,7 +23,7 @@ import java.util.Vector;
 
 class NotesBaseImpl<E extends Base> implements NotesBase {
 
-  private E notesObject;
+  private final E notesObject;
 
   NotesBaseImpl(E notesObject) {
     this.notesObject = notesObject;
@@ -34,7 +34,7 @@ class NotesBaseImpl<E extends Base> implements NotesBase {
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public void recycle() throws NotesConnectorExceptionImpl {
     try {
       notesObject.recycle();
@@ -44,7 +44,7 @@ class NotesBaseImpl<E extends Base> implements NotesBase {
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   @SuppressWarnings("unchecked")
   public void recycle(Vector objects) throws NotesConnectorExceptionImpl {
     if (objects == null) {
@@ -64,7 +64,7 @@ class NotesBaseImpl<E extends Base> implements NotesBase {
     }
   }
 
-  /* @Override */
+  @Override
   public String toString() {
     return notesObject.toString();
   }

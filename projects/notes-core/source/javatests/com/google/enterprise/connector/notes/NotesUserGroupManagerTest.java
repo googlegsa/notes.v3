@@ -15,25 +15,20 @@
 package com.google.enterprise.connector.notes;
 
 import com.google.common.collect.Lists;
-import com.google.enterprise.connector.notes.NotesConnector;
-import com.google.enterprise.connector.notes.NotesConnectorSession;
 import com.google.enterprise.connector.notes.client.NotesACL;
 import com.google.enterprise.connector.notes.client.NotesACLEntry;
-import com.google.enterprise.connector.notes.client.NotesDatabase;
 import com.google.enterprise.connector.notes.client.NotesDocument;
 import com.google.enterprise.connector.notes.client.NotesItem;
 import com.google.enterprise.connector.notes.client.NotesSession;
 import com.google.enterprise.connector.notes.client.NotesView;
-import com.google.enterprise.connector.notes.client.mock.NotesACLMock;
 import com.google.enterprise.connector.notes.client.mock.NotesACLEntryMock;
+import com.google.enterprise.connector.notes.client.mock.NotesACLMock;
 import com.google.enterprise.connector.notes.client.mock.NotesDatabaseMock;
 import com.google.enterprise.connector.notes.client.mock.NotesDocumentMock;
 import com.google.enterprise.connector.notes.client.mock.NotesItemMock;
 import com.google.enterprise.connector.notes.client.mock.NotesSessionMock;
 import com.google.enterprise.connector.notes.client.mock.SessionFactoryMock;
-import com.google.enterprise.connector.notes.client.mock.ViewNavFromCategoryCreator;
-import com.google.enterprise.connector.spi.LocalDatabase;
-import com.google.enterprise.connector.spi.Session;
+import com.google.enterprise.connector.spi.RepositoryException;
 import com.google.enterprise.connector.util.database.JdbcDatabase;
 
 import junit.extensions.TestSetup;
@@ -44,15 +39,11 @@ import junit.framework.TestSuite;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
-import java.util.Vector;
-import javax.sql.DataSource;
 
 public class NotesUserGroupManagerTest extends TestCase {
 
@@ -67,7 +58,7 @@ public class NotesUserGroupManagerTest extends TestCase {
   public static Test suite() {
     return new TestSetup(
         new TestSuite(NotesUserGroupManagerTest.class)) {
-      protected void setUp() throws Exception {
+      @Override protected void setUp() throws Exception {
         connector = NotesConnectorTest.getConnector();
         factory = (SessionFactoryMock) connector.getSessionFactory();
         NotesConnectorSessionTest.configureFactoryForSession(factory);
@@ -223,7 +214,7 @@ public class NotesUserGroupManagerTest extends TestCase {
         }
       }
 
-      protected void tearDown() throws Exception {
+      @Override protected void tearDown() throws Exception {
         connector.shutdown();
       }
     };
@@ -242,6 +233,8 @@ public class NotesUserGroupManagerTest extends TestCase {
       throws Exception {
     NotesDocumentMock notesPerson = new NotesDocumentMock();
     notesPerson.addItem(new NotesItemMock("name", "unid",
+            "type", NotesItem.TEXT, "values", gsaname));
+    notesPerson.addItem(new NotesItemMock("name", NCCONST.NCITM_UNID,
             "type", NotesItem.TEXT, "values", gsaname));
     notesPerson.addItem(new NotesItemMock("name", NCCONST.PITM_FULLNAME,
             "type", NotesItem.TEXT, "values", notesname));
@@ -266,6 +259,8 @@ public class NotesUserGroupManagerTest extends TestCase {
       String... members) throws Exception {
     NotesDocumentMock notesGroup = new NotesDocumentMock();
     notesGroup.addItem(new NotesItemMock("name", "unid",
+            "type", NotesItem.TEXT, "values", groupName));
+    notesGroup.addItem(new NotesItemMock("name", NCCONST.NCITM_UNID,
             "type", NotesItem.TEXT, "values", groupName));
     notesGroup.addItem(new NotesItemMock("name", NCCONST.GITM_LISTNAME,
             "type", NotesItem.TEXT, "values", groupName));
@@ -298,18 +293,26 @@ public class NotesUserGroupManagerTest extends TestCase {
       new HashMap<Long, HashSet<Long>>();
   private HashMap<Long, HashSet<Long>> groupRoles =
       new HashMap<Long, HashSet<Long>>();
+  private List<String> userUnids;
+  private List<String> groupUnids;
 
   public NotesUserGroupManagerTest() {
     super();
   }
 
+  @Override
   protected void setUp() throws Exception {
     userGroupManager = new NotesUserGroupManager(connectorSession);
     userGroupManager.setUpResources(true);
     conn = userGroupManager.getConnection();
     userGroupManager.initializeUserCache();
+    userUnids =
+        userGroupManager.getViewUnids(namesDatabase, NCCONST.DIRVIEW_VIMUSERS);
+    groupUnids =
+        userGroupManager.getViewUnids(namesDatabase, NCCONST.DIRVIEW_VIMGROUPS);
   }
 
+  @Override
   protected void tearDown() {
     userGroupManager.clearTables(conn);
     userGroupManager.releaseResources();
@@ -401,6 +404,28 @@ public class NotesUserGroupManagerTest extends TestCase {
     assertGroupHasChild("jedi", "padawan learners");
   }
 
+  public void testSkipUpdateGroups() throws Exception {
+    String nonExistentId = "group123";
+    assertTrue(groupUnids.size() > 1);
+    groupUnids.add(2, nonExistentId);
+
+    assertEquals("Groups' map is not empty", 0, groups.size());
+    setUpGroups();
+    assertTrue("Groups are not populated from groupUnids", groups.size() > 0);
+
+    for (String unid : groupUnids) {
+      NotesDocument doc;
+      try {
+        doc = namesDatabase.getDocumentByUNID(unid);
+        assertEquals(doc.getItemValueString(NCCONST.NCITM_UNID), unid);
+        String groupName = doc.getItemValueString(NCCONST.GITM_LISTNAME);
+        assertGroupExists(groupName.toLowerCase());
+      } catch (RepositoryException e) {
+        assertTrue(e.getMessage().contains(nonExistentId));
+      }
+    }
+  }
+
   public void testUpdateUsers() throws Exception {
     setUpUsers();
     assertEquals(userCount, notesUserNames.size());
@@ -412,6 +437,30 @@ public class NotesUserGroupManagerTest extends TestCase {
     assertUserHasGroup("palpatine", "bad guys");
     assertUserHasGroup("palpatine", "ou=tests/o=tests");
     assertUserHasGroup("palpatine", "o=tests");
+  }
+
+  public void testSkipUpdateUsers() throws Exception {
+    String nonExistentId = "user123";
+    assertTrue(userUnids.size() > 1);
+    userUnids.add(2, nonExistentId);
+
+    assertEquals("Users'map is not empty", 0, notesUserNames.size());
+    setUpUsers();
+    assertTrue("Users are not populated from userUnids",
+        notesUserNames.size() > 0);
+
+    for (String unid : userUnids) {
+      NotesDocument doc;
+      try {
+        doc = namesDatabase.getDocumentByUNID(unid);
+        assertEquals(doc.getItemValueString(NCCONST.NCITM_UNID), unid);
+        String notesName = doc.getItemValueString(NCCONST.PITM_FULLNAME);
+        assertTrue(notesName + " user doesn't exist",
+            notesUserNames.containsKey(notesName.toLowerCase()));
+      } catch (RepositoryException e) {
+        assertTrue(e.getMessage().contains(nonExistentId));
+      }
+    }
   }
 
   public void testUpdateRoles() throws Exception {
@@ -494,8 +543,8 @@ public class NotesUserGroupManagerTest extends TestCase {
   }
 
   public void testGroupDeletions() throws Exception {
-    userGroupManager.updateGroups();
-    userGroupManager.updateUsers();
+    userGroupManager.updateGroups(groupUnids);
+    userGroupManager.updateUsers(userUnids);
 
     // Find the Notes doc for the group to be deleted.
     // Use a group with children.
@@ -538,8 +587,8 @@ public class NotesUserGroupManagerTest extends TestCase {
   }
 
   public void testUserNoLongerSelected() throws Exception {
-    userGroupManager.updateGroups();
-    userGroupManager.updateUsers();
+    userGroupManager.updateGroups(groupUnids);
+    userGroupManager.updateUsers(userUnids);
 
     // Find the Notes doc for the user to be deleted.
     NotesView nameView = namesDatabase.getView("notesnamelookup");
@@ -753,13 +802,13 @@ public class NotesUserGroupManagerTest extends TestCase {
   }
 
   private void setUpGroups() throws Exception {
-    userGroupManager.updateGroups();
+    userGroupManager.updateGroups(groupUnids);
     getGroupData();
   }
 
   private void setUpUsers() throws Exception {
-    userGroupManager.updateGroups();
-    userGroupManager.updateUsers();
+    userGroupManager.updateGroups(groupUnids);
+    userGroupManager.updateUsers(userUnids);
     getGroupData(); // Must be done after updateUsers
     getUserData();
   }

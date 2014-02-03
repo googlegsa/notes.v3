@@ -18,7 +18,6 @@ import com.google.common.base.Strings;
 import com.google.enterprise.connector.notes.client.NotesDatabase;
 import com.google.enterprise.connector.notes.client.NotesDocument;
 import com.google.enterprise.connector.notes.client.NotesSession;
-import com.google.enterprise.connector.notes.client.NotesThread;
 import com.google.enterprise.connector.notes.client.NotesView;
 import com.google.enterprise.connector.notes.client.NotesViewEntry;
 import com.google.enterprise.connector.notes.client.NotesViewNavigator;
@@ -29,7 +28,6 @@ import com.google.enterprise.connector.spi.Session;
 import com.google.enterprise.connector.spi.TraversalManager;
 
 import java.util.HashMap;
-import java.util.Map;
 import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -40,16 +38,17 @@ public class NotesConnectorSession implements Session {
 
   private TraversalManager traversalManager;
   private NotesUserGroupManager userGroupManager;
-  private String server = null;
-  private String database = null;
-  private String password = "";
-  private NotesConnector connector = null;
+  private final String server;
+  private final String database;
+  private final String password;
+  private final NotesConnector connector;
   private Vector<String> ExcludedExtns = null;
   private int MaxFileSize;
   private String SpoolDir = null;
   private HashMap<String,String> MimeTypeMap = null;
-  HashMap<String, String> serverDomainMap = new HashMap<String, String>();
-  private NotesPollerNotifier npn = null;
+  private final HashMap<String, String> serverDomainMap =
+      new HashMap<String, String>();
+  private final NotesPollerNotifier npn;
   private int maxCrawlQDepth;
   private int deletionBatchSize;
   private int numCrawlerThreads;
@@ -460,19 +459,19 @@ public class NotesConnectorSession implements Session {
     return notesDocManager;
   }
 
-  /* @Override */
+  @Override
   public AuthenticationManager getAuthenticationManager() {
     //TODO: Should we always return the same AuthenticationManager?
     return new NotesAuthenticationManager(this);
   }
 
-  /* @Override */
+  @Override
   public AuthorizationManager getAuthorizationManager() {
     //TODO: Should we always return the same AuthorizationManager?
     return new NotesAuthorizationManager(this);
   }
 
-  /* @Override */
+  @Override
   public synchronized TraversalManager getTraversalManager() {
     if (traversalManager == null) {
       traversalManager = new NotesTraversalManager(this);

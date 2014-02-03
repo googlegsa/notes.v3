@@ -24,7 +24,6 @@ import com.google.enterprise.connector.notes.client.NotesView;
 import com.google.enterprise.connector.spi.RepositoryException;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -98,7 +97,6 @@ public class NotesDatabaseMock extends NotesBaseMock
               + " field for " + fieldValue + " value in document [UNID: "
               + unid + "]", e);
         }
-        
       }
     }
     return doclist;
@@ -146,7 +144,7 @@ public class NotesDatabaseMock extends NotesBaseMock
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public NotesView getView(String view) throws RepositoryException {
     LOGGER.fine("getting view: " + view);
 
@@ -164,7 +162,7 @@ public class NotesDatabaseMock extends NotesBaseMock
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public boolean openByReplicaID(String server, String replicaId)
       throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "openByReplicaID");
@@ -187,7 +185,7 @@ public class NotesDatabaseMock extends NotesBaseMock
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public NotesDocument getDocumentByUNID(String unid)
       throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "getDocumentByUNID");
@@ -196,11 +194,11 @@ public class NotesDatabaseMock extends NotesBaseMock
         return doc;
       }
     }
-    return null;
+    throw new RepositoryException(unid + " document is not found");
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public NotesDocument createDocument() throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "createDocument");
     NotesDocumentMock document = new NotesDocumentMock();
@@ -209,21 +207,21 @@ public class NotesDatabaseMock extends NotesBaseMock
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public String getReplicaID() throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "getReplicaID");
     return replicaId;
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public String getFilePath() throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "getFilePath");
     return null;
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public NotesDocumentCollection search(String formula)
       throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "search");
@@ -231,7 +229,7 @@ public class NotesDatabaseMock extends NotesBaseMock
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public NotesDocumentCollection search(String formula,
       NotesDateTime startDate) throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "search");
@@ -239,7 +237,7 @@ public class NotesDatabaseMock extends NotesBaseMock
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public NotesDocumentCollection search(String formula,
       NotesDateTime startDate, int maxDocs) throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "search");
@@ -247,7 +245,7 @@ public class NotesDatabaseMock extends NotesBaseMock
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public NotesACL getACL() throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "getACL");
     if (acl != null) {
@@ -257,19 +255,20 @@ public class NotesDatabaseMock extends NotesBaseMock
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public Vector getACLActivityLog() throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "getACLActivityLog");
     return aclActivityLog;
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public boolean isOpen() throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "isOpen");
     return true;
   }
 
+  @Override
   public String toString() {
     try {
       return getFilePath();

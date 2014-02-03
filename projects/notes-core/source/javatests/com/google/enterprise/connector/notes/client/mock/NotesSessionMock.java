@@ -19,7 +19,6 @@ import com.google.enterprise.connector.notes.client.NotesDateTime;
 import com.google.enterprise.connector.notes.client.NotesDocument;
 import com.google.enterprise.connector.notes.client.NotesName;
 import com.google.enterprise.connector.notes.client.NotesSession;
-import com.google.enterprise.connector.notes.client.NotesView;
 import com.google.enterprise.connector.spi.RepositoryException;
 
 import java.text.ParseException;
@@ -38,8 +37,8 @@ public class NotesSessionMock extends NotesBaseMock
   private static final Logger LOGGER =
       Logger.getLogger(CLASS_NAME);
 
-  private List<NotesDatabaseMock> databases;
-  private Map<String, String> environment;
+  private final List<NotesDatabaseMock> databases;
+  private final Map<String, String> environment;
 
   NotesSessionMock(List<NotesDatabaseMock> databases,
       Map<String, String> environment) {
@@ -52,27 +51,27 @@ public class NotesSessionMock extends NotesBaseMock
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public String getPlatform() throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "getPlatform");
     return null;
  }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public String getCommonUserName() throws RepositoryException {
     return null;
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public boolean verifyPassword(String password, String hashedPassword)
       throws RepositoryException {
     return password.equals(hashedPassword);
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public String getEnvironmentString(String name, boolean isSystem)
       throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "getEnvironmentString");
@@ -80,7 +79,7 @@ public class NotesSessionMock extends NotesBaseMock
  }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public NotesDatabase getDatabase(String server, String database)
       throws RepositoryException {
    LOGGER.entering(CLASS_NAME, "getDatabase");
@@ -110,7 +109,7 @@ public class NotesSessionMock extends NotesBaseMock
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public Vector evaluate(String formula) throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "evaluate");
     // Handle the special formula in NotesUserGroupManager
@@ -134,7 +133,7 @@ public class NotesSessionMock extends NotesBaseMock
  }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public Vector evaluate(String formula, NotesDocument document)
       throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "evaluate");
@@ -145,7 +144,7 @@ public class NotesSessionMock extends NotesBaseMock
  }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public NotesDateTime createDateTime(String date) throws RepositoryException {
    LOGGER.entering(CLASS_NAME, "createDateTime");
    // TODO: this is often used to get an object, followed
@@ -162,12 +161,13 @@ public class NotesSessionMock extends NotesBaseMock
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public NotesName createName(String name) throws RepositoryException {
     return new NotesNameMock(name);
   }
 
   /* TODO: implement getUserName.
+  @Override
   public String toString() {
     try {
       return getUserName();

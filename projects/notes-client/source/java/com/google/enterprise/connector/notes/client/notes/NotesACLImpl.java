@@ -40,8 +40,8 @@ class NotesACLImpl extends NotesBaseImpl<ACL> implements NotesACL {
   }
 
   /** {@inheritDoc} */
-  /* @Override */
   /* Apparently never returns null. */
+  @Override
   public NotesACLEntry getFirstEntry() throws NotesConnectorExceptionImpl {
     try {
       return new NotesACLEntryImpl(getNotesObject().getFirstEntry());
@@ -51,7 +51,7 @@ class NotesACLImpl extends NotesBaseImpl<ACL> implements NotesACL {
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public NotesACLEntry getNextEntry() throws NotesConnectorExceptionImpl {
     try {
       ACLEntry entry = getNotesObject().getNextEntry();
@@ -65,7 +65,7 @@ class NotesACLImpl extends NotesBaseImpl<ACL> implements NotesACL {
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public NotesACLEntry getNextEntry(NotesACLEntry previousEntry)
       throws NotesConnectorExceptionImpl {
     try {
@@ -81,7 +81,7 @@ class NotesACLImpl extends NotesBaseImpl<ACL> implements NotesACL {
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public Vector getRoles() throws NotesConnectorExceptionImpl {
     try {
       return getNotesObject().getRoles();

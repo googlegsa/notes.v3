@@ -40,28 +40,28 @@ public class NotesDateTimeMock extends NotesBaseMock
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public Date toJavaDate() throws RepositoryException {
    LOGGER.entering(CLASS_NAME, "");
    return date;
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public void setNow() throws RepositoryException {
    LOGGER.entering(CLASS_NAME, "setNow");
    date = new Date();
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public void setAnyTime() throws RepositoryException {
    LOGGER.entering(CLASS_NAME, "setAnyTime");
    // empty
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public int timeDifference(NotesDateTime otherDateTime)
       throws RepositoryException, IllegalArgumentException {
    LOGGER.entering(CLASS_NAME, "timeDifference");
@@ -74,6 +74,7 @@ public class NotesDateTimeMock extends NotesBaseMock
   }
 
   /* TODO: implement getLocalTime.
+  @Override
   public String toString() {
     try {
       return getLocalTime();

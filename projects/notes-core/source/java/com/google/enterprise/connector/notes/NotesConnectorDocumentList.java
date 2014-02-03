@@ -21,23 +21,22 @@ import com.google.enterprise.connector.notes.client.NotesView;
 import com.google.enterprise.connector.spi.Document;
 import com.google.enterprise.connector.spi.DocumentList;
 import com.google.enterprise.connector.spi.RepositoryException;
-import com.google.enterprise.connector.spi.SpiConstants;
 import com.google.enterprise.connector.spi.SpiConstants.ActionType;
 
+import java.net.MalformedURLException;
+import java.sql.Connection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.net.MalformedURLException;
-import java.sql.Connection;
 
 class NotesConnectorDocumentList implements DocumentList {
   private static final String CLASS_NAME =
       NotesConnectorDocumentList.class.getName();
   private static final Logger LOGGER = Logger.getLogger(CLASS_NAME);
-  private Iterator<String> iterator;
+  private final Iterator<String> iterator;
   private NotesConnectorDocument ncdoc = null;
-  private NotesConnectorSession ncs;
+  private final NotesConnectorSession ncs;
   private NotesSession ns = null;
 
   /** The connector database */
@@ -48,7 +47,7 @@ class NotesConnectorDocumentList implements DocumentList {
   private NotesDocument crawldoc = null;
 
   /** The list of UNIDs included in this document list */
-  private List<String> unidList = null;
+  private final List<String> unidList;
 
   public NotesConnectorDocumentList(NotesConnectorSession doclistncs,
       List<String> documents) {
@@ -60,7 +59,7 @@ class NotesConnectorDocumentList implements DocumentList {
     this.ncs = doclistncs;
   }
 
-  /* @Override */
+  @Override
   public Document nextDocument() {
     final String METHOD = "nextDocument";
     LOGGER.entering(CLASS_NAME, METHOD);
@@ -204,7 +203,7 @@ class NotesConnectorDocumentList implements DocumentList {
     LOGGER.exiting(CLASS_NAME, METHOD);
   }
 
-  /* @Override */
+  @Override
   public String checkpoint() throws RepositoryException {
     final String METHOD = "checkpoint";
     String checkPointUnid = null;
@@ -295,6 +294,7 @@ class NotesConnectorDocumentList implements DocumentList {
     return checkPointUnid;
   }
 
+  @Override
   public String toString() {
     return unidList.toString();
   }

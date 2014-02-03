@@ -16,15 +16,10 @@ package com.google.enterprise.connector.notes.client.notes;
 
 import com.google.enterprise.connector.notes.client.NotesDocument;
 import com.google.enterprise.connector.notes.client.NotesDocumentCollection;
-import com.google.enterprise.connector.notes.client.NotesEmbeddedObject;
-import com.google.enterprise.connector.notes.client.NotesItem;
-import com.google.enterprise.connector.notes.client.NotesView;
 
 import lotus.domino.Document;
 import lotus.domino.DocumentCollection;
 import lotus.domino.NotesException;
-
-import java.util.Vector;
 
 class NotesDocumentCollectionImpl extends NotesBaseImpl<DocumentCollection>
     implements NotesDocumentCollection {
@@ -34,7 +29,7 @@ class NotesDocumentCollectionImpl extends NotesBaseImpl<DocumentCollection>
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public NotesDocument getFirstDocument() throws NotesConnectorExceptionImpl {
     try {
       Document doc = getNotesObject().getFirstDocument();
@@ -48,7 +43,7 @@ class NotesDocumentCollectionImpl extends NotesBaseImpl<DocumentCollection>
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public NotesDocument getNextDocument() throws NotesConnectorExceptionImpl {
     try {
       Document doc = getNotesObject().getNextDocument();
@@ -62,7 +57,7 @@ class NotesDocumentCollectionImpl extends NotesBaseImpl<DocumentCollection>
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public NotesDocument getNextDocument(NotesDocument document)
       throws NotesConnectorExceptionImpl {
     try {
@@ -78,7 +73,7 @@ class NotesDocumentCollectionImpl extends NotesBaseImpl<DocumentCollection>
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public int getCount() throws NotesConnectorExceptionImpl {
     try {
       return getNotesObject().getCount();

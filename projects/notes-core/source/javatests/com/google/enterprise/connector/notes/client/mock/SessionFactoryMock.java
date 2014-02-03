@@ -32,22 +32,22 @@ public class SessionFactoryMock implements SessionFactory {
   private static final Logger LOGGER =
       Logger.getLogger(CLASS_NAME);
 
-  private List<NotesDatabaseMock> databases =
+  private final List<NotesDatabaseMock> databases =
       new ArrayList<NotesDatabaseMock>();
-  private Map<String, String> environment = new HashMap<String, String>();
+  private final Map<String, String> environment = new HashMap<String, String>();
 
   public SessionFactoryMock() {
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public NotesSession createSessionWithFullAccess(String password) {
     LOGGER.entering(CLASS_NAME, "createSessionWithFullAccess");
     return new NotesSessionMock(databases, environment);
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public NotesThread getNotesThread() {
     LOGGER.entering(CLASS_NAME, "getNotesThread");
     return new NotesThreadMock();

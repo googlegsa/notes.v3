@@ -18,7 +18,6 @@ import com.google.enterprise.connector.notes.client.NotesDateTime;
 import com.google.enterprise.connector.notes.client.NotesItem;
 import com.google.enterprise.connector.spi.RepositoryException;
 
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Vector;
@@ -31,7 +30,7 @@ public class NotesItemMock extends NotesBaseMock implements NotesItem {
   private static final Logger LOGGER =
       Logger.getLogger(CLASS_NAME);
 
-  private Map<String, Object> properties = new HashMap<String, Object>();
+  private final Map<String, Object> properties = new HashMap<String, Object>();
   private boolean isReaders = false;
   private boolean isAuthors = false;
 
@@ -69,7 +68,7 @@ public class NotesItemMock extends NotesBaseMock implements NotesItem {
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   @SuppressWarnings("unchecked")
   public NotesDateTime getDateTimeValue() throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "getDateTimeValue");
@@ -83,14 +82,14 @@ public class NotesItemMock extends NotesBaseMock implements NotesItem {
   }
   
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public String getName() throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "getName");
     return (String) properties.get("name");
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public int getType() throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "getType");
     Object type = properties.get("type");
@@ -101,7 +100,7 @@ public class NotesItemMock extends NotesBaseMock implements NotesItem {
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public String getText(int maxlen) throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "getText");
     Vector values = getValues();
@@ -117,7 +116,7 @@ public class NotesItemMock extends NotesBaseMock implements NotesItem {
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public boolean isReaders() throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "isReaders");
     return isReaders;
@@ -128,7 +127,7 @@ public class NotesItemMock extends NotesBaseMock implements NotesItem {
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public boolean isAuthors() throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "isAuthors");
     return isAuthors;
@@ -139,14 +138,14 @@ public class NotesItemMock extends NotesBaseMock implements NotesItem {
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public Vector getValues() throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "getValues");
     return (Vector) properties.get("values");
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public void appendToTextList(String value) throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "appendToTextList");
     @SuppressWarnings("unchecked")
@@ -161,7 +160,7 @@ public class NotesItemMock extends NotesBaseMock implements NotesItem {
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   @SuppressWarnings("unchecked")
   public void appendToTextList(Vector values) throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "appendToTextList");
@@ -176,11 +175,12 @@ public class NotesItemMock extends NotesBaseMock implements NotesItem {
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public void setSummary(boolean summary) throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "setSummary");
   }
 
+  @Override
   public String toString() {
     try {
       return getName() + " = " + getText(256);

@@ -49,7 +49,7 @@ public class NotesAuthenticationManagerTest extends TestCase {
   public static Test suite() {
     return new TestSetup(
         new TestSuite(NotesAuthenticationManagerTest.class)) {
-      protected void setUp() throws Exception {
+      @Override protected void setUp() throws Exception {
         connector = NotesConnectorTest.getConnector();
         factory = (SessionFactoryMock) connector.getSessionFactory();
         NotesConnectorSessionTest.configureFactoryForSession(factory);
@@ -113,6 +113,7 @@ public class NotesAuthenticationManagerTest extends TestCase {
     super();
   }
 
+  @Override
   protected void setUp() throws Exception {
     super.setUp();
     authenticationManager = connectorSession.getAuthenticationManager();
@@ -121,6 +122,7 @@ public class NotesAuthenticationManagerTest extends TestCase {
     nugm.updateRoles();
   }
 
+  @Override
   protected void tearDown() throws Exception {
     try {
       nugm.releaseResources();

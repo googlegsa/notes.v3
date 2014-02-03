@@ -22,7 +22,6 @@ import com.google.enterprise.connector.notes.client.NotesView;
 import com.google.enterprise.connector.spi.Document;
 import com.google.enterprise.connector.spi.Property;
 import com.google.enterprise.connector.spi.SpiConstants;
-import com.google.enterprise.connector.spi.Session;
 import com.google.enterprise.connector.spi.Value;
 
 import junit.extensions.TestSetup;
@@ -32,8 +31,6 @@ import junit.framework.TestSuite;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Vector;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class InheritableAclTest extends TestCase {
@@ -48,7 +45,7 @@ public class InheritableAclTest extends TestCase {
   public static Test suite() {
     if (Boolean.getBoolean("javatest.supportsinheritedacls")) {
       return new TestSetup(new TestSuite(InheritableAclTest.class)) {
-        protected void setUp() throws Exception {
+        @Override protected void setUp() throws Exception {
           connector = ConnectorFixture.getConnector(false, true);
           connectorSession = (NotesConnectorSession) connector.login();
           NotesUserGroupManager userGroupManager =
@@ -57,7 +54,7 @@ public class InheritableAclTest extends TestCase {
           documents = ConnectorFixture.traverseAll(connectorSession);
         }
 
-        protected void tearDown() throws Exception {
+        @Override protected void tearDown() throws Exception {
           connector.shutdown();
         }
       };

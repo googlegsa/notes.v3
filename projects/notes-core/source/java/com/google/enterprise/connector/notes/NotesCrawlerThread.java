@@ -26,9 +26,7 @@ import com.google.enterprise.connector.notes.client.NotesView;
 import com.google.enterprise.connector.spi.RepositoryException;
 import com.google.enterprise.connector.spi.SpiConstants.ActionType;
 
-import java.io.IOException;
 import java.net.URLEncoder;
-import java.security.NoSuchAlgorithmException;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -46,8 +44,8 @@ public class NotesCrawlerThread extends Thread {
   private static final Logger LOGGER = Logger.getLogger(CLASS_NAME);
   static final String META_FIELDS_PREFIX = "x.";
 
-  private NotesConnector nc = null;
-  private NotesConnectorSession ncs = null;
+  private final NotesConnector nc;
+  private final NotesConnectorSession ncs;
   private NotesSession ns = null;
   private NotesDatabase cdb = null;
   @VisibleForTesting
@@ -916,7 +914,6 @@ public class NotesCrawlerThread extends Thread {
         NotesDocument crawlDoc = null;
         // Only get from the queue if there is more than 300MB in the
         // spool directory
-        // TODO: getFreeSpace is a Java 1.6 method.
         java.io.File spoolDir = new java.io.File(ncs.getSpoolDir());
         LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
             "Spool free space is " + spoolDir.getFreeSpace());
@@ -1036,6 +1033,7 @@ public class NotesCrawlerThread extends Thread {
       return metaName;
     }
 
+    @Override
     public String toString() {
       return "[form: " + formName + "; field: " + fieldName
           + "; meta: " + metaName + "]";

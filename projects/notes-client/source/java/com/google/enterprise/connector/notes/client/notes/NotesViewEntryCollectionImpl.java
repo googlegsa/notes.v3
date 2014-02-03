@@ -22,8 +22,6 @@ import lotus.domino.NotesException;
 import lotus.domino.ViewEntry;
 import lotus.domino.ViewEntryCollection;
 
-import java.util.logging.Logger;
-
 class NotesViewEntryCollectionImpl extends NotesBaseImpl<ViewEntryCollection>
     implements NotesViewEntryCollection {
 
@@ -32,7 +30,7 @@ class NotesViewEntryCollectionImpl extends NotesBaseImpl<ViewEntryCollection>
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public int getCount() throws RepositoryException {
     try {
       return getNotesObject().getCount();
@@ -42,7 +40,7 @@ class NotesViewEntryCollectionImpl extends NotesBaseImpl<ViewEntryCollection>
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public NotesViewEntry getEntry(Object entry) throws RepositoryException {
     try {
       ViewEntry foundEntry = getNotesObject().getEntry(
@@ -57,7 +55,7 @@ class NotesViewEntryCollectionImpl extends NotesBaseImpl<ViewEntryCollection>
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public NotesViewEntry getFirstEntry() throws RepositoryException {
     try {
       ViewEntry foundEntry = getNotesObject().getFirstEntry();
@@ -71,7 +69,7 @@ class NotesViewEntryCollectionImpl extends NotesBaseImpl<ViewEntryCollection>
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public NotesViewEntry getNextEntry() throws RepositoryException {
     try {
       ViewEntry foundEntry = getNotesObject().getNextEntry();
@@ -85,7 +83,7 @@ class NotesViewEntryCollectionImpl extends NotesBaseImpl<ViewEntryCollection>
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public NotesViewEntry getNextEntry(NotesViewEntry previousEntry)
       throws RepositoryException {
     try {
@@ -101,7 +99,7 @@ class NotesViewEntryCollectionImpl extends NotesBaseImpl<ViewEntryCollection>
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public NotesViewEntry getLastEntry() throws RepositoryException {
     try {
       ViewEntry foundEntry = getNotesObject().getLastEntry();

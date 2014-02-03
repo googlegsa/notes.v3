@@ -14,40 +14,23 @@
 
 package com.google.enterprise.connector.notes;
 
-import com.google.common.collect.Lists;
 import com.google.enterprise.connector.notes.NotesConnector;
 import com.google.enterprise.connector.notes.NotesConnectorSession;
 import com.google.enterprise.connector.notes.NotesUserGroupManager.User;
-import com.google.enterprise.connector.notes.client.NotesACL;
-import com.google.enterprise.connector.notes.client.NotesACLEntry;
-import com.google.enterprise.connector.notes.client.NotesDatabase;
-import com.google.enterprise.connector.notes.client.NotesDocument;
 import com.google.enterprise.connector.notes.client.NotesItem;
 import com.google.enterprise.connector.notes.client.NotesSession;
-import com.google.enterprise.connector.notes.client.NotesView;
-import com.google.enterprise.connector.notes.client.mock.NotesACLMock;
-import com.google.enterprise.connector.notes.client.mock.NotesACLEntryMock;
 import com.google.enterprise.connector.notes.client.mock.NotesDatabaseMock;
 import com.google.enterprise.connector.notes.client.mock.NotesDocumentMock;
 import com.google.enterprise.connector.notes.client.mock.NotesItemMock;
 import com.google.enterprise.connector.notes.client.mock.NotesSessionMock;
 import com.google.enterprise.connector.notes.client.mock.SessionFactoryMock;
-import com.google.enterprise.connector.spi.AuthorizationManager;
-import com.google.enterprise.connector.spi.AuthorizationResponse;
-import com.google.enterprise.connector.spi.Session;
-import com.google.enterprise.connector.spi.SimpleAuthenticationIdentity;
 
 import junit.extensions.TestSetup;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
 import java.util.HashMap;
-import java.util.Map;
-import java.util.Vector;
 
 /*
 * checkDatabaseAccess
@@ -96,7 +79,7 @@ private static HashMap<String, User> users = new HashMap<String, User>();
   public static Test suite() {
     return new TestSetup(new TestSuite(
             NotesAuthorizationManagerWildcardsTest.class)) {
-      protected void setUp() throws Exception {
+      @Override protected void setUp() throws Exception {
         connector = NotesConnectorTest.getConnector();
         factory = (SessionFactoryMock) connector.getSessionFactory();
         NotesConnectorSessionTest.configureFactoryForSession(factory);
@@ -200,12 +183,14 @@ private static HashMap<String, User> users = new HashMap<String, User>();
     super();
   }
 
+  @Override
   protected void setUp() throws Exception {
     super.setUp();
     authorizationManager = (NotesAuthorizationManager) connectorSession
         .getAuthorizationManager();
   }
 
+  @Override
   protected void tearDown() throws Exception {
     // Clean up database document permit/deny so each test can
     // start with what it wants to test.

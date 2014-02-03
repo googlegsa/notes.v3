@@ -33,35 +33,35 @@ class NotesViewEntryCollectionMock extends NotesBaseMock
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public int getCount() throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "getCount");
     return -1;
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public NotesViewEntry getEntry(Object entry) throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "getEntry");
     return null;
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public NotesViewEntry getFirstEntry() throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "getFirstEntry");
     return null;
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public NotesViewEntry getNextEntry() throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "getNextEntry");
     return null;
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public NotesViewEntry getNextEntry(NotesViewEntry previousEntry)
       throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "getNextEntry");
@@ -69,7 +69,7 @@ class NotesViewEntryCollectionMock extends NotesBaseMock
   }
 
   /** {@inheritDoc} */
-  /* @Override */
+  @Override
   public NotesViewEntry getLastEntry() throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "getLastEntry");
     return null;

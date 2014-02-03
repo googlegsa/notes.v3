@@ -22,9 +22,7 @@ import com.google.enterprise.connector.spi.RepositoryException;
 import com.google.enterprise.connector.util.database.DatabaseConnectionPool;
 import com.google.enterprise.connector.util.database.JdbcDatabase;
 
-import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
-import java.net.URLEncoder;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
