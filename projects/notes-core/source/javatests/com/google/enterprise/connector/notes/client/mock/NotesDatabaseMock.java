@@ -15,6 +15,7 @@
 package com.google.enterprise.connector.notes.client.mock;
 
 import com.google.enterprise.connector.notes.NCCONST;
+import com.google.enterprise.connector.notes.NotesConnectorException;
 import com.google.enterprise.connector.notes.client.NotesACL;
 import com.google.enterprise.connector.notes.client.NotesDatabase;
 import com.google.enterprise.connector.notes.client.NotesDateTime;
@@ -34,10 +35,9 @@ import java.util.logging.Logger;
 public class NotesDatabaseMock extends NotesBaseMock
     implements NotesDatabase {
   private static final String CLASS_NAME = NotesDatabaseMock.class.getName();
+  private static final Logger LOGGER = Logger.getLogger(CLASS_NAME);
 
-  /** The logger for this class. */
-  private static final Logger LOGGER =
-      Logger.getLogger(CLASS_NAME);
+  private static final int NOTES_ERR_BAD_UNID = 4091;
 
   private NotesSessionMock session;
 
@@ -186,7 +186,7 @@ public class NotesDatabaseMock extends NotesBaseMock
 
   /** {@inheritDoc} */
   @Override
-  public NotesDocument getDocumentByUNID(String unid)
+  public NotesDocument getDocumentByUNID(final String unid)
       throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "getDocumentByUNID");
     for (NotesDocumentMock doc: documents) {
@@ -194,7 +194,14 @@ public class NotesDatabaseMock extends NotesBaseMock
         return doc;
       }
     }
-    throw new RepositoryException(unid + " document is not found");
+    throw new NotesConnectorException() {
+        @Override public String getMessage() {
+          return unid + " document is not found";
+        }
+        @Override public int getId() {
+          return NOTES_ERR_BAD_UNID;
+        }
+    };
   }
 
   /** {@inheritDoc} */
@@ -217,7 +224,7 @@ public class NotesDatabaseMock extends NotesBaseMock
   @Override
   public String getFilePath() throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "getFilePath");
-    return null;
+    return name;
   }
 
   /** {@inheritDoc} */

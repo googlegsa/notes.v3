@@ -18,7 +18,6 @@ import com.google.enterprise.connector.notes.client.NotesItem;
 import com.google.enterprise.connector.notes.client.mock.NotesDatabaseMock;
 import com.google.enterprise.connector.notes.client.mock.NotesDocumentMock;
 import com.google.enterprise.connector.notes.client.mock.NotesItemMock;
-import com.google.enterprise.connector.notes.client.mock.NotesViewMock;
 import com.google.enterprise.connector.notes.client.mock.SessionFactoryMock;
 import com.google.enterprise.connector.notes.client.mock.ViewNavFromCategoryCreator;
 
@@ -74,9 +73,7 @@ public class NotesConnectorSessionTest extends TestCase {
     docDbSrc.addItem(new NotesItemMock("name","Template",
         "type",NotesItem.TEXT,"values","Discussion"));
     configDatabase.addDocument(docDbSrc, NCCONST.VIEWDATABASES);
-    NotesViewMock viewSrc = 
-        (NotesViewMock) configDatabase.getView(NCCONST.VIEWDATABASES);
-    viewSrc.setFields(new String[]{"DbRepId"});
+    configDatabase.setViewFields(NCCONST.VIEWDATABASES, "DbRepId");
 
     // Create Notes names database.
     NotesDatabaseMock namesDatabase = new NotesDatabaseMock("testserver",

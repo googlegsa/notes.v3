@@ -35,6 +35,10 @@ import java.util.Map;
 import java.util.Set;
 import java.util.Vector;
 
+/*
+ * TODO(tdnguyen): Move the functionality to generate documents out of this
+ *                 class to provide a common test fixture.
+ */
 public class NotesDocumentManagerTest extends TestCase {
   private NotesConnector connector;
   private SessionFactoryMock factory;
@@ -42,7 +46,7 @@ public class NotesDocumentManagerTest extends TestCase {
   private NotesSession session;
   private NotesDocumentManager notesDocManager;
   
-  private List<NotesDocument> docs;
+  private List<NotesDocumentMock> docs;
   private static final int NUM_OF_DOCS = 1000;
 
   @Override
@@ -224,7 +228,7 @@ public class NotesDocumentManagerTest extends TestCase {
   }
   
   void generateDocuments() throws RepositoryException {
-    docs = new ArrayList<NotesDocument>();
+    docs = new ArrayList<NotesDocumentMock>();
     String host = TESTCONST.SERVER_DOMINO_WEB + TESTCONST.DOMAIN;
     String replicaId = TESTCONST.DBSRC_REPLICAID;
   
@@ -233,7 +237,7 @@ public class NotesDocumentManagerTest extends TestCase {
     for(int i = 0; i < (32 - digitCount1); i++){
       baseUnid.append("X");
     }
-    NotesDocument docNew = null;
+    NotesDocumentMock docNew = null;
     int digitCount2 = 0;
     for (int x = 0; x < NUM_OF_DOCS; x++) {
       digitCount2 = String.valueOf(x).length();
@@ -272,7 +276,7 @@ public class NotesDocumentManagerTest extends TestCase {
     }
   }
   
-  private NotesDocument createNotesDocumentWithAllInfo() 
+  private NotesDocumentMock createNotesDocumentWithAllInfo() 
       throws RepositoryException{
     NotesDocumentMock docMock = new NotesDocumentMock();
     docMock.addItem(new NotesItemMock("name", "Form", "type", NotesItem.TEXT, 
@@ -358,7 +362,7 @@ public class NotesDocumentManagerTest extends TestCase {
     return docMock;
   }
   
-  private NotesDocument createNotesDocumentWithoutReaders() 
+  private NotesDocumentMock createNotesDocumentWithoutReaders() 
       throws RepositoryException{
     NotesDocumentMock docMock = new NotesDocumentMock();
     docMock.addItem(new NotesItemMock("name", "Form", "type", NotesItem.TEXT, 
@@ -420,5 +424,9 @@ public class NotesDocumentManagerTest extends TestCase {
     docMock.addItem(new NotesItemMock("name", NCCONST.NCITM_UNID, "type", 
         NotesItem.TEXT, "values","XXXXXXXXXXXXXXXXXXXXXXXXXXXX0001"));
     return docMock;
+  }
+
+  List<NotesDocumentMock> getDocuments() {
+    return docs;
   }
 }
