@@ -14,8 +14,18 @@
 
 package com.google.enterprise.connector.notes;
 
+import static org.easymock.EasyMock.capture;
+import static org.easymock.EasyMock.createMock;
+import static org.easymock.EasyMock.createNiceMock;
+import static org.easymock.EasyMock.eq;
+import static org.easymock.EasyMock.expect;
+import static org.easymock.EasyMock.isA;
+import static org.easymock.EasyMock.replay;
+import static org.easymock.EasyMock.verify;
+
 import com.google.enterprise.connector.notes.client.NotesDatabase;
 import com.google.enterprise.connector.notes.client.NotesDocument;
+import com.google.enterprise.connector.notes.client.NotesEmbeddedObject;
 import com.google.enterprise.connector.notes.client.NotesItem;
 import com.google.enterprise.connector.notes.client.NotesSession;
 import com.google.enterprise.connector.notes.client.NotesView;
@@ -23,6 +33,8 @@ import com.google.enterprise.connector.notes.client.mock.NotesDatabaseMock;
 import com.google.enterprise.connector.notes.client.mock.NotesDocumentMock;
 import com.google.enterprise.connector.notes.client.mock.NotesItemMock;
 import com.google.enterprise.connector.notes.client.mock.SessionFactoryMock;
+
+import org.easymock.Capture;
 
 import junit.framework.TestCase;
 
@@ -430,6 +442,53 @@ public class NotesCrawlerThreadTest extends TestCase {
     assertNull("Attachment is not null",
         crawlerThread.createAttachmentDoc(null, docSrc, "nonexistent-file.doc",
         null));
+  }
+
+  public void testLongAttachmentFileName() throws Exception {
+    String attachmentName = "this_is_a_very_long_file_name_"
+        + "this_is_a_very_long_file_name_this_is_a_very_long_file_name_"
+        + "this_is_a_very_long_file_name_this_is_a_very_long_file_name_"
+        + "this_is_a_very_long_file_name_this_is_a_very_long_file_name.doc";
+
+    NotesConnector nc = createNiceMock(NotesConnector.class);
+    NotesConnectorSession ncs = createNiceMock(NotesConnectorSession.class);
+    NotesSession ns = createMock(NotesSession.class);
+    NotesDatabase cdb = createNiceMock(NotesDatabase.class);
+    NotesView crawlQ = createNiceMock(NotesView.class);
+    expect(ncs.getServer()).andReturn("domino1");
+    expect(ncs.getDatabase()).andReturn("gsaconfig.nsf");
+    expect(ncs.getSpoolDir()).andReturn("spooldir");
+    expect(ncs.createNotesSession()).andReturn(ns);
+    expect(ns.getDatabase(isA(String.class), isA(String.class))).andReturn(cdb);
+    expect(cdb.getView(isA(String.class))).andReturn(crawlQ);
+    expect(cdb.getReplicaID()).andReturn("REPLICA100");
+
+    NotesDocument docCrawl = createNiceMock(NotesDocument.class);
+    expect(docCrawl.getUniversalID()).andReturn("UNID100");
+
+    NotesDocument docSrc = createNiceMock(NotesDocument.class);
+    NotesEmbeddedObject embObj = createNiceMock(NotesEmbeddedObject.class);
+    expect(docSrc.getAttachment(attachmentName)).andReturn(embObj);
+    expect(embObj.getType()).andReturn(NotesEmbeddedObject.EMBED_ATTACHMENT);
+    expect(embObj.getFileSize()).andReturn(1);
+
+    NotesDocument docAttach = createNiceMock(NotesDocument.class);
+    expect(cdb.createDocument()).andReturn(docAttach);
+    Capture<String> captureContentPath = new Capture<String>();
+    expect(docAttach.replaceItemValue(eq(NCCONST.ITM_CONTENTPATH),
+        capture(captureContentPath))).andReturn(null);
+    replay(ncs, ns, cdb, crawlQ, docCrawl, docSrc, docAttach, embObj);
+
+    NotesCrawlerThread crawler = new NotesCrawlerThread(nc, ncs);
+    crawler.connectQueue();
+    String attachmentId =
+        crawler.createAttachmentDoc(docCrawl, docSrc, attachmentName, "Text");
+
+    assertNotNull(attachmentId);
+    assertEquals(40, attachmentId.length());
+    assertEquals("spooldir/attachments/REPLICA100/UNID100/" + attachmentId,
+        captureContentPath.getValue());
+    verify(docAttach);
   }
 
   public void testSendDeleteRequests() throws Exception {

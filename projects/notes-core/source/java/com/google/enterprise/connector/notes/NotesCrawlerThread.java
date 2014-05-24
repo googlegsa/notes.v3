@@ -786,8 +786,7 @@ public class NotesCrawlerThread extends Thread {
       if ((0 != MimeType.length()) &&
           eo.getFileSize() <= ncs.getMaxFileSize()) {
         attachDoc.replaceItemValue(NCCONST.ITM_MIMETYPE, MimeType);
-        String attachmentPath = getAttachmentFilePath(crawlDoc,
-            encodedAttachmentName);
+        String attachmentPath = getAttachmentFilePath(crawlDoc, attachNameHash);
         eo.extractFile(attachmentPath);
         attachDoc.replaceItemValue(NCCONST.ITM_CONTENTPATH, attachmentPath);
       } else {
