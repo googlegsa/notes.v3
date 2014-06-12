@@ -661,10 +661,15 @@ public class NotesDatabasePoller {
             "Skipping database - Database could not be opened.");
         lastUpdated.recycle();
         ns.recycle(lastUpdatedV);
-      	srcdb.recycle();
-      	return;
+        srcdb.recycle();
+        return;
       }
 
+      String dbName = srcdbDoc.getItemValueString(NCCONST.DITM_DBNAME);
+      String authType = srcdbDoc.getItemValueString(NCCONST.DITM_AUTHTYPE);
+      LOGGER.log(Level.FINE,
+          "{0} database is configured using {1} authentication type",
+          new Object[] {dbName, authType});
       if (processACL(ns, cdb, srcdb, srcdbDoc)) {
         // Scan database ACLs and update H2 cache
         LOGGER.log(Level.FINE, "Scan ACLs and update H2 for {0} replica",
@@ -673,8 +678,7 @@ public class NotesDatabasePoller {
 
         // If the ACL has changed and we are using per Document
         // ACLs we need to resend all documents.
-        if (srcdbDoc.getItemValueString(NCCONST.DITM_AUTHTYPE)
-            .contentEquals(NCCONST.AUTH_ACL)) {
+        if (authType.contentEquals(NCCONST.AUTH_ACL)) {
           LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
               "Database ACL has changed - Resetting last update "
               + "to reindex all document ACLs.");
