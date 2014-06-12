@@ -42,6 +42,7 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Vector;
 
 public class NotesConnectorDocumentTest extends TestCase {
 
@@ -291,6 +292,8 @@ public class NotesConnectorDocumentTest extends TestCase {
           SpiConstants.PROPNAME_ACLGROUPS);
       assertPropertyEquals("Domino%2Freplicaid%2F%5Breaderrole%5D",
           document, SpiConstants.PROPNAME_ACLGROUPS, 1);
+      assertPropertyEquals("Domino%2F*", document,
+          SpiConstants.PROPNAME_ACLGROUPS);
     } else {
       assertNull(document.findProperty(
               SpiConstants.PROPNAME_ACLINHERITFROM_DOCID));
@@ -529,8 +532,11 @@ public class NotesConnectorDocumentTest extends TestCase {
     crawlDoc.addItem(new NotesItemMock("name", NCCONST.NCITM_AUTHTYPE, "type",
             NotesItem.TEXT, "values", NCCONST.AUTH_ACL));
     if (hasReaders) {
+      Vector<String> readers = new Vector<String>();
+      readers.add("cn=John Smith/ou=Tests/o=Tests");
+      readers.add("*");
       crawlDoc.addItem(new NotesItemMock("name", NCCONST.NCITM_DOCAUTHORREADERS,
-              "type", NotesItem.TEXT, "values", "cn=John Smith/ou=Tests/o=Tests",
+              "type", NotesItem.TEXT, "values", readers,
               "readergroup", "[readerrole]"));
     }
 
