@@ -248,7 +248,7 @@ public class NotesDatabaseMock extends NotesBaseMock
   public NotesDocumentCollection search(String formula,
       NotesDateTime startDate, int maxDocs) throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "search");
-    return null;
+    return new NotesDocumentCollectionMock(documents);
   }
 
   /** {@inheritDoc} */

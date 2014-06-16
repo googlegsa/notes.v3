@@ -62,6 +62,8 @@ public class NotesConnectorSessionTest extends TestCase {
         "type",NotesItem.TEXT,"values",TESTCONST.SERVER_DOMINO));
     docDbSrc.addItem(new NotesItemMock("name","DbRepId",
         "type",NotesItem.TEXT,"values",TESTCONST.DBSRC_REPLICAID));
+    docDbSrc.addItem(new NotesItemMock("name", NCCONST.NCITM_UNID,
+        "type", NotesItem.TEXT, "values", TESTCONST.DBSRC_REPLICAID));
     docDbSrc.addItem(new NotesItemMock("name","Enabled",
         "type",NotesItem.NUMBERS,"values",1));
     docDbSrc.addItem(new NotesItemMock("name","Stopped",
