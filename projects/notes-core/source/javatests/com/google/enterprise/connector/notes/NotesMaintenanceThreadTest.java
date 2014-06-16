@@ -24,13 +24,8 @@ import com.google.enterprise.connector.spi.SpiConstants.ActionType;
 
 import junit.framework.TestCase;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.logging.Handler;
-import java.util.logging.Level;
-import java.util.logging.LogRecord;
-import java.util.logging.Logger;
 
 public class NotesMaintenanceThreadTest extends TestCase {
   private NotesConnector connector;
@@ -95,7 +90,8 @@ public class NotesMaintenanceThreadTest extends TestCase {
 
   public void testMissingSelectionCriteria() throws Exception {
     // Setup log messages and source database
-    List<String> logs = captureLogMessages("selection criteria");
+    List<String> logs = TestUtil.captureLogMessages(
+        NotesMaintenanceThread.class, "selection criteria");
     setupSourceDatabase("mickey1/mtv/us", "test.nsf",
         TESTCONST.DBSRC_REPLICAID, notesDocMgrDbTest.getDocuments(),
         NCCONST.VIEWINDEXED);
@@ -126,7 +122,8 @@ public class NotesMaintenanceThreadTest extends TestCase {
 
   public void testValidSelectionCriteriaFormulas() throws Exception {
     // Setup log messages and source database
-    List<String> logs = captureLogMessages("selection formula");
+    List<String> logs = TestUtil.captureLogMessages(
+        NotesMaintenanceThread.class, "selection formula");
     setupSourceDatabase("mickey1/mtv/us", "test.nsf",
         TESTCONST.DBSRC_REPLICAID, notesDocMgrDbTest.getDocuments(),
         NCCONST.VIEWINDEXED);
@@ -154,28 +151,6 @@ public class NotesMaintenanceThreadTest extends TestCase {
     // Test log message
     assertTrue(logs.size() > 0);
     assertTrue(logs.get(0).contains(searchString));
-  }
-
-  /**
-   * Capture and return log messages that match the substring.
-   */
-  private List<String> captureLogMessages(final String substr) {
-    // Setup logger
-    final List<String> logs = new ArrayList<String>();
-    Logger logger = Logger.getLogger(NotesMaintenanceThread.class.getName());
-    logger.setLevel(Level.ALL);
-
-    logger.addHandler(new Handler() {
-        @Override public void close() {}
-        @Override public void flush() {}
-
-        @Override public void publish(LogRecord arg0) {
-          if (arg0.getMessage().contains(substr)) {
-            logs.add(arg0.getMessage());
-          }
-        }
-    });
-    return logs;
   }
 
   private NotesDatabaseMock setupSourceDatabase(String server, String filePath,

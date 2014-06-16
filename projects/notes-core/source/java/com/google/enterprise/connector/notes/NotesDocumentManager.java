@@ -139,8 +139,25 @@ public class NotesDocumentManager {
     attachmentsDDL.append(", foreign key(docid) references ");
     attachmentsDDL.append(indexedTableName).append("(docid))");
 
-    jdbcDatabase.verifyTableExists(attachmentsTableName,
-        new String[]{attachmentsDDL.toString()});
+    if (jdbcDatabase.verifyTableExists(attachmentsTableName,
+        new String[]{attachmentsDDL.toString()})) {
+      StringBuilder alterDdl = new StringBuilder();
+      alterDdl.append("alter table ").append(attachmentsTableName);
+      alterDdl.append(" alter column attachment_unid varchar(");
+      alterDdl.append(NCCONST.COLUMN_SIZE_UNID).append(") selectivity 100");
+      Connection conn = null;
+      try {
+        conn = getDatabaseConnection();
+        Util.executeStatements(conn, true, alterDdl.toString());
+        LOGGER.fine("Alter attachment_unid column in table "
+            + attachmentsTableName);
+      } catch (SQLException e) {
+        throw new RepositoryException("Failed to alter attachment_unid column"
+            + " in table " + attachmentsTableName, e);
+      } finally {
+        releaseDatabaseConnection(conn);
+      }
+    }
     LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
         "Create/verify " + attachmentsTableName);
   }

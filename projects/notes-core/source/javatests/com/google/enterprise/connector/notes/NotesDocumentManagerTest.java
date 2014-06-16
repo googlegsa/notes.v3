@@ -22,6 +22,7 @@ import com.google.enterprise.connector.notes.client.mock.NotesDocumentMock;
 import com.google.enterprise.connector.notes.client.mock.NotesItemMock;
 import com.google.enterprise.connector.notes.client.mock.SessionFactoryMock;
 import com.google.enterprise.connector.spi.RepositoryException;
+import com.google.enterprise.connector.util.database.JdbcDatabase;
 
 import junit.framework.TestCase;
 
@@ -29,6 +30,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -40,14 +42,14 @@ import java.util.Vector;
  *                 class to provide a common test fixture.
  */
 public class NotesDocumentManagerTest extends TestCase {
+  private static final int NUM_OF_DOCS = 1000;
+
   private NotesConnector connector;
   private SessionFactoryMock factory;
   private NotesConnectorSession connectorSession;
   private NotesSession session;
   private NotesDocumentManager notesDocManager;
-  
   private List<NotesDocumentMock> docs;
-  private static final int NUM_OF_DOCS = 1000;
 
   @Override
   protected void setUp() throws Exception {
@@ -172,6 +174,58 @@ public class NotesDocumentManagerTest extends TestCase {
     } finally {
       if (conn != null) {
         notesDocManager.releaseDatabaseConnection(conn);
+      }
+    }
+  }
+
+  public void testAlterColumn() throws Exception {
+    String attachmentTable = notesDocManager.attachmentsTableName;
+    String alterDdl = "alter table " + attachmentTable
+        + " alter column attachment_unid varchar(32)";
+    
+    JdbcDatabase jdbcDb = connector.getJdbcDatabase();
+    Connection conn = null;
+    try {
+      // Set the column to 32 characters
+      conn = jdbcDb.getConnectionPool().getConnection();
+      Statement stmt = conn.createStatement();
+      stmt.execute(alterDdl);
+      stmt.close();
+      
+      // Check column size
+      assertEquals("varchar(32)",
+          getColumnType("attachment_unid", attachmentTable, conn));
+
+      // Run or initialize the NotesDocumentManager
+      notesDocManager = new NotesDocumentManager(connectorSession);
+
+      // Check for column size
+      assertEquals("varchar(40)",
+          getColumnType("attachment_unid", attachmentTable, conn));
+    } finally {
+      jdbcDb.getConnectionPool().releaseConnection(conn);
+    }
+  }
+
+  private String getColumnType(String columnName, String tableName,
+      Connection conn) throws SQLException {
+    Statement stmt = null;
+    ResultSet rs = null;
+    try {
+      stmt = conn.createStatement();
+      rs = stmt.executeQuery("show columns from " + tableName);
+      while (rs.next()) {
+        if (columnName.equalsIgnoreCase(rs.getString("FIELD"))) {
+          return rs.getString("TYPE").toLowerCase();
+        }
+      }
+      return "";
+    } finally {
+      if (rs != null) {
+        rs.close();
+      }
+      if (stmt != null) {
+        stmt.close();
       }
     }
   }
