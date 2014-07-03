@@ -22,6 +22,7 @@ import com.google.enterprise.connector.notes.client.mock.NotesDocumentMock;
 import com.google.enterprise.connector.notes.client.mock.NotesItemMock;
 import com.google.enterprise.connector.notes.client.mock.SessionFactoryMock;
 import com.google.enterprise.connector.spi.RepositoryException;
+import com.google.enterprise.connector.util.database.JdbcDatabase;
 
 import junit.framework.TestCase;
 
@@ -29,21 +30,26 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.Vector;
 
+/*
+ * TODO(tdnguyen): Move the functionality to generate documents out of this
+ *                 class to provide a common test fixture.
+ */
 public class NotesDocumentManagerTest extends TestCase {
+  private static final int NUM_OF_DOCS = 1000;
+
   private NotesConnector connector;
   private SessionFactoryMock factory;
   private NotesConnectorSession connectorSession;
   private NotesSession session;
   private NotesDocumentManager notesDocManager;
-  
-  private List<NotesDocument> docs;
-  private static final int NUM_OF_DOCS = 1000;
+  private List<NotesDocumentMock> docs;
 
   @Override
   protected void setUp() throws Exception {
@@ -172,6 +178,58 @@ public class NotesDocumentManagerTest extends TestCase {
     }
   }
 
+  public void testAlterColumn() throws Exception {
+    String attachmentTable = notesDocManager.attachmentsTableName;
+    String alterDdl = "alter table " + attachmentTable
+        + " alter column attachment_unid varchar(32)";
+    
+    JdbcDatabase jdbcDb = connector.getJdbcDatabase();
+    Connection conn = null;
+    try {
+      // Set the column to 32 characters
+      conn = jdbcDb.getConnectionPool().getConnection();
+      Statement stmt = conn.createStatement();
+      stmt.execute(alterDdl);
+      stmt.close();
+      
+      // Check column size
+      assertEquals("varchar(32)",
+          getColumnType("attachment_unid", attachmentTable, conn));
+
+      // Run or initialize the NotesDocumentManager
+      notesDocManager = new NotesDocumentManager(connectorSession);
+
+      // Check for column size
+      assertEquals("varchar(40)",
+          getColumnType("attachment_unid", attachmentTable, conn));
+    } finally {
+      jdbcDb.getConnectionPool().releaseConnection(conn);
+    }
+  }
+
+  private String getColumnType(String columnName, String tableName,
+      Connection conn) throws SQLException {
+    Statement stmt = null;
+    ResultSet rs = null;
+    try {
+      stmt = conn.createStatement();
+      rs = stmt.executeQuery("show columns from " + tableName);
+      while (rs.next()) {
+        if (columnName.equalsIgnoreCase(rs.getString("FIELD"))) {
+          return rs.getString("TYPE").toLowerCase();
+        }
+      }
+      return "";
+    } finally {
+      if (rs != null) {
+        rs.close();
+      }
+      if (stmt != null) {
+        stmt.close();
+      }
+    }
+  }
+
   public void testDeleteAttachments() throws RepositoryException {
     Connection conn = null;
     try {
@@ -224,7 +282,7 @@ public class NotesDocumentManagerTest extends TestCase {
   }
   
   void generateDocuments() throws RepositoryException {
-    docs = new ArrayList<NotesDocument>();
+    docs = new ArrayList<NotesDocumentMock>();
     String host = TESTCONST.SERVER_DOMINO_WEB + TESTCONST.DOMAIN;
     String replicaId = TESTCONST.DBSRC_REPLICAID;
   
@@ -233,7 +291,7 @@ public class NotesDocumentManagerTest extends TestCase {
     for(int i = 0; i < (32 - digitCount1); i++){
       baseUnid.append("X");
     }
-    NotesDocument docNew = null;
+    NotesDocumentMock docNew = null;
     int digitCount2 = 0;
     for (int x = 0; x < NUM_OF_DOCS; x++) {
       digitCount2 = String.valueOf(x).length();
@@ -272,7 +330,7 @@ public class NotesDocumentManagerTest extends TestCase {
     }
   }
   
-  private NotesDocument createNotesDocumentWithAllInfo() 
+  private NotesDocumentMock createNotesDocumentWithAllInfo() 
       throws RepositoryException{
     NotesDocumentMock docMock = new NotesDocumentMock();
     docMock.addItem(new NotesItemMock("name", "Form", "type", NotesItem.TEXT, 
@@ -358,7 +416,7 @@ public class NotesDocumentManagerTest extends TestCase {
     return docMock;
   }
   
-  private NotesDocument createNotesDocumentWithoutReaders() 
+  private NotesDocumentMock createNotesDocumentWithoutReaders() 
       throws RepositoryException{
     NotesDocumentMock docMock = new NotesDocumentMock();
     docMock.addItem(new NotesItemMock("name", "Form", "type", NotesItem.TEXT, 
@@ -420,5 +478,9 @@ public class NotesDocumentManagerTest extends TestCase {
     docMock.addItem(new NotesItemMock("name", NCCONST.NCITM_UNID, "type", 
         NotesItem.TEXT, "values","XXXXXXXXXXXXXXXXXXXXXXXXXXXX0001"));
     return docMock;
+  }
+
+  List<NotesDocumentMock> getDocuments() {
+    return docs;
   }
 }

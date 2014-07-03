@@ -162,29 +162,28 @@ public class NotesMaintenanceThread extends Thread {
               "MaintenanceThread: Restarting deletion check.");
         }
       }
-      NotesDocId notesId = null;
-      for (String unid : indexedDocuments.keySet()) {
+      for (Map.Entry<String, NotesDocId> entry : indexedDocuments.entrySet()) {
         if (nc.getShutdown()) {
           break;
         }
+        NotesDocId notesId = entry.getValue();
         LOGGER.logp(Level.FINER, CLASS_NAME, METHOD,
-            "MaintenanceThread: Checking deletion for document: " + unid);
+            "MaintenanceThread: Checking deletion for document: " + notesId);
         try {
-          notesId = indexedDocuments.get(unid);
           lastdocid = notesId.toString();
           //Validate database config using replica ID
           loadDbConfigDoc(notesId.getReplicaId(), DatabaseView);
           if (DbConfigDoc == null) {
             LOGGER.logp(Level.SEVERE, CLASS_NAME, METHOD,
                 "MaintenanceThread: Skipping document because no " +
-                "database config found for " + unid);
+                "database config found for " + notesId);
             continue;
           }
           //When a database is in stopped mode we purge all documents
           if (getStopped()) {
             LOGGER.logp(Level.FINER, CLASS_NAME, METHOD,
                 "MaintenanceThread: Deleting document because database " +
-                "is being purged. " + unid);
+                "is being purged. " + notesId);
             sendDeleteRequest(notesId);
             continue;
           }
@@ -194,7 +193,7 @@ public class NotesMaintenanceThread extends Thread {
           if (checkDeletions.toLowerCase().contentEquals("no")) {
             LOGGER.logp(Level.FINER, CLASS_NAME, METHOD,
                 "MaintenanceThread: Skipping document because " +
-                "deletion checking is not enabled. " + unid);
+                "deletion checking is not enabled. " + notesId);
             continue;
           }
           //Is crawling enabled for this database?  If not then
@@ -204,7 +203,7 @@ public class NotesMaintenanceThread extends Thread {
           if (isEnabled != 1) {
             LOGGER.logp(Level.FINER, CLASS_NAME, METHOD,
                 "MaintenanceThread: Skipping document because " +
-                "database crawling is disabled. " + unid);
+                "database crawling is disabled. " + notesId);
             continue;
           }
           //Try and open the source database
@@ -212,11 +211,11 @@ public class NotesMaintenanceThread extends Thread {
           if (!isSrcDbOpened) {
             LOGGER.logp(Level.SEVERE, CLASS_NAME, METHOD,
                 "MaintenanceThread: Skipping document because source " +
-                "database could not be opened : " + unid);
+                "database could not be opened: " + notesId);
             continue;
           }
 
-          boolean isDocDeleted = loadSourceDocument(unid);
+          boolean isDocDeleted = loadSourceDocument(entry.getKey());
           if (isDocDeleted) {
             sendDeleteRequest(notesId);
             continue;
@@ -228,11 +227,15 @@ public class NotesMaintenanceThread extends Thread {
             continue;
           }
 
-          loadTemplateDoc(DbConfigDoc.getItemValueString(NCCONST.DITM_TEMPLATE));
+          String templateName =
+              DbConfigDoc.getItemValueString(NCCONST.DITM_TEMPLATE);
+          loadTemplateDoc(templateName);
           if (null == TemplateDoc) {
             LOGGER.logp(Level.SEVERE, CLASS_NAME, METHOD,
-                "MaintenanceThread: Skipping selection criteria " +
-                "check because template could not be opened : " + unid);
+                "MaintenanceThread: Skipping selection criteria check " +
+                "because template could not be opened: " + notesId +
+                ", Template: "+ templateName + ", Database: " +
+                notesId.getServer() + "!!" + SrcDb.getFilePath());
             continue;
           }
 
@@ -240,13 +243,15 @@ public class NotesMaintenanceThread extends Thread {
           if (!meetsCriteria) {
             LOGGER.logp(Level.FINER, CLASS_NAME, METHOD,
                 "MaintenanceThread: Deleting document because " +
-                "selection formula returned false : " + unid);
+                "selection formula returned false: " + notesId +
+                ", Database: " + notesId.getServer() + "!!" +
+                SrcDb.getFilePath());
             sendDeleteRequest(notesId);
             continue;
           }
         } catch (RepositoryException e) {
-          LOGGER.logp(Level.WARNING, CLASS_NAME, METHOD, "Unable to process " + 
-              unid + " document", e);
+          LOGGER.logp(Level.WARNING, CLASS_NAME, METHOD,
+              "Unable to process document: " + notesId, e);
           // Skip current UNID and process next.
           continue;
         }
@@ -356,7 +361,8 @@ public class NotesMaintenanceThread extends Thread {
       OpenDbRepId = notesId.getReplicaId();
     } else {
       LOGGER.logp(Level.SEVERE, CLASS_NAME, METHOD,
-          "Maintenance thread can't open database: " + notesId.getReplicaId());
+          "Maintenance thread can't open database: " + notesId.getServer()
+          + "!!" + notesId.getReplicaId());
     }
     LOGGER.exiting(CLASS_NAME, METHOD);
     return isSrcDbOpen;

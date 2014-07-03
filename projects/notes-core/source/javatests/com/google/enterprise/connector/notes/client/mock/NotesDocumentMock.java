@@ -46,12 +46,15 @@ public class NotesDocumentMock extends NotesBaseMock
   private final List<NotesDocumentMock> responses =
       new ArrayList<NotesDocumentMock>();
 
+  private NotesDateTime lastModified;
+
   /* The constructor's currently public for testing. At some
    * point, we might be able to build a more thorough test data
    * framework and remove the need for tests to construct mock
    * objects explicitly.
    */
   public NotesDocumentMock() {
+    this.lastModified = new NotesDateTimeMock(new Date());
   }
 
   public void setDatabase(NotesDatabaseMock database) {
@@ -300,7 +303,7 @@ public class NotesDocumentMock extends NotesBaseMock
   @Override
   public NotesDateTime getLastModified() throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "getLastModified");
-    return null;
+    return lastModified;
   }
 
   /** {@inheritDoc} */

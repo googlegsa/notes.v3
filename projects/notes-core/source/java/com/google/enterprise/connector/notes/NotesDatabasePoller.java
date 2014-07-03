@@ -4,7 +4,7 @@
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
+//     http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -45,11 +45,7 @@ public class NotesDatabasePoller {
   private static final String CLASS_NAME = NotesDatabasePoller.class.getName();
   private static final Logger LOGGER = Logger.getLogger(CLASS_NAME);
 
-  NotesDateTime pollTime = null; // Configuration database
-  NotesView templateView = null;
-  NotesView unidView = null;
-  NotesView srcdbView = null;
-  NotesConnectorSession notesConnectorSession;
+  private final NotesConnectorSession notesConnectorSession;
 
   // This method will reset any documents in the crawl queue that are
   // in the INCRAWL state back to NEW state
@@ -142,11 +138,11 @@ public class NotesDatabasePoller {
       // TODO: use Date or Calendar to avoid the Notes library
       // dependency on the operating system's settings for date
       // formats.
-      pollTime = ns.createDateTime("1/1/1900");
+      NotesDateTime pollTime = ns.createDateTime("1/1/1900");
       pollTime.setNow();
 
-      templateView = cdb.getView(NCCONST.VIEWTEMPLATES);
-      srcdbView = cdb.getView(NCCONST.VIEWDATABASES);
+      NotesView templateView = cdb.getView(NCCONST.VIEWTEMPLATES);
+      NotesView srcdbView = cdb.getView(NCCONST.VIEWDATABASES);
       srcdbView.refresh();
       NotesView vwSubmitQ = cdb.getView(NCCONST.VIEWSUBMITQ);
       NotesView vwCrawlQ = cdb.getView(NCCONST.VIEWCRAWLQ);
@@ -170,7 +166,7 @@ public class NotesDatabasePoller {
         LOGGER.logp(Level.FINER, CLASS_NAME, METHOD,
             "Source Database Config Document " +
             srcdbDoc.getItemValue(NCCONST.DITM_DBNAME));
-        pollSourceDatabase(ns, cdb, srcdbDoc);
+        pollSourceDatabase(ns, cdb, srcdbDoc, templateView, pollTime);
         NotesDocument prevDoc = srcdbDoc;
         srcdbDoc = srcdbView.getNextDocument(prevDoc);
         prevDoc.recycle();
@@ -600,8 +596,8 @@ public class NotesDatabasePoller {
    * that way we can prevent overflowing the database
    *
    */
-  private void pollSourceDatabase(NotesSession ns,
-      NotesDatabase cdb, NotesDocument srcdbDoc) {
+  private void pollSourceDatabase(NotesSession ns, NotesDatabase cdb,
+      NotesDocument srcdbDoc, NotesView templateView, NotesDateTime pollTime) {
     final String METHOD = "pollSourceDatabase";
     NotesDateTime lastUpdated = null;
     Vector<?> lastUpdatedV = null;
@@ -661,10 +657,15 @@ public class NotesDatabasePoller {
             "Skipping database - Database could not be opened.");
         lastUpdated.recycle();
         ns.recycle(lastUpdatedV);
-      	srcdb.recycle();
-      	return;
+        srcdb.recycle();
+        return;
       }
 
+      String dbName = srcdbDoc.getItemValueString(NCCONST.DITM_DBNAME);
+      String authType = srcdbDoc.getItemValueString(NCCONST.DITM_AUTHTYPE);
+      LOGGER.log(Level.FINE,
+          "{0} database is configured using {1} authentication type",
+          new Object[] {dbName, authType});
       if (processACL(ns, cdb, srcdb, srcdbDoc)) {
         // Scan database ACLs and update H2 cache
         LOGGER.log(Level.FINE, "Scan ACLs and update H2 for {0} replica",
@@ -673,8 +674,7 @@ public class NotesDatabasePoller {
 
         // If the ACL has changed and we are using per Document
         // ACLs we need to resend all documents.
-        if (srcdbDoc.getItemValueString(NCCONST.DITM_AUTHTYPE)
-            .contentEquals(NCCONST.AUTH_ACL)) {
+        if (authType.contentEquals(NCCONST.AUTH_ACL)) {
           LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
               "Database ACL has changed - Resetting last update "
               + "to reindex all document ACLs.");
@@ -688,14 +688,10 @@ public class NotesDatabasePoller {
           srcdbDoc.getItemValueString(NCCONST.DITM_TEMPLATE), true);
       String searchString = templateDoc.getItemValueString(
           NCCONST.TITM_SEARCHSTRING);
-      // We append the last processed date as a modifier
-      searchString += " & @Modified > [" + lastUpdated + "]";
       LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
           "Search string is: " + searchString);
 
-      //getDBReaderGroups(srcdb);
-
-      NotesDocumentCollection dc = srcdb.search(searchString, null, 0);
+      NotesDocumentCollection dc = srcdb.search(searchString, lastUpdated, 0);
       LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
           srcdb.getFilePath() + " Number of documents to be processed: "
           + dc.getCount());
@@ -752,6 +748,10 @@ public class NotesDatabasePoller {
         crawlRequestDoc.save();
         crawlRequestDoc.recycle();  //TEST THIS
         crawlRequestDoc = null;
+        NotesDateTime lastModified = curDoc.getLastModified();
+        if (lastModified.timeDifference(lastUpdated) > 0) {
+          lastUpdated = lastModified;
+        }
         NotesDocument prevDoc = curDoc;
         curDoc = dc.getNextDocument(prevDoc);
         prevDoc.recycle();
@@ -759,7 +759,10 @@ public class NotesDatabasePoller {
       dc.recycle();
 
       // Set last modified date
-      srcdbDoc.replaceItemValue(NCCONST.DITM_LASTUPDATE, pollTime);
+      LOGGER.log(Level.FINE,
+          "[{0}] Source database last updated: {1}", new Object[] {
+              srcdbDoc.getItemValueString(NCCONST.DITM_DBNAME), lastUpdated});
+      srcdbDoc.replaceItemValue(NCCONST.DITM_LASTUPDATE, lastUpdated);
       srcdbDoc.save();
 
       // TODO: Handle db.search for case where there are more

@@ -18,6 +18,7 @@ import com.google.common.primitives.Ints;
 import com.google.enterprise.connector.notes.client.NotesDateTime;
 import com.google.enterprise.connector.spi.RepositoryException;
 
+import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.logging.Logger;
@@ -25,6 +26,8 @@ import java.util.logging.Logger;
 public class NotesDateTimeMock extends NotesBaseMock
     implements NotesDateTime {
   private static final String CLASS_NAME = NotesDateTimeMock.class.getName();
+  private static final SimpleDateFormat FORMATTER =
+      new SimpleDateFormat("MM/dd/yyyy hh:mm:ss z");
 
   /** The logger for this class. */
   private static final Logger LOGGER =
@@ -73,14 +76,34 @@ public class NotesDateTimeMock extends NotesBaseMock
        (thisDate.getTimeInMillis() - otherDate.getTimeInMillis()) / 1000L);
   }
 
-  /* TODO: implement getLocalTime.
   @Override
   public String toString() {
     try {
-      return getLocalTime();
-    } catch (RepositoryException e) {
+      return FORMATTER.format(date);
+    } catch (Exception e) {
       return "";
     }
   }
-  */
+
+  @Override
+  public int hashCode() {
+    final int prime = 31;
+    int result = 1;
+    result = prime * result + ((date == null) ? 0 : date.hashCode());
+    return result;
+  }
+
+  @Override
+  public boolean equals(Object obj) {
+    if (obj == null || date == null) {
+      return false;
+    }
+    if (this == obj) {
+      return true;
+    }
+    if (!(obj instanceof NotesDateTimeMock)) {
+      return false;
+    }
+    return date.equals(((NotesDateTimeMock) obj).date);
+  }
 }

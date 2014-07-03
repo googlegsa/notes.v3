@@ -18,7 +18,6 @@ import com.google.enterprise.connector.notes.client.NotesItem;
 import com.google.enterprise.connector.notes.client.mock.NotesDatabaseMock;
 import com.google.enterprise.connector.notes.client.mock.NotesDocumentMock;
 import com.google.enterprise.connector.notes.client.mock.NotesItemMock;
-import com.google.enterprise.connector.notes.client.mock.NotesViewMock;
 import com.google.enterprise.connector.notes.client.mock.SessionFactoryMock;
 import com.google.enterprise.connector.notes.client.mock.ViewNavFromCategoryCreator;
 
@@ -63,6 +62,8 @@ public class NotesConnectorSessionTest extends TestCase {
         "type",NotesItem.TEXT,"values",TESTCONST.SERVER_DOMINO));
     docDbSrc.addItem(new NotesItemMock("name","DbRepId",
         "type",NotesItem.TEXT,"values",TESTCONST.DBSRC_REPLICAID));
+    docDbSrc.addItem(new NotesItemMock("name", NCCONST.NCITM_UNID,
+        "type", NotesItem.TEXT, "values", TESTCONST.DBSRC_REPLICAID));
     docDbSrc.addItem(new NotesItemMock("name","Enabled",
         "type",NotesItem.NUMBERS,"values",1));
     docDbSrc.addItem(new NotesItemMock("name","Stopped",
@@ -74,9 +75,7 @@ public class NotesConnectorSessionTest extends TestCase {
     docDbSrc.addItem(new NotesItemMock("name","Template",
         "type",NotesItem.TEXT,"values","Discussion"));
     configDatabase.addDocument(docDbSrc, NCCONST.VIEWDATABASES);
-    NotesViewMock viewSrc = 
-        (NotesViewMock) configDatabase.getView(NCCONST.VIEWDATABASES);
-    viewSrc.setFields(new String[]{"DbRepId"});
+    configDatabase.setViewFields(NCCONST.VIEWDATABASES, "DbRepId");
 
     // Create Notes names database.
     NotesDatabaseMock namesDatabase = new NotesDatabaseMock("testserver",

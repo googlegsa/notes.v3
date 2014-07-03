@@ -1267,23 +1267,28 @@ class NotesUserGroupManager {
           groups.add(groupId);
         }
         // Prepend wildcard to each OU
-        String wildcardName = "*/" + ou;
-        long wildcardGroupId = verifyDomainExists(wildcardName, true);
-        if (wildcardGroupId != -1L) {
-          markAsPseudoGroup(wildcardGroupId, ou);
-          groups.add(wildcardGroupId);
-          getGroupsWithWildcardMembers(wildcardName.toLowerCase(), groups, 
-              serverAccessView);
-        }
+        mapWildcardGroup("*/" + ou, groups, serverAccessView);
         dn = ou;
       } catch (Exception e) {
         LOGGER.logp(Level.WARNING, CLASS_NAME, METHOD,
             "Error creating group from dn: " + dn, e);
       }
     }
+    mapWildcardGroup("*", groups, serverAccessView);
     LOGGER.exiting(CLASS_NAME, METHOD);
   }
-  
+
+  private void mapWildcardGroup(String wildcardName, Set<Long> groups,
+      NotesView serverAccessView) {
+    long wildcardGroupId = verifyDomainExists(wildcardName, true);
+    if (wildcardGroupId != -1L) {
+      markAsPseudoGroup(wildcardGroupId, wildcardName);
+      groups.add(wildcardGroupId);
+      getGroupsWithWildcardMembers(wildcardName.toLowerCase(), groups, 
+          serverAccessView);
+    }
+  }
+
   private void getGroupsWithWildcardMembers(String wildcardName, 
       Set<Long> groups, NotesView serverAccessView) {
     final String METHOD = "getGroupsWithWildcardMembers";

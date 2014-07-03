@@ -663,7 +663,7 @@ public class NotesUserGroupManagerTest extends TestCase {
       userGroupManager.updateUsersGroups(true);
       getGroupData();
       getUserData();
-      assertEquals(groups.toString(), groupCount + 4, groups.size());
+      assertEquals(groups.toString(), groupCount + 5, groups.size());
       assertEquals(userCount, notesUserNames.size());
     }
   }
@@ -683,7 +683,7 @@ public class NotesUserGroupManagerTest extends TestCase {
     assertEquals("yoda", user.getGsaName());
     assertEquals("cn=yoda/ou=tests/o=tests", user.getNotesName());
     Collection<String> groups = user.getGroups();
-    assertEquals("size of: " + groups, 8, groups.size());
+    assertEquals("size of: " + groups, 9, groups.size());
     assertTrue("good guys", groups.contains("good guys"));
     assertTrue("jedi", groups.contains("jedi"));
     assertTrue("masters", groups.contains("masters"));
@@ -715,7 +715,8 @@ public class NotesUserGroupManagerTest extends TestCase {
     assertEquals("cody", user.getGsaName());
     assertEquals("cn=cody/ou=tests/o=tests", user.getNotesName());
     Collection<String> groups = user.getGroups();
-    assertEquals("size of: " + groups, 9, groups.size());
+    assertEquals("size of: " + groups, 10, groups.size());
+    assertTrue("*", groups.contains("*"));
     assertTrue("good guys", groups.contains("good guys"));
     assertTrue("jedi", groups.contains("clones"));
     assertTrue("o=tests", groups.contains("o=tests"));
