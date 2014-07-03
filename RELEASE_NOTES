@@ -10,6 +10,31 @@ documentation.
 Web Site: http://code.google.com/p/google-enterprise-connector-notes/
 
 
+Release 3.2.8, Jun 2014
+=======================
+This is an upgrade release with bug fixes.  Users of version 2.8.4 through
+3.2.4 are encouraged to upgrade.
+
+Issues Fixed Since 3.2.4
+------------------------
+13059110 - Log server and database in Lotus Notes errors.
+13662337 - Lotus Notes connector does not take daylight saving time into
+           account.
+15092519 - Lotus Notes connector throws NotesException if the attachment
+           filename is long.
+15116467 - Alter attachment table to expand attachment_unid column to 40
+           characters.
+15292362 - Lotus Notes does not support wildcard in Readers field.  Add logging
+           for source database authentication type.
+
+Version Compatibility
+---------------------
+Connector instances from version 3.0.0 through 3.2.4 may be used with this
+version.  For connector instances using version 3.2.0-M1, it is recommended to
+reinstall the connector instance or install a new one.  Connector instances
+using other versions are not impacted by this upgrade.
+
+
 Release 3.2.4, January 2014
 ===========================
 This is an upgrade release with bug fixes.  Users of version 2.8.4 through
