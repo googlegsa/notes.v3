@@ -209,7 +209,7 @@ public class NotesDatabasePollerTest extends TestCase {
     NotesDateTime lastUpdated =
         connectorSession.createNotesSession().createDateTime("1/1/1970");
     List<NotesDocumentMock> docs = MockFixture.generateDocuments(1);
-    Vector<NotesDateTimeMock> vecLastModified =
+    Vector<?> vecLastModified =
         docs.get(docs.size() - 1).getItemValue(NCCONST.ITM_LASTMODIFIED);
 
     // Setup source database
@@ -243,8 +243,7 @@ public class NotesDatabasePollerTest extends TestCase {
     NotesDocumentMock docDbSrc =
         (NotesDocumentMock) configDb.getDocumentByUNID(
             TESTCONST.DBSRC_REPLICAID);
-    Vector<NotesDateTimeMock> vecLastUpdated =
-        docDbSrc.getItemValue(NCCONST.DITM_LASTUPDATE);
+    Vector<?> vecLastUpdated = docDbSrc.getItemValue(NCCONST.DITM_LASTUPDATE);
     assertEquals(vecLastModified, vecLastUpdated);
   }
 }

@@ -116,7 +116,7 @@
   <path id="compile_tests_path">
         <fileset dir="${connector-manager.thirdparty.jar.dir}">
           <include name="prod/*.jar" />
-          <include name="tests/junit.jar" />
+          <include name="tests/*.jar" />
         </fileset>
         <path refid="base_tests_path" />
         <pathelement location="${classes}" />
