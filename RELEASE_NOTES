@@ -32,7 +32,8 @@ Version Compatibility
 Connector instances from version 3.0.0 through 3.2.4 may be used with this
 version.  For connector instances using version 3.2.0-M1, it is recommended to
 reinstall the connector instance or install a new one.  Connector instances
-using other versions are not impacted by this upgrade.
+using other versions are not impacted by this upgrade. This version works with
+Connector Manager version 3.2.4 or later.
 
 
 Release 3.2.4, January 2014
