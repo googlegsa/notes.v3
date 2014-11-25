@@ -25,7 +25,6 @@ import com.google.enterprise.connector.spi.AuthenticationManager;
 import com.google.enterprise.connector.spi.AuthorizationManager;
 import com.google.enterprise.connector.spi.RepositoryException;
 import com.google.enterprise.connector.spi.Session;
-import com.google.enterprise.connector.spi.TraversalManager;
 
 import java.util.HashMap;
 import java.util.Vector;
@@ -36,7 +35,7 @@ public class NotesConnectorSession implements Session {
   private static final String CLASS_NAME = NotesConnectorSession.class.getName();
   private static final Logger LOGGER = Logger.getLogger(CLASS_NAME);
 
-  private TraversalManager traversalManager;
+  private NotesTraversalManager traversalManager;
   private NotesUserGroupManager userGroupManager;
   private final String server;
   private final String database;
@@ -472,7 +471,7 @@ public class NotesConnectorSession implements Session {
   }
 
   @Override
-  public synchronized TraversalManager getTraversalManager() {
+  public synchronized NotesTraversalManager getTraversalManager() {
     if (traversalManager == null) {
       traversalManager = new NotesTraversalManager(this);
     }

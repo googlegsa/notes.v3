@@ -52,8 +52,8 @@ public class NotesTraversalManager implements TraversalManager,
         + traversalContext.supportsInheritedAcls());
   }
 
-  TraversalContext getTraversalContext() {
-    return traversalContext;
+  boolean supportsInheritedAcls() {
+    return traversalContext.supportsInheritedAcls();
   }
 
   @Override

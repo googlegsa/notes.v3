@@ -218,8 +218,7 @@ public class NotesDatabasePoller {
       boolean shouldUpdateAcl = true;
       if (dbdoc.getItemValueString(NCCONST.DITM_AUTHTYPE)
           .contentEquals(NCCONST.AUTH_ACL)) {
-        if (((NotesTraversalManager) notesConnectorSession
-            .getTraversalManager()).getTraversalContext()
+        if (notesConnectorSession.getTraversalManager()
             .supportsInheritedAcls()) {
           if (LOGGER.isLoggable(Level.FINER)) {
             LOGGER.logp(Level.FINER, CLASS_NAME, METHOD,

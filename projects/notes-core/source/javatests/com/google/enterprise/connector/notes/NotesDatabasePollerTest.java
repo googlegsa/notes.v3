@@ -102,8 +102,7 @@ public class NotesDatabasePollerTest extends TestCase {
         (NotesConnectorSession) connector.login();
     SimpleTraversalContext context = new SimpleTraversalContext();
     context.setSupportsInheritedAcls(supportsInheritedAcls);
-    ((NotesTraversalManager) connectorSession.getTraversalManager())
-        .setTraversalContext(context);
+    connectorSession.getTraversalManager().setTraversalContext(context);
     poller = new DatabasePollerTestable(connectorSession);
   }
 

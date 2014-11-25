@@ -116,7 +116,7 @@ public class ConnectorFixture extends TestCase {
   public static NotesTraversalManager getTraversalManager(NotesConnectorSession
       connectorSession) throws RepositoryLoginException, RepositoryException {
     NotesTraversalManager traversalManager =
-        (NotesTraversalManager) connectorSession.getTraversalManager();
+        connectorSession.getTraversalManager();
     SimpleTraversalContext context = new SimpleTraversalContext();
     // TODO: handle both versions of acl support within the tests
     // and avoid manual property editing.

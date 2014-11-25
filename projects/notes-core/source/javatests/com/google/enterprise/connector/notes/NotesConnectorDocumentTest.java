@@ -312,8 +312,7 @@ public class NotesConnectorDocumentTest extends TestCase {
         (NotesConnectorSession) connector.login();
     SimpleTraversalContext context = new SimpleTraversalContext();
     context.setSupportsInheritedAcls(supportsInheritedAcls);
-    ((NotesTraversalManager) connectorSession.getTraversalManager())
-        .setTraversalContext(context);
+    connectorSession.getTraversalManager().setTraversalContext(context);
     NotesSession session = connectorSession.createNotesSession();
     NotesDatabaseMock connectorDatabase =
         (NotesDatabaseMock) session.getDatabase(
