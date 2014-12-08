@@ -15,6 +15,7 @@
 package com.google.enterprise.connector.notes.client.notes;
 
 import com.google.enterprise.connector.notes.client.NotesDateTime;
+import com.google.enterprise.connector.spi.RepositoryException;
 
 import lotus.domino.DateTime;
 import lotus.domino.NotesException;
@@ -26,6 +27,16 @@ class NotesDateTimeImpl extends NotesBaseImpl<DateTime>
 
   NotesDateTimeImpl(DateTime dateTime) {
     super(dateTime);
+  }
+
+  /** {@inheritDoc} */
+  @Override
+  public void adjustSecond(int seconds) throws RepositoryException {
+    try {
+      getNotesObject().adjustSecond(seconds);
+    } catch (NotesException e) {
+      throw new NotesConnectorExceptionImpl(e);
+    }
   }
 
   /** {@inheritDoc} */

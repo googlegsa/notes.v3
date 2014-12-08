@@ -27,6 +27,7 @@ import com.google.enterprise.connector.notes.client.mock.NotesDatabaseMock;
 import com.google.enterprise.connector.notes.client.mock.NotesDateTimeMock;
 import com.google.enterprise.connector.notes.client.mock.NotesDocumentMock;
 import com.google.enterprise.connector.notes.client.mock.NotesItemMock;
+import com.google.enterprise.connector.notes.client.mock.NotesSessionMock;
 import com.google.enterprise.connector.notes.client.mock.SessionFactoryMock;
 import com.google.enterprise.connector.spi.RepositoryException;
 import com.google.enterprise.connector.spi.SimpleTraversalContext;
@@ -35,17 +36,22 @@ import junit.framework.TestCase;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Vector;
 
 public class NotesDatabasePollerTest extends TestCase {
+
+  private static Map<String, Date> lastCrawlCache = new HashMap<String, Date>();
 
   static class DatabasePollerTestable extends NotesDatabasePoller {
 
     boolean calledUpdateGsaPolicyAcl;
 
     DatabasePollerTestable(NotesConnectorSession session) {
-      super(session);
+      super(session, lastCrawlCache);
     }
 
     @Override
@@ -204,24 +210,77 @@ public class NotesDatabasePollerTest extends TestCase {
     }
   }
 
-  public void testPollSourceDatabaseByLastModified() throws Exception {
-    NotesDateTime lastUpdated =
-        connectorSession.createNotesSession().createDateTime("1/1/1970");
-    List<NotesDocumentMock> docs = MockFixture.generateDocuments(1);
-    Vector<?> vecLastModified =
-        docs.get(docs.size() - 1).getItemValue(NCCONST.ITM_LASTMODIFIED);
+  public void testPollDatabases_Notes8() throws Exception {
+    factory.setEnvironmentProperty(TESTCONST.NOTES_VERSION,
+        TESTCONST.NotesVersion.VERSION_8.toString());
 
-    // Setup source database
-    NotesDatabaseMock configDb = factory.getDatabase("testconfig.nsf");
-    NotesDatabaseMock srcDb = MockFixture.newMockDatabase("mickey1/mtv/us",
-        "test.nsf", TESTCONST.DBSRC_REPLICAID, docs, NCCONST.VIEWINDEXED);
-    factory.addDatabase(srcDb);
-    MockFixture.setupSourceDatabase(configDb, srcDb, NCCONST.AUTH_ACL,
-        "Discussion", true, lastUpdated, "ACL LOG");
+    String[] timestamp1 = {
+        "11/12/2014 10:00:02",
+        "11/12/2014 10:00:01",
+        "11/12/2014 10:00:03",
+        "11/12/2014 10:00:00"
+    };
+    String[] timestamp2 = {
+        "11/12/2014 10:00:03",
+        "06/30/2014 05:00:00"
+    };
+    testPollDatabases(timestamp1, timestamp2, timestamp2[0]);
+  }
 
-    // Setup template document including formulas
+  public void testPollDatabases_Notes9() throws Exception {
+    factory.setEnvironmentProperty(TESTCONST.NOTES_VERSION,
+        TESTCONST.NotesVersion.VERSION_9.toString());
+
+    String[] timestamp1 = {
+        "11/12/2014 10:15:02",
+        "11/12/2014 10:15:01",
+        "11/12/2014 10:15:03"
+    };
+    String[] timestamp2 = {
+        "10/12/2014 08:00:00",
+        "11/12/2014 10:15:03"
+    };
+    testPollDatabases(timestamp1, timestamp2, timestamp2[1]);
+  }
+
+  private void testPollDatabases(String[] timestamp1, String[] timestamp2,
+      String expectedTime) throws Exception {
+    NotesDateTimeMock expectedLastUpdate = MockFixture.parseTime(expectedTime);
+
+    // Setup config and source databases
+    NotesDatabaseMock configDb = setUpConfigDb();
+    NotesDatabaseMock srcDb =  setUpSourceDb(configDb);
+
+    // Generates documents in source database
+    generateSourceDocs(srcDb, NCCONST.VIEWINDEXED, timestamp1);
+    assertEquals(timestamp1.length, getDocCount(srcDb));
+
+    int docsBeforePolling = getDocCount(configDb);
+    poller.pollDatabases(connectorSession.createNotesSession(), configDb, 100);
+    assertEquals(docsBeforePolling + timestamp1.length, getDocCount(configDb));
+    assertEquals(expectedLastUpdate, getLastUpdatedTime(configDb, srcDb));
+
+    // Adds new documents (timestamp2) and expects the number of documents in
+    // source database must be equal to the number of elements in timestamp1
+    // and timestamp2.
+    generateSourceDocs(srcDb, NCCONST.VIEWINDEXED, timestamp2);
+    assertEquals(timestamp1.length + timestamp2.length, getDocCount(srcDb));
+
+    // The database poller polls more than 1 document whose timestamp is equal
+    // to the last updated time; however, only 1 crawl document is created due
+    // to the existence of previously crawled documents in the lastCrawlCache.
+    docsBeforePolling = getDocCount(configDb);
+    poller.pollDatabases(connectorSession.createNotesSession(), configDb, 100);
+    assertEquals(docsBeforePolling + 1, getDocCount(configDb));
+    assertEquals(expectedLastUpdate, getLastUpdatedTime(configDb, srcDb));
+  }
+
+  private NotesDatabaseMock setUpConfigDb() throws Exception {
     String searchFormula =
         "Select Form *= \"Main Topic\":\"MainTopic\":\"Response\"";
+    NotesDatabaseMock configDb = factory.getDatabase("testconfig.nsf");
+
+    // Setup template document and search formulas
     MockFixture.setupNotesTemplate(configDb, "Discussion", searchFormula, true);
 
     // Setup phantom docs in crawl and submit views
@@ -234,15 +293,47 @@ public class NotesDatabasePollerTest extends TestCase {
     configDb.setViewFields(NCCONST.VIEWSUBMITQ, NCCONST.NCITM_UNID);
     configDb.setViewFields(NCCONST.VIEWCRAWLQ, NCCONST.NCITM_UNID);
 
-    // Poll source database
-    poller.pollDatabases(connectorSession.createNotesSession(), configDb, 10);
+    return configDb;
+  }
 
-    // Expect the last updated time in the database source document to be
-    // equal to the last modified time of the source document.
+  private NotesDatabaseMock setUpSourceDb(NotesDatabaseMock configDb)
+      throws Exception {
+    NotesSessionMock sessionMock =
+        (NotesSessionMock) connectorSession.createNotesSession();
+    NotesDateTime lastUpdated = sessionMock.createDateTime("1/1/1970");
+    NotesDatabaseMock srcDb = new NotesDatabaseMock("mickey1/mtv/us",
+        "test.nsf", TESTCONST.DBSRC_REPLICAID);
+    factory.addDatabase(srcDb);
+    MockFixture.setupSourceDatabase(configDb, srcDb, NCCONST.AUTH_ACL,
+        "Discussion", true, lastUpdated, "ACL LOG");
+
+    return srcDb;
+  }
+
+  private void generateSourceDocs(NotesDatabaseMock db, String viewName,
+      String... timestamps) throws Exception {
+    List<NotesDocumentMock> docs =
+        MockFixture.generateDocuments(timestamps.length);
+    for (int i = 0; i < timestamps.length; i++) {
+      NotesDocumentMock doc = docs.get(i);
+      doc.setLastModified(MockFixture.parseTime(timestamps[i]));
+      db.addDocument(doc, viewName);
+    }
+  }
+
+  private NotesDateTimeMock getLastUpdatedTime(NotesDatabaseMock configDb,
+      NotesDatabaseMock srcDb) throws RepositoryException {
     NotesDocumentMock docDbSrc =
-        (NotesDocumentMock) configDb.getDocumentByUNID(
-            TESTCONST.DBSRC_REPLICAID);
-    Vector<?> vecLastUpdated = docDbSrc.getItemValue(NCCONST.DITM_LASTUPDATE);
-    assertEquals(vecLastModified, vecLastUpdated);
+        (NotesDocumentMock) configDb.getDocumentByUNID(srcDb.getReplicaID());
+    Vector<?> lastUpdated = docDbSrc.getItemValue(NCCONST.DITM_LASTUPDATE);
+    if (lastUpdated == null) {
+      return null;
+    } else {
+      return (NotesDateTimeMock) lastUpdated.get(0);
+    }
+  }
+
+  private int getDocCount(NotesDatabaseMock db) throws Exception {
+    return db.search(null).getCount();
   }
 }

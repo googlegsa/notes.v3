@@ -14,6 +14,7 @@
 
 package com.google.enterprise.connector.notes.client.mock;
 
+import com.google.enterprise.connector.notes.TESTCONST;
 import com.google.enterprise.connector.notes.client.NotesDatabase;
 import com.google.enterprise.connector.notes.client.NotesDateTime;
 import com.google.enterprise.connector.notes.client.NotesDocument;
@@ -39,11 +40,18 @@ public class NotesSessionMock extends NotesBaseMock
 
   private final List<NotesDatabaseMock> databases;
   private final Map<String, String> environment;
+  private final String versionString;
 
   NotesSessionMock(List<NotesDatabaseMock> databases,
       Map<String, String> environment) {
     this.databases = databases;
     this.environment = environment;
+    String envVer = environment.get(TESTCONST.NOTES_VERSION);
+    if (envVer == null) {
+      this.versionString = TESTCONST.NotesVersion.VERSION_8.toString();
+    } else {
+      this.versionString = envVer;
+    }
   }
 
   public void addDatabase(NotesDatabaseMock database) {
@@ -56,6 +64,12 @@ public class NotesSessionMock extends NotesBaseMock
     LOGGER.entering(CLASS_NAME, "getPlatform");
     return null;
  }
+
+  /** {@inheritDoc} */
+  @Override
+  public String getNotesVersion() throws RepositoryException {
+    return versionString;
+  }
 
   /** {@inheritDoc} */
   @Override
@@ -147,10 +161,6 @@ public class NotesSessionMock extends NotesBaseMock
   @Override
   public NotesDateTime createDateTime(String date) throws RepositoryException {
    LOGGER.entering(CLASS_NAME, "createDateTime");
-   // TODO: this is often used to get an object, followed
-   // immediately by date.setNow, so for now try returning an
-   // unset date to avoid NullPointerExceptions.
-
    try {
      SimpleDateFormat format = new SimpleDateFormat("M/d/yyyy");
      Date d = format.parse(date);
@@ -158,6 +168,11 @@ public class NotesSessionMock extends NotesBaseMock
    } catch (ParseException e) {
      throw new RepositoryException(e);
    }
+  }
+
+  @Override
+  public NotesDateTime createDateTime(Date date) throws RepositoryException {
+    return new NotesDateTimeMock(date);
   }
 
   /** {@inheritDoc} */

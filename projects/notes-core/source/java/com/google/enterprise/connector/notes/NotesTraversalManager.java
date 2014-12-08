@@ -25,7 +25,11 @@ import com.google.enterprise.connector.spi.TraversalContextAware;
 import com.google.enterprise.connector.spi.TraversalManager;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -39,9 +43,12 @@ public class NotesTraversalManager implements TraversalManager,
   private int batchHint = 10;
   private final NotesConnectorSession ncs;
   private TraversalContext traversalContext;
+  private final Map<String, Date> lastCrawlCache;
 
   public NotesTraversalManager(NotesConnectorSession session) {
     ncs = session;
+    lastCrawlCache =
+        Collections.synchronizedMap(new HashMap<String, Date>());
   }
 
   /** {@inheritDoc} */
@@ -65,10 +72,10 @@ public class NotesTraversalManager implements TraversalManager,
 
   @Override
   public DocumentList startTraversal() {
-    final String METHOD = "startTraversal";
     LOGGER.info("Start traversal");
     // This will reset the start date on all connector
     NotesDatabasePoller.resetDatabases(ncs);
+    lastCrawlCache.clear();
     return traverse("0");
   }
 
@@ -107,7 +114,8 @@ public class NotesTraversalManager implements TraversalManager,
       // Since it takes two polling cycles to get documents into the GSA
       // if the system is idle
 
-      NotesDatabasePoller dbpoller = new NotesDatabasePoller(ncs);
+      NotesDatabasePoller dbpoller =
+          new NotesDatabasePoller(ncs, lastCrawlCache);
       dbpoller.pollDatabases(ns, cdb, ncs.getMaxCrawlQDepth());
       NotesPollerNotifier npn = ncs.getNotifier();
       npn.wakeWorkers();

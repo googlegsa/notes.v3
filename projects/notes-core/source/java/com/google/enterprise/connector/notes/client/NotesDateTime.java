@@ -21,6 +21,14 @@ import java.util.Date;
 public interface NotesDateTime extends NotesBase {
 
   /**
+   * Increment or decrement the date-time by the number of seconds.
+   * 
+   * @param seconds number of seconds
+   * @throws RepositoryException
+   */
+  void adjustSecond(int seconds) throws RepositoryException;
+
+  /**
    * Returns this date as a Date.
    *
    * @return a Date

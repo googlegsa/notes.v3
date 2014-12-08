@@ -36,7 +36,10 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -46,6 +49,7 @@ public class NotesDatabasePoller {
   private static final Logger LOGGER = Logger.getLogger(CLASS_NAME);
 
   private final NotesConnectorSession notesConnectorSession;
+  private final Map<String, Date> lastCrawlCache;
 
   // This method will reset any documents in the crawl queue that are
   // in the INCRAWL state back to NEW state
@@ -126,8 +130,10 @@ public class NotesDatabasePoller {
     }
   }
 
-  public NotesDatabasePoller(NotesConnectorSession notesConnectorSession) {
+  public NotesDatabasePoller(NotesConnectorSession notesConnectorSession,
+      Map<String, Date> lastCrawlCache) {
     this.notesConnectorSession = notesConnectorSession;
+    this.lastCrawlCache = lastCrawlCache;
   }
 
   public void pollDatabases(NotesSession ns, NotesDatabase cdb,
@@ -149,6 +155,7 @@ public class NotesDatabasePoller {
 
       // TODO: Make this loop shutdown aware
 
+      Map<String, Date> nextBatch = new HashMap<String, Date>();
       NotesDocument srcdbDoc = srcdbView.getFirstDocument();
       while (null != srcdbDoc) {
         vwSubmitQ.refresh();
@@ -166,11 +173,19 @@ public class NotesDatabasePoller {
         LOGGER.logp(Level.FINER, CLASS_NAME, METHOD,
             "Source Database Config Document " +
             srcdbDoc.getItemValue(NCCONST.DITM_DBNAME));
-        pollSourceDatabase(ns, cdb, srcdbDoc, templateView, pollTime);
+        pollSourceDatabase(ns, cdb, srcdbDoc, templateView, pollTime,
+            nextBatch);
         NotesDocument prevDoc = srcdbDoc;
         srcdbDoc = srcdbView.getNextDocument(prevDoc);
         prevDoc.recycle();
       }
+      // TODO(tdnguyen): Move the cache update and the setting of
+      // DITM_LASTUPDATE field to NotesConnectorDocumentList.checkpoint method.
+      synchronized (lastCrawlCache) {
+        lastCrawlCache.clear();
+        lastCrawlCache.putAll(nextBatch);
+      }
+
       vwSubmitQ.recycle();
       vwCrawlQ.recycle();
       pollTime.recycle();
@@ -596,9 +611,11 @@ public class NotesDatabasePoller {
    *
    */
   private void pollSourceDatabase(NotesSession ns, NotesDatabase cdb,
-      NotesDocument srcdbDoc, NotesView templateView, NotesDateTime pollTime) {
+      NotesDocument srcdbDoc, NotesView templateView, NotesDateTime pollTime,
+      Map<String, Date> nextBatch) {
     final String METHOD = "pollSourceDatabase";
     NotesDateTime lastUpdated = null;
+    NotesDateTime searchLastUpdated = null;
     Vector<?> lastUpdatedV = null;
     LOGGER.entering(CLASS_NAME, METHOD);
 
@@ -622,8 +639,18 @@ public class NotesDatabasePoller {
         lastUpdated = (NotesDateTime) lastUpdatedV.firstElement();
         LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
             "Last processed time was " + lastUpdated);
+        searchLastUpdated = ns.createDateTime(lastUpdated.toJavaDate());
+        if (Util.isNotesVersionEightOrOlder(ns.getNotesVersion())) {
+          // Adjust -1 second to include documents whose last modified time is
+          // equal to the last updated time.
+          searchLastUpdated.adjustSecond(-1);
+          LOGGER.log(Level.FINEST,
+              "Last processed time was adjusted by -1 second [{0}]",
+              searchLastUpdated);
+        }
       } else {
         lastUpdated = ns.createDateTime("1/1/1980");
+        searchLastUpdated = ns.createDateTime(lastUpdated.toJavaDate());
         LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
             "Database has never been processed.");
       }
@@ -640,6 +667,7 @@ public class NotesDatabasePoller {
         LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
             "Skipping database - Poll interval has not yet elapsed.");
         lastUpdated.recycle();
+        searchLastUpdated.recycle();
         ns.recycle(lastUpdatedV);
         return;
       }
@@ -655,6 +683,7 @@ public class NotesDatabasePoller {
         LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
             "Skipping database - Database could not be opened.");
         lastUpdated.recycle();
+        searchLastUpdated.recycle();
         ns.recycle(lastUpdatedV);
         srcdb.recycle();
         return;
@@ -690,21 +719,32 @@ public class NotesDatabasePoller {
       LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
           "Search string is: " + searchString);
 
-      NotesDocumentCollection dc = srcdb.search(searchString, lastUpdated, 0);
-      LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
-          srcdb.getFilePath() + " Number of documents to be processed: "
-          + dc.getCount());
+      NotesDocumentCollection dc =
+          srcdb.search(searchString, searchLastUpdated, 0);
+      LOGGER.log(Level.FINE, 
+           "{0} Number of documents to be processed: {1}, cache size: {2}",
+           new Object[] {srcdb.getFilePath(), dc.getCount(),
+               lastCrawlCache.size()});
+
       NotesDocument curDoc = dc.getFirstDocument();
       while (null != curDoc) {
         String NotesURL = curDoc.getNotesURL();
-        LOGGER.logp(Level.FINER, CLASS_NAME, METHOD,
-            "Processing document " + NotesURL);
+        NotesDateTime lastModified = curDoc.getLastModified();
+        LOGGER.log(Level.FINER, "Processing document {0} last modified on {1}",
+            new Object[] {NotesURL, lastModified});
+        nextBatch.put(NotesURL, lastModified.toJavaDate());
+        Date prevLastModified = lastCrawlCache.get(NotesURL);
+        if (prevLastModified != null
+                && prevLastModified.equals(lastModified.toJavaDate())) {
+          LOGGER.log(Level.FINEST,
+              "Skipping previously crawled document: {0}", NotesURL);
+          curDoc = nextDocument(dc, curDoc);
+          continue;
+        }
         if (curDoc.hasItem(NCCONST.NCITM_CONFLICT)) {
           LOGGER.logp(Level.FINER, CLASS_NAME, METHOD,
               "Skipping conflict document " + NotesURL);
-          NotesDocument prevDoc = curDoc;
-          curDoc = dc.getNextDocument(prevDoc);
-          prevDoc.recycle();
+          curDoc = nextDocument(dc, curDoc);
           continue;
         }
 
@@ -747,13 +787,11 @@ public class NotesDatabasePoller {
         crawlRequestDoc.save();
         crawlRequestDoc.recycle();  //TEST THIS
         crawlRequestDoc = null;
-        NotesDateTime lastModified = curDoc.getLastModified();
         if (lastModified.timeDifference(lastUpdated) > 0) {
           lastUpdated = lastModified;
+          LOGGER.log(Level.FINEST, "New last updated time: {0}", lastUpdated);
         }
-        NotesDocument prevDoc = curDoc;
-        curDoc = dc.getNextDocument(prevDoc);
-        prevDoc.recycle();
+        curDoc = nextDocument(dc, curDoc);
       }
       dc.recycle();
 
@@ -773,11 +811,19 @@ public class NotesDatabasePoller {
       srcdb.recycle();
       templateDoc.recycle();
       lastUpdated.recycle();
+      searchLastUpdated.recycle();
       ns.recycle(lastUpdatedV);
     } catch (Exception e) {
       LOGGER.log(Level.SEVERE, CLASS_NAME, e);
     } finally {
       LOGGER.exiting(CLASS_NAME, METHOD);
     }
+  }
+
+  private NotesDocument nextDocument(NotesDocumentCollection dc,
+      NotesDocument curDoc) throws RepositoryException {
+    NotesDocument nextDoc = dc.getNextDocument(curDoc);
+    curDoc.recycle();
+    return nextDoc;
   }
 }
