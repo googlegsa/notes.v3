@@ -17,11 +17,11 @@ package com.google.enterprise.connector.notes;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public class NotesPollerNotifier {
+class NotesPollerNotifier {
   private static final String CLASS_NAME = NotesPollerNotifier.class.getName();
   private static final Logger LOGGER = Logger.getLogger(CLASS_NAME);
   private  NotesConnector nc;
-  int NumThreads = 1;
+  private int NumThreads = 1;
 
   public NotesPollerNotifier(NotesConnector connector) {
     final String METHOD="NotesPollerNotifier";

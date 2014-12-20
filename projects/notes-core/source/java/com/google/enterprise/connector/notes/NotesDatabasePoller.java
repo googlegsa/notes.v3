@@ -34,6 +34,7 @@ import com.google.gdata.util.ServiceException;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
@@ -44,51 +45,12 @@ import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public class NotesDatabasePoller {
+class NotesDatabasePoller {
   private static final String CLASS_NAME = NotesDatabasePoller.class.getName();
   private static final Logger LOGGER = Logger.getLogger(CLASS_NAME);
 
   private final NotesConnectorSession notesConnectorSession;
   private final Map<String, Date> lastCrawlCache;
-
-  // This method will reset any documents in the crawl queue that are
-  // in the INCRAWL state back to NEW state
-  public static void resetCrawlQueue(NotesConnectorSession ncs) {
-    final String METHOD = "resetCrawlQueue";
-    NotesSession ns = null;
-
-    LOGGER.entering(CLASS_NAME, METHOD);
-    try {
-      ns = ncs.createNotesSession();
-      NotesDatabase cdb = ns.getDatabase(
-          ncs.getServer(), ncs.getDatabase());
-
-      // Reset the last update date for each configured database
-      NotesView incrawlView = cdb.getView(NCCONST.VIEWINCRAWL);
-      incrawlView.refresh();
-      NotesDocument srcDoc = incrawlView.getFirstDocument();
-      while (null != srcDoc) {
-        LOGGER.logp(Level.FINER, CLASS_NAME, METHOD,
-            "Connector starting - Resetting crawl document found " +
-            "in INCRAWL state " + srcDoc.getUniversalID());
-        srcDoc.replaceItemValue(NCCONST.NCITM_STATE, NCCONST.STATENEW);
-        NotesDocument prevDoc = srcDoc;
-        srcDoc = incrawlView.getNextDocument(prevDoc);
-
-        // Don't save this until we have the next doc in the view.
-        // Otherwise an exception will result
-        prevDoc.save();
-        prevDoc.recycle();
-      }
-      incrawlView.recycle();
-    } catch (Exception e) {
-      LOGGER.logp(Level.SEVERE, CLASS_NAME, METHOD,
-          "Error resetting crawl document.", e);
-    } finally {
-      ncs.closeNotesSession(ns);
-      LOGGER.exiting(CLASS_NAME, METHOD);
-    }
-  }
 
   public static void resetDatabases(NotesConnectorSession ncs) {
     final String METHOD = "resetDatabases";
@@ -198,7 +160,8 @@ public class NotesDatabasePoller {
     }
   }
 
-  public boolean processACL(NotesSession notesSession,
+  @VisibleForTesting
+  boolean processACL(NotesSession notesSession,
       NotesDatabase connectorDatabase, NotesDatabase srcdb,
       NotesDocument dbdoc) {
     final String METHOD = "processACL";
@@ -462,7 +425,7 @@ public class NotesDatabasePoller {
     NotesDocId id = new NotesDocId();
     id.setHost(server + domain);
     id.setReplicaId(dbdoc.getItemValueString(NCCONST.DITM_REPLICAID));
-    String urlPattern = java.text.MessageFormat.format(
+    String urlPattern = MessageFormat.format(
         notesConnectorSession.getConnector().getPolicyAclPattern(),
         notesConnectorSession.getConnector().getGoogleConnectorName(),
         id.toString());
@@ -699,6 +662,15 @@ public class NotesDatabasePoller {
         LOGGER.log(Level.FINE, "Scan ACLs and update H2 for {0} replica",
             srcdb.getReplicaID());
         notesConnectorSession.getUserGroupManager().updateRoles(srcdb);
+
+        // If the ACL has changed and we are using per Document
+        // ACLs we need to resend all documents.
+        if (authType.contentEquals(NCCONST.AUTH_ACL)) {
+          LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
+              "Database ACL has changed - Resetting last update "
+              + "to reindex all document ACLs.");
+          lastUpdated = ns.createDateTime("1/1/1980");
+        }
       }
 
       // From the template, we get the search string to determine

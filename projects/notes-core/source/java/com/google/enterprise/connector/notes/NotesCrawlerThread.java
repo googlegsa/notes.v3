@@ -26,6 +26,7 @@ import com.google.enterprise.connector.notes.client.NotesView;
 import com.google.enterprise.connector.spi.RepositoryException;
 import com.google.enterprise.connector.spi.SpiConstants.ActionType;
 
+import java.io.File;
 import java.net.URLEncoder;
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -39,7 +40,7 @@ import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class NotesCrawlerThread extends Thread {
+class NotesCrawlerThread extends Thread {
   private static final String CLASS_NAME = NotesCrawlerThread.class.getName();
   private static final Logger LOGGER = Logger.getLogger(CLASS_NAME);
   static final String META_FIELDS_PREFIX = "x.";
@@ -713,9 +714,9 @@ public class NotesCrawlerThread extends Thread {
    *         content will not be indexed.
    * @throws RepositoryException if embedded object is not accessible
    */
-  public String createAttachmentDoc(NotesDocument crawlDoc,
-      NotesDocument srcDoc, String AttachmentName, String MimeType)
-      throws RepositoryException {
+  @VisibleForTesting
+  String createAttachmentDoc(NotesDocument crawlDoc, NotesDocument srcDoc,
+      String AttachmentName, String MimeType) throws RepositoryException {
     final String METHOD = "createAttachmentDoc";
     String AttachmentURL = null;
     LOGGER.entering(CLASS_NAME, METHOD);
@@ -826,19 +827,20 @@ public class NotesCrawlerThread extends Thread {
   // will delete the doc.  The second submit will then send an
   // empty doc So we must use the UNID of the crawl request to
   // generate the unique filename
-  public String getAttachmentFilePath(NotesDocument crawlDoc,
+  private String getAttachmentFilePath(NotesDocument crawlDoc,
       String attachName) throws RepositoryException {
     String dirName = String.format("%s/attachments/%s/%s",
         ncs.getSpoolDir(),
         cdb.getReplicaID(),
         crawlDoc.getUniversalID());
-    new java.io.File(dirName).mkdirs();
+    new File(dirName).mkdirs();
     String FilePath = String.format("%s/%s", dirName, attachName);
     //TODO:  Ensure that FilePath is a valid Windows filepath
     return FilePath;
   }
 
-  public void connectQueue() throws RepositoryException {
+  @VisibleForTesting
+  void connectQueue() throws RepositoryException {
     if (null == ns) {
       ns = ncs.createNotesSession();
     }
@@ -855,7 +857,7 @@ public class NotesCrawlerThread extends Thread {
    * We accumulate objects as pre-fetch documents
    * De-allocate these in reverse order
    */
-  public void disconnectQueue()  {
+  private void disconnectQueue()  {
     final String METHOD = "disconnectQueue";
     LOGGER.entering(CLASS_NAME, METHOD);
     try {
@@ -912,7 +914,7 @@ public class NotesCrawlerThread extends Thread {
         NotesDocument crawlDoc = null;
         // Only get from the queue if there is more than 300MB in the
         // spool directory
-        java.io.File spoolDir = new java.io.File(ncs.getSpoolDir());
+        File spoolDir = new File(ncs.getSpoolDir());
         LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
             "Spool free space is " + spoolDir.getFreeSpace());
         if (spoolDir.getFreeSpace()/1000000 < 300) {

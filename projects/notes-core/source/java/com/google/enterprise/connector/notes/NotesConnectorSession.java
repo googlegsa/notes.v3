@@ -26,6 +26,7 @@ import com.google.enterprise.connector.spi.AuthorizationManager;
 import com.google.enterprise.connector.spi.RepositoryException;
 import com.google.enterprise.connector.spi.Session;
 
+import java.io.File;
 import java.util.HashMap;
 import java.util.Vector;
 import java.util.logging.Level;
@@ -175,7 +176,7 @@ public class NotesConnectorSession implements Session {
             ns.getEnvironmentString(NCCONST.INIDIRECTORY, true),
             NCCONST.DEFAULT_ATTACHMENT_DIR);;
       }
-      java.io.File sdir = new java.io.File(SpoolDir);
+      File sdir = new File(SpoolDir);
 
       // Make the directory and make sure we can write to it
       sdir.mkdirs();

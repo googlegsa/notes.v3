@@ -39,7 +39,6 @@ public class NotesConnectorType implements ConnectorType {
   private static final String NAME = "name";
   private static final String TEXT = "text";
   private static final String TYPE = "type";
-  private static final String INPUT = "input";
   private static final String PASSWORD = "password";
 
   private List<String> keys = null;
@@ -76,7 +75,7 @@ public class NotesConnectorType implements ConnectorType {
    * @param val
    * @return true if the val is acceptable for this key
    */
-  public boolean validateConfigPair(String key, String val) {
+  private boolean validateConfigPair(String key, String val) {
     if (val == null || val.length() == 0) {
       // Empty passwords are allowed. GSA configuration is optional.
       if (key.equals("idPassword") ||

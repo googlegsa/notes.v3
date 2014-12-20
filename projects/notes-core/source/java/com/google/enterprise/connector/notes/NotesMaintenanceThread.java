@@ -41,29 +41,24 @@ import java.util.logging.Logger;
  * 1.  They no longer exist in the source database.
  * 2.  They belong to a database which is marked for deletion.
  */
-public class NotesMaintenanceThread extends Thread {
+class NotesMaintenanceThread extends Thread {
   private static final String CLASS_NAME =
       NotesMaintenanceThread.class.getName();
   private static final Logger LOGGER = Logger.getLogger(CLASS_NAME);
 
-  NotesConnector nc = null;
-  NotesConnectorSession ncs;
-  NotesUserGroupManager nugm;
-  NotesDatabase cdb = null;
-  NotesPollerNotifier npn = null;
-  String OpenDbRepId = "";
-  NotesDatabase SrcDb = null;
-  NotesDocument DbConfigDoc = null;
-  NotesSession ns = null;
-  String DbConfigDocRepId = "";
-  NotesDateTime CheckTime = null;
-  String IndexedDocRepId = "";
-  NotesDocument TemplateDoc = null;
-  NotesDocument SourceDocument = null;
-  NotesDocument IndexedDoc = null;
-
-  NotesMaintenanceThread() {
-  }
+  private final NotesConnector nc;
+  private final NotesConnectorSession ncs;
+  private final NotesUserGroupManager nugm;
+  private NotesDatabase cdb = null;
+  private String OpenDbRepId = "";
+  private NotesDatabase SrcDb = null;
+  private NotesDocument DbConfigDoc = null;
+  private NotesSession ns = null;
+  private String DbConfigDocRepId = "";
+  private NotesDateTime CheckTime = null;
+  private NotesDocument TemplateDoc = null;
+  private NotesDocument SourceDocument = null;
+  private NotesDocument IndexedDoc = null;
 
   NotesMaintenanceThread(NotesConnector connector,
       NotesConnectorSession session) throws RepositoryException {
@@ -73,9 +68,7 @@ public class NotesMaintenanceThread extends Thread {
 
     nc = connector;
     ncs = session;
-    if (session != null) {
-      nugm = session.getUserGroupManager();
-    }
+    nugm = (session == null) ? null : session.getUserGroupManager();
   }
 
   @Override

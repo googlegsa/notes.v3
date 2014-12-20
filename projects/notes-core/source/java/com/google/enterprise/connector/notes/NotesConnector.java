@@ -21,6 +21,7 @@ import com.google.enterprise.connector.spi.ConnectorPersistentStore;
 import com.google.enterprise.connector.spi.ConnectorPersistentStoreAware;
 import com.google.enterprise.connector.spi.ConnectorShutdownAware;
 import com.google.enterprise.connector.spi.RepositoryException;
+import com.google.enterprise.connector.spi.Session;
 import com.google.enterprise.connector.util.database.JdbcDatabase;
 
 import java.util.Vector;
@@ -45,12 +46,11 @@ public class NotesConnector implements Connector,
   private String localNamespace;
   private boolean shutdown = false;
   private boolean deleted = false;
-  NotesConnectorSession ncs = null;
-  @VisibleForTesting
-  NotesMaintenanceThread maintThread = null;
-  NotesPollerNotifier npn = null;
-  Vector<NotesCrawlerThread> vecCrawlerThreads = null;
-  SessionFactory sessionFactory;
+  private NotesConnectorSession ncs = null;
+  private NotesPollerNotifier npn = null;
+  @VisibleForTesting NotesMaintenanceThread maintThread = null;
+  @VisibleForTesting Vector<NotesCrawlerThread> vecCrawlerThreads = null;
+  private SessionFactory sessionFactory;
   private final Object peopleCacheLock = new Object();
   private ConnectorPersistentStore connectorPersistentStore;
   private JdbcDatabase jdbcDatabase;
@@ -74,8 +74,7 @@ public class NotesConnector implements Connector,
   }
 
   @Override
-  public com.google.enterprise.connector.spi.Session login()
-      throws RepositoryException {
+  public Session login() throws RepositoryException {
     final String METHOD = "login";
 
     // We always want to return ok here
@@ -306,7 +305,8 @@ public class NotesConnector implements Connector,
     deleted = true;
   }
 
-  public boolean getDelete() {
+  @VisibleForTesting
+  boolean getDelete() {
     final String METHOD = "getDelete";
     LOGGER.entering(CLASS_NAME, METHOD);
     return deleted;
@@ -328,7 +328,7 @@ public class NotesConnector implements Connector,
         npn.wakeWorkers();
       }
       try {
-        java.lang.Thread.sleep(5000);
+        Thread.sleep(5000);
       } catch (Exception e) {
         LOGGER.log(Level.SEVERE, CLASS_NAME, e);
       }
@@ -337,7 +337,8 @@ public class NotesConnector implements Connector,
   }
 
   // TODO: consider renaming to isShutdown.
-  public boolean getShutdown() {
+  @VisibleForTesting
+  boolean getShutdown() {
     return shutdown;
   }
 

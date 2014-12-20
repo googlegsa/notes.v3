@@ -555,7 +555,8 @@ class NotesUserGroupManager {
    *
    * @param force if true, force an update
    */
-  public synchronized void updateUsersGroups(boolean force) {
+  @VisibleForTesting
+  synchronized void updateUsersGroups(boolean force) {
     final String METHOD = "updateUsersGroups";
     LOGGER.entering(CLASS_NAME, METHOD);
     try {
