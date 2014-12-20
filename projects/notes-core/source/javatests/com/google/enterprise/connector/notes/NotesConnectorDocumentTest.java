@@ -14,6 +14,7 @@
 
 package com.google.enterprise.connector.notes;
 
+import com.google.common.collect.ImmutableSet;
 import com.google.enterprise.connector.notes.client.NotesItem;
 import com.google.enterprise.connector.notes.client.NotesSession;
 import com.google.enterprise.connector.notes.client.mock.NotesDatabaseMock;
@@ -21,6 +22,7 @@ import com.google.enterprise.connector.notes.client.mock.NotesDateTimeMock;
 import com.google.enterprise.connector.notes.client.mock.NotesDocumentMock;
 import com.google.enterprise.connector.notes.client.mock.NotesItemMock;
 import com.google.enterprise.connector.notes.client.mock.SessionFactoryMock;
+import com.google.enterprise.connector.spi.Document;
 import com.google.enterprise.connector.spi.Principal;
 import com.google.enterprise.connector.spi.Property;
 import com.google.enterprise.connector.spi.SimpleTraversalContext;
@@ -42,6 +44,7 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Set;
 import java.util.Vector;
 
 public class NotesConnectorDocumentTest extends TestCase {
@@ -286,14 +289,11 @@ public class NotesConnectorDocumentTest extends TestCase {
       assertPropertyEquals("http://host:42/replicaid/" +
           NCCONST.DB_ACL_INHERIT_TYPE_ANDBOTH,
           document, SpiConstants.PROPNAME_ACLINHERITFROM_DOCID);
-      assertPropertyEquals("jsmith", document,
-          SpiConstants.PROPNAME_ACLUSERS);
-      assertPropertyEquals("Domino%2Freadergroup", document,
-          SpiConstants.PROPNAME_ACLGROUPS);
-      assertPropertyEquals("Domino%2Freplicaid%2F%5Breaderrole%5D",
-          document, SpiConstants.PROPNAME_ACLGROUPS, 1);
-      assertPropertyEquals("Domino%2F*", document,
-          SpiConstants.PROPNAME_ACLGROUPS);
+      assertEquals(ImmutableSet.of("jsmith"),
+          getPrincipalNames(document, SpiConstants.PROPNAME_ACLUSERS));
+      assertEquals(ImmutableSet.of("Domino%2F*", "Domino%2Freadergroup",
+              "Domino%2Freplicaid%2F%5Breaderrole%5D"),
+          getPrincipalNames(document, SpiConstants.PROPNAME_ACLGROUPS));
     } else {
       assertNull(document.findProperty(
               SpiConstants.PROPNAME_ACLINHERITFROM_DOCID));
@@ -323,15 +323,16 @@ public class NotesConnectorDocumentTest extends TestCase {
     document.setCrawlDoc("unid", crawlDoc);
 
     // Check defaults.
-    Principal principal =
-        getFirstPrincipal(document, SpiConstants.PROPNAME_ACLUSERS);
-    assertEquals(new Principal(PrincipalType.UNKNOWN,
-            connector.getGlobalNamespace(), "jsmith",
-            CaseSensitivityType.EVERYTHING_CASE_INSENSITIVE), principal);
-    principal = getFirstPrincipal(document, SpiConstants.PROPNAME_ACLGROUPS);
-    assertEquals(new Principal(PrincipalType.UNQUALIFIED,
-            connector.getLocalNamespace(), "Domino%2Freadergroup",
-            CaseSensitivityType.EVERYTHING_CASE_INSENSITIVE), principal);
+    assertEquals(getExpectedPrincipals(PrincipalType.UNKNOWN,
+            connector.getGlobalNamespace(), ImmutableSet.of("jsmith"),
+            CaseSensitivityType.EVERYTHING_CASE_INSENSITIVE),
+        getPrincipals(document, SpiConstants.PROPNAME_ACLUSERS));
+    assertEquals(getExpectedPrincipals(PrincipalType.UNQUALIFIED,
+            connector.getLocalNamespace(),
+            ImmutableSet.of("Domino%2F*", "Domino%2Freadergroup",
+                "Domino%2Freplicaid%2F%5Breaderrole%5D"),
+            CaseSensitivityType.EVERYTHING_CASE_INSENSITIVE),
+        getPrincipals(document, SpiConstants.PROPNAME_ACLGROUPS));
 
     // Change usernames to local namespace. Groups should stay local.
     try {
@@ -339,15 +340,16 @@ public class NotesConnectorDocumentTest extends TestCase {
       document =
           new NotesConnectorDocument(connectorSession, session, connectorDatabase);
       document.setCrawlDoc("unid", crawlDoc);
-      principal = getFirstPrincipal(document, SpiConstants.PROPNAME_ACLUSERS);
-      assertEquals(new Principal(PrincipalType.UNQUALIFIED,
-              connector.getLocalNamespace(), "jsmith",
-              CaseSensitivityType.EVERYTHING_CASE_INSENSITIVE), principal);
-
-      principal = getFirstPrincipal(document, SpiConstants.PROPNAME_ACLGROUPS);
-      assertEquals(new Principal(PrincipalType.UNQUALIFIED,
-              connector.getLocalNamespace(), "Domino%2Freadergroup",
-              CaseSensitivityType.EVERYTHING_CASE_INSENSITIVE), principal);
+      assertEquals(getExpectedPrincipals(PrincipalType.UNQUALIFIED,
+              connector.getLocalNamespace(), ImmutableSet.of("jsmith"),
+              CaseSensitivityType.EVERYTHING_CASE_INSENSITIVE),
+          getPrincipals(document, SpiConstants.PROPNAME_ACLUSERS));
+      assertEquals(getExpectedPrincipals(PrincipalType.UNQUALIFIED,
+              connector.getLocalNamespace(),
+              ImmutableSet.of("Domino%2F*", "Domino%2Freadergroup",
+                  "Domino%2Freplicaid%2F%5Breaderrole%5D"),
+              CaseSensitivityType.EVERYTHING_CASE_INSENSITIVE),
+          getPrincipals(document, SpiConstants.PROPNAME_ACLGROUPS));
     } finally {
       connector.setGsaNamesAreGlobal(true);
     }
@@ -377,19 +379,14 @@ public class NotesConnectorDocumentTest extends TestCase {
         document, SpiConstants.PROPNAME_ACLINHERITANCETYPE);
     assertPropertyEquals(DocumentType.ACL.toString(), document,
             SpiConstants.PROPNAME_DOCUMENTTYPE);
-    assertPropertyEquals("user1", document, SpiConstants.PROPNAME_ACLUSERS);
-    assertPropertyEquals("user2", document, SpiConstants.PROPNAME_ACLUSERS, 1);
-    assertPropertyEquals("user3", document, SpiConstants.PROPNAME_ACLDENYUSERS);
-    assertPropertyEquals("user4", document,
-        SpiConstants.PROPNAME_ACLDENYUSERS, 1);
-    assertPropertyEquals("Domino%2Fgroup1", document,
-        SpiConstants.PROPNAME_ACLGROUPS);
-    assertPropertyEquals("Domino%2Fgroup2", document,
-        SpiConstants.PROPNAME_ACLGROUPS, 1);
-    assertPropertyEquals("Domino%2Fgroup3", document,
-        SpiConstants.PROPNAME_ACLDENYGROUPS);
-    assertPropertyEquals("Domino%2Fgroup4", document,
-        SpiConstants.PROPNAME_ACLDENYGROUPS, 1);
+    assertEquals(ImmutableSet.of("user1", "user2"),
+        getPrincipalNames(document, SpiConstants.PROPNAME_ACLUSERS));
+    assertEquals(ImmutableSet.of("user3", "user4"),
+        getPrincipalNames(document, SpiConstants.PROPNAME_ACLDENYUSERS));
+    assertEquals(ImmutableSet.of("Domino%2Fgroup1", "Domino%2Fgroup2"),
+        getPrincipalNames(document, SpiConstants.PROPNAME_ACLGROUPS));
+    assertEquals(ImmutableSet.of("Domino%2Fgroup3", "Domino%2Fgroup4"),
+        getPrincipalNames(document, SpiConstants.PROPNAME_ACLDENYGROUPS));
   }
 
   public void testDatabaseAclPrincipalValues() throws Exception {
@@ -409,15 +406,15 @@ public class NotesConnectorDocumentTest extends TestCase {
 
     // Check defaults.
     assertTrue(connector.getGsaNamesAreGlobal());
-    Principal principal =
-        getFirstPrincipal(document, SpiConstants.PROPNAME_ACLUSERS);
-    assertEquals(new Principal(PrincipalType.UNKNOWN,
-            connector.getGlobalNamespace(), "user1",
-            CaseSensitivityType.EVERYTHING_CASE_INSENSITIVE), principal);
-    principal = getFirstPrincipal(document, SpiConstants.PROPNAME_ACLGROUPS);
-    assertEquals(new Principal(PrincipalType.UNQUALIFIED,
-            connector.getLocalNamespace(), "Domino%2Fgroup1",
-            CaseSensitivityType.EVERYTHING_CASE_INSENSITIVE), principal);
+    assertEquals(getExpectedPrincipals(PrincipalType.UNKNOWN,
+            connector.getGlobalNamespace(), ImmutableSet.of("user1", "user2"),
+            CaseSensitivityType.EVERYTHING_CASE_INSENSITIVE),
+        getPrincipals(document, SpiConstants.PROPNAME_ACLUSERS));
+    assertEquals(getExpectedPrincipals(PrincipalType.UNQUALIFIED,
+            connector.getLocalNamespace(),
+            ImmutableSet.of("Domino%2Fgroup1", "Domino%2Fgroup2"),
+            CaseSensitivityType.EVERYTHING_CASE_INSENSITIVE),
+        getPrincipals(document, SpiConstants.PROPNAME_ACLGROUPS));
 
     // Change usernames to local namespace. Groups should stay local.
     try {
@@ -425,14 +422,15 @@ public class NotesConnectorDocumentTest extends TestCase {
       document =
           new NotesConnectorDocument(connectorSession, session, connectorDatabase);
       document.setCrawlDoc("unid", crawlDoc);
-      principal = getFirstPrincipal(document, SpiConstants.PROPNAME_ACLUSERS);
-      assertEquals(new Principal(PrincipalType.UNQUALIFIED,
-              connector.getLocalNamespace(), "user1",
-              CaseSensitivityType.EVERYTHING_CASE_INSENSITIVE), principal);
-      principal = getFirstPrincipal(document, SpiConstants.PROPNAME_ACLGROUPS);
-      assertEquals(new Principal(PrincipalType.UNQUALIFIED,
-              connector.getLocalNamespace(), "Domino%2Fgroup1",
-              CaseSensitivityType.EVERYTHING_CASE_INSENSITIVE), principal);
+      assertEquals(getExpectedPrincipals(PrincipalType.UNQUALIFIED,
+              connector.getLocalNamespace(), ImmutableSet.of("user1", "user2"),
+              CaseSensitivityType.EVERYTHING_CASE_INSENSITIVE),
+          getPrincipals(document, SpiConstants.PROPNAME_ACLUSERS));
+      assertEquals(getExpectedPrincipals(PrincipalType.UNQUALIFIED,
+              connector.getLocalNamespace(),
+              ImmutableSet.of("Domino%2Fgroup1", "Domino%2Fgroup2"),
+              CaseSensitivityType.EVERYTHING_CASE_INSENSITIVE),
+          getPrincipals(document, SpiConstants.PROPNAME_ACLGROUPS));
     } finally {
       connector.setGsaNamesAreGlobal(true);
     }
@@ -453,11 +451,7 @@ public class NotesConnectorDocumentTest extends TestCase {
     Value v;
     while ((v = p.nextValue()) != null) {
       if (i == index) {
-        if (v instanceof PrincipalValue) {
-          assertEquals(expected, ((PrincipalValue) v).getPrincipal().getName());
-        } else {
-          assertEquals(expected, v.toString());
-        }
+        assertEquals(expected, v.toString());
         return;
       }
       i++;
@@ -558,14 +552,47 @@ public class NotesConnectorDocumentTest extends TestCase {
     return crawlDoc;
   }
 
-  private Principal getFirstPrincipal(NotesConnectorDocument document,
+  /** Gets all values of the given property, which must be Principals. */
+  private Set<Principal> getPrincipals(Document document,
       String propertyName) throws Exception {
     Property property = document.findProperty(propertyName);
     assertNotNull("Missing " + propertyName, property);
-    Value value = property.nextValue();
-    assertNotNull("Missing value for " + propertyName, value);
-    assertTrue("Not PrincipalValue: " + propertyName,
-        value instanceof PrincipalValue);
-    return ((PrincipalValue) value).getPrincipal();
+    ImmutableSet.Builder<Principal> builder =
+        new ImmutableSet.Builder<Principal>();
+    Value value;
+    while ((value = property.nextValue()) != null) {
+      assertTrue("Not PrincipalValue: " + propertyName,
+          value instanceof PrincipalValue);
+      builder.add(((PrincipalValue) value).getPrincipal());
+    }
+    return builder.build();
+  }
+
+  /** Gets the principal names for all values of the given property. */
+  private Set<String> getPrincipalNames(Document document,
+      String propertyName) throws Exception {
+    Property property = document.findProperty(propertyName);
+    assertNotNull("Missing " + propertyName, property);
+    ImmutableSet.Builder<String> builder = new ImmutableSet.Builder<String>();
+    Value value;
+    while ((value = property.nextValue()) != null) {
+      assertTrue("Not PrincipalValue: " + propertyName,
+          value instanceof PrincipalValue);
+      builder.add(((PrincipalValue) value).getPrincipal().getName());
+    }
+    return builder.build();
+  }
+
+  /** Constructs a set of expected Principals with the given options. */
+  private Set<Principal> getExpectedPrincipals(PrincipalType principalType,
+      String namespace, Set<String> names,
+      CaseSensitivityType caseSensitivityType) {
+    ImmutableSet.Builder<Principal> builder =
+        new ImmutableSet.Builder<Principal>();
+    for (String name : names) {
+      builder.add(
+          new Principal(principalType, namespace, name, caseSensitivityType));
+    }
+    return builder.build();
   }
 }
