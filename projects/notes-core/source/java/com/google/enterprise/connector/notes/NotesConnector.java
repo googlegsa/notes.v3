@@ -36,12 +36,8 @@ public class NotesConnector implements Connector,
   private String server = null;
   private String database = null;
   private boolean gsaNamesAreGlobal = true;
-  private String workingDir = null;
   private String connectorName;
   private String policyAclPattern;
-  private String googleFeedHost;
-  private String gsaUsername;
-  private String gsaPassword;
   private String globalNamespace;
   private String localNamespace;
   private boolean shutdown = false;
@@ -149,8 +145,8 @@ public class NotesConnector implements Connector,
   public void setGoogleConnectorWorkDir(String googleConnectorWorkDir) {
     final String METHOD = "setGoogleConnectorWorkDir";
     LOGGER.logp(Level.CONFIG, CLASS_NAME, METHOD,
-        "Connector config GoogleConnectorWorkDir = " + googleConnectorWorkDir);
-    workingDir = googleConnectorWorkDir;
+        "Deprecated googleConnectorWorkDir property, set to "
+        + googleConnectorWorkDir + ", will be ignored");
   }
 
   public void setGoogleConnectorName(String googleConnectorName) {
@@ -170,22 +166,21 @@ public class NotesConnector implements Connector,
   public void setGoogleFeedHost(String googleFeedHost) {
     final String METHOD = "setGoogleFeedHost";
     LOGGER.logp(Level.CONFIG, CLASS_NAME, METHOD,
-        "Connector config Google feed host = " + googleFeedHost);
-    this.googleFeedHost = googleFeedHost;
+        "Deprecated googleFeedHost property, set to " + googleFeedHost
+        + ", will be ignored");
   }
 
   public void setGsaUsername(String gsaUsername) {
     final String METHOD = "setGsaUsername";
-    LOGGER.logp(Level.CONFIG, CLASS_NAME, METHOD,
-        "Connector config gsaUsername = " + gsaUsername);
-    this.gsaUsername = gsaUsername;
+    LOGGER.logp(Level.WARNING, CLASS_NAME, METHOD,
+        "Deprecated gsaUsername property, set to " + gsaUsername
+        + ", will be ignored");
   }
 
   public void setGsaPassword(String gsaPassword) {
     final String METHOD = "setGsaPassword";
-    LOGGER.logp(Level.CONFIG, CLASS_NAME, METHOD,
-        "Connector config gsaPassword set");
-    this.gsaPassword = gsaPassword;
+    LOGGER.logp(Level.WARNING, CLASS_NAME, METHOD,
+        "Deprecated gsaPassword property will be ignored");
   }
 
   public void setGoogleLocalNamespace(String namespace) {
@@ -243,36 +238,12 @@ public class NotesConnector implements Connector,
     return gsaNamesAreGlobal;
   }
 
-  public String getGoogleConnectorWorkDir(String googleConnectorWorkDir) {
-    return workingDir;
-  }
-
   public String getGoogleConnectorName() {
     return connectorName;
   }
 
   public String getPolicyAclPattern() {
     return policyAclPattern;
-  }
-
-  public String getGsaProtocol() {
-    return "http";
-  }
-
-  public String getGoogleFeedHost() {
-    return googleFeedHost;
-  }
-
-  public int getGsaPort() {
-    return 8000;
-  }
-
-  public String getGsaUsername() {
-    return gsaUsername;
-  }
-
-  public String getGsaPassword() {
-    return gsaPassword;
   }
 
   public String getGlobalNamespace() {
@@ -370,4 +341,3 @@ public class NotesConnector implements Connector,
     LOGGER.exiting(CLASS_NAME, METHOD);
   }
 }
-

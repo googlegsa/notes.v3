@@ -174,9 +174,9 @@ class NotesCrawlerThread extends Thread {
    *   authors fields, but not any non-blank readers fields,
    *   document level security will not be enforced.
    */
-  protected boolean getDocumentReaderNames(NotesDocument crawlDoc,
+  protected void setDocumentReaderNames(NotesDocument crawlDoc,
       NotesDocument srcDoc) throws RepositoryException {
-    final String METHOD = "getDocumentReaderNames";
+    final String METHOD = "setDocumentReaderNames";
     LOGGER.entering(CLASS_NAME, METHOD);
 
     Vector<?> allItems = srcDoc.getItems();
@@ -215,7 +215,6 @@ class NotesCrawlerThread extends Thread {
             authorReaders);
         crawlDoc.replaceItemValue(NCCONST.NCITM_DOCREADERS, authorReaders);
       }
-      return hasReaders;
     } finally {
       srcDoc.recycle(allItems);
     }
@@ -237,28 +236,15 @@ class NotesCrawlerThread extends Thread {
   }
 
   // This function will set google security fields for the document
-  protected void setDocumentSecurity(NotesDocument crawlDoc,
-      NotesDocument srcDoc) throws RepositoryException {
+  protected void setDocumentSecurity(NotesDocument crawlDoc)
+      throws RepositoryException {
     final String METHOD = "setDocumentSecurity";
     LOGGER.entering(CLASS_NAME, METHOD);
 
     String AuthType = crawlDoc.getItemValueString(NCCONST.NCITM_AUTHTYPE);
 
-    if (AuthType.equals(NCCONST.AUTH_NONE)) {
-      crawlDoc.replaceItemValue(NCCONST.ITM_ISPUBLIC, Boolean.TRUE.toString());
-      return;
-    }
-    if (AuthType.equals(NCCONST.AUTH_ACL)) {
-      crawlDoc.replaceItemValue(NCCONST.ITM_ISPUBLIC, Boolean.FALSE.toString());
-
-      ;  // TODO: Handle document ACLs
-      return;
-    }
-    if (AuthType.equals(NCCONST.AUTH_CONNECTOR)) {
-      crawlDoc.replaceItemValue(NCCONST.ITM_ISPUBLIC, Boolean.FALSE.toString());
-      ;
-      return;
-    }
+    crawlDoc.replaceItemValue(NCCONST.ITM_ISPUBLIC,
+        String.valueOf(AuthType.equals(NCCONST.AUTH_NONE)));
   }
 
   protected void evaluateField(NotesDocument crawlDoc, NotesDocument srcDoc,
@@ -554,23 +540,8 @@ class NotesCrawlerThread extends Thread {
             "to process document " + NotesURL);
       }
 
-      boolean hasReaders = getDocumentReaderNames(crawlDoc, srcDoc);
-      if (hasReaders) {
-        if (NCCONST.AUTH_ACL.equals(
-            crawlDoc.getItemValueString(NCCONST.NCITM_AUTHTYPE))) {
-
-          // Continue processing doc if GSA supports inherited
-          // ACLs. Return false if not; doc won't be indexed.
-          if (!ncs.getTraversalManager().supportsInheritedAcls()) {
-            LOGGER.logp(Level.WARNING, CLASS_NAME, METHOD,
-                "Document " + NotesURL + " has document-level security, "
-                + "but the connector is configured to use database-level "
-                + "Policy ACLs. This document will not be indexed.");
-            return false;
-          }
-        }
-      }
-      setDocumentSecurity(crawlDoc, srcDoc);
+      setDocumentReaderNames(crawlDoc, srcDoc);
+      setDocumentSecurity(crawlDoc);
 
       mapFields(crawlDoc, srcDoc);
       mapMetaFields(crawlDoc, srcDoc);

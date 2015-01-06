@@ -65,12 +65,6 @@ public class ConnectorFixture extends TestCase {
         "javatest.database");
     ConnectorFixture.idpassword = ConnectorFixture.getRequiredProperty(
         "javatest.idpassword");
-    String googleFeedHost = ConnectorFixture.getOptionalProperty(
-        "javatest.googleFeedHost");
-    String gsausername = ConnectorFixture.getOptionalProperty(
-        "javatest.gsausername");
-    String gsapassword = ConnectorFixture.getOptionalProperty(
-        "javatest.gsapassword");
 
     // Instantiate and configure connector.
     NotesConnector connector = new NotesConnector();
@@ -83,19 +77,8 @@ public class ConnectorFixture extends TestCase {
     connector.setServer(server);
     connector.setDatabase(database);
     connector.setIdPassword(idpassword);
-    if (googleFeedHost != null) {
-      connector.setGoogleFeedHost(googleFeedHost);
-    }
-    if (gsausername != null) {
-      connector.setGsaUsername(gsausername);
-    }
-    if (gsapassword != null) {
-      connector.setGsaPassword(gsapassword);
-    }
-    connector.setGoogleConnectorName("javatests");
     connector.setPolicyAclPattern(
         "^googleconnector://{0}.localhost/doc?docid={1}");
-
     connector.setGoogleConnectorName("notestest");
     connector.setDatabaseAccess(new ConnectorPersistentStore() {
         @Deprecated @Override
