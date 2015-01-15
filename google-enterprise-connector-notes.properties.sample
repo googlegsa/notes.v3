@@ -29,6 +29,9 @@ build.bootclasspath = /System/Library/Frameworks/JavaVM.framework/Versions/1.6.0
 javatest.server =
 javatest.database = gsaconfig.nsf
 javatest.idpassword = password
+javatest.googleFeedHost = gsaHost
+javatest.gsausername = admin
+javatest.gsapassword = adminpassword
 
 # Use the PVI (GSA login name), not the Notes name
 javatest.authentication.username = UserName

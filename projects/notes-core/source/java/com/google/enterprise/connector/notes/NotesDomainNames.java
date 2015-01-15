@@ -23,7 +23,7 @@ import java.util.TreeMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-class NotesDomainNames {
+public class NotesDomainNames {
   private static final String CLASS_NAME = NotesDomainNames.class.getName();
   private static final Logger LOGGER = Logger.getLogger(CLASS_NAME);
 

@@ -25,21 +25,18 @@ import java.util.logging.Logger;
  * 
  * @since 3.0.6
  */
-enum NotesUsernameType {
+public enum NotesUsernameType {
   USERNAME("username") {
-    @Override
     public String getUsername(AuthenticationIdentity userId) {
       return userId.getUsername();
     }
   },
   NTDOMAIN("domain\\username") {
-    @Override
     public String getUsername(AuthenticationIdentity userId) {
       return userId.getDomain() + "\\" + userId.getUsername();
     }
   },
   INTERNET("username@domain") {
-    @Override
     public String getUsername(AuthenticationIdentity userId) {
       return userId.getUsername() + "@" + userId.getDomain();
     }

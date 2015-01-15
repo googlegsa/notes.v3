@@ -36,7 +36,7 @@ public class NotesConnectorTest extends TestCase {
     connector.setGoogleGlobalNamespace("GlobalNamespace");
 
     // Initialize this to prevent NotesConnector from creating one.
-    connector.maintThread = new NotesMaintenanceThread(null, null);
+    connector.maintThread = new NotesMaintenanceThread();
     connector.setGoogleConnectorName("notestest");
     connector.setDatabaseAccess(new ConnectorPersistentStore() {
         @Deprecated @Override

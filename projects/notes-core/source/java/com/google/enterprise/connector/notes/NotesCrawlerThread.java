@@ -26,7 +26,6 @@ import com.google.enterprise.connector.notes.client.NotesView;
 import com.google.enterprise.connector.spi.RepositoryException;
 import com.google.enterprise.connector.spi.SpiConstants.ActionType;
 
-import java.io.File;
 import java.net.URLEncoder;
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -40,7 +39,7 @@ import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-class NotesCrawlerThread extends Thread {
+public class NotesCrawlerThread extends Thread {
   private static final String CLASS_NAME = NotesCrawlerThread.class.getName();
   private static final Logger LOGGER = Logger.getLogger(CLASS_NAME);
   static final String META_FIELDS_PREFIX = "x.";
@@ -174,9 +173,9 @@ class NotesCrawlerThread extends Thread {
    *   authors fields, but not any non-blank readers fields,
    *   document level security will not be enforced.
    */
-  protected void setDocumentReaderNames(NotesDocument crawlDoc,
+  protected boolean getDocumentReaderNames(NotesDocument crawlDoc,
       NotesDocument srcDoc) throws RepositoryException {
-    final String METHOD = "setDocumentReaderNames";
+    final String METHOD = "getDocumentReaderNames";
     LOGGER.entering(CLASS_NAME, METHOD);
 
     Vector<?> allItems = srcDoc.getItems();
@@ -215,6 +214,7 @@ class NotesCrawlerThread extends Thread {
             authorReaders);
         crawlDoc.replaceItemValue(NCCONST.NCITM_DOCREADERS, authorReaders);
       }
+      return hasReaders;
     } finally {
       srcDoc.recycle(allItems);
     }
@@ -236,15 +236,28 @@ class NotesCrawlerThread extends Thread {
   }
 
   // This function will set google security fields for the document
-  protected void setDocumentSecurity(NotesDocument crawlDoc)
-      throws RepositoryException {
+  protected void setDocumentSecurity(NotesDocument crawlDoc,
+      NotesDocument srcDoc) throws RepositoryException {
     final String METHOD = "setDocumentSecurity";
     LOGGER.entering(CLASS_NAME, METHOD);
 
     String AuthType = crawlDoc.getItemValueString(NCCONST.NCITM_AUTHTYPE);
 
-    crawlDoc.replaceItemValue(NCCONST.ITM_ISPUBLIC,
-        String.valueOf(AuthType.equals(NCCONST.AUTH_NONE)));
+    if (AuthType.equals(NCCONST.AUTH_NONE)) {
+      crawlDoc.replaceItemValue(NCCONST.ITM_ISPUBLIC, Boolean.TRUE.toString());
+      return;
+    }
+    if (AuthType.equals(NCCONST.AUTH_ACL)) {
+      crawlDoc.replaceItemValue(NCCONST.ITM_ISPUBLIC, Boolean.FALSE.toString());
+
+      ;  // TODO: Handle document ACLs
+      return;
+    }
+    if (AuthType.equals(NCCONST.AUTH_CONNECTOR)) {
+      crawlDoc.replaceItemValue(NCCONST.ITM_ISPUBLIC, Boolean.FALSE.toString());
+      ;
+      return;
+    }
   }
 
   protected void evaluateField(NotesDocument crawlDoc, NotesDocument srcDoc,
@@ -540,8 +553,23 @@ class NotesCrawlerThread extends Thread {
             "to process document " + NotesURL);
       }
 
-      setDocumentReaderNames(crawlDoc, srcDoc);
-      setDocumentSecurity(crawlDoc);
+      boolean hasReaders = getDocumentReaderNames(crawlDoc, srcDoc);
+      if (hasReaders) {
+        if (NCCONST.AUTH_ACL.equals(
+            crawlDoc.getItemValueString(NCCONST.NCITM_AUTHTYPE))) {
+
+          // Continue processing doc if GSA supports inherited
+          // ACLs. Return false if not; doc won't be indexed.
+          if (!ncs.getTraversalManager().supportsInheritedAcls()) {
+            LOGGER.logp(Level.WARNING, CLASS_NAME, METHOD,
+                "Document " + NotesURL + " has document-level security, "
+                + "but the connector is configured to use database-level "
+                + "Policy ACLs. This document will not be indexed.");
+            return false;
+          }
+        }
+      }
+      setDocumentSecurity(crawlDoc, srcDoc);
 
       mapFields(crawlDoc, srcDoc);
       mapMetaFields(crawlDoc, srcDoc);
@@ -685,9 +713,9 @@ class NotesCrawlerThread extends Thread {
    *         content will not be indexed.
    * @throws RepositoryException if embedded object is not accessible
    */
-  @VisibleForTesting
-  String createAttachmentDoc(NotesDocument crawlDoc, NotesDocument srcDoc,
-      String AttachmentName, String MimeType) throws RepositoryException {
+  public String createAttachmentDoc(NotesDocument crawlDoc,
+      NotesDocument srcDoc, String AttachmentName, String MimeType)
+      throws RepositoryException {
     final String METHOD = "createAttachmentDoc";
     String AttachmentURL = null;
     LOGGER.entering(CLASS_NAME, METHOD);
@@ -798,20 +826,19 @@ class NotesCrawlerThread extends Thread {
   // will delete the doc.  The second submit will then send an
   // empty doc So we must use the UNID of the crawl request to
   // generate the unique filename
-  private String getAttachmentFilePath(NotesDocument crawlDoc,
+  public String getAttachmentFilePath(NotesDocument crawlDoc,
       String attachName) throws RepositoryException {
     String dirName = String.format("%s/attachments/%s/%s",
         ncs.getSpoolDir(),
         cdb.getReplicaID(),
         crawlDoc.getUniversalID());
-    new File(dirName).mkdirs();
+    new java.io.File(dirName).mkdirs();
     String FilePath = String.format("%s/%s", dirName, attachName);
     //TODO:  Ensure that FilePath is a valid Windows filepath
     return FilePath;
   }
 
-  @VisibleForTesting
-  void connectQueue() throws RepositoryException {
+  public void connectQueue() throws RepositoryException {
     if (null == ns) {
       ns = ncs.createNotesSession();
     }
@@ -828,7 +855,7 @@ class NotesCrawlerThread extends Thread {
    * We accumulate objects as pre-fetch documents
    * De-allocate these in reverse order
    */
-  private void disconnectQueue()  {
+  public void disconnectQueue()  {
     final String METHOD = "disconnectQueue";
     LOGGER.entering(CLASS_NAME, METHOD);
     try {
@@ -885,7 +912,7 @@ class NotesCrawlerThread extends Thread {
         NotesDocument crawlDoc = null;
         // Only get from the queue if there is more than 300MB in the
         // spool directory
-        File spoolDir = new File(ncs.getSpoolDir());
+        java.io.File spoolDir = new java.io.File(ncs.getSpoolDir());
         LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
             "Spool free space is " + spoolDir.getFreeSpace());
         if (spoolDir.getFreeSpace()/1000000 < 300) {

@@ -34,9 +34,9 @@ import com.google.enterprise.connector.notes.client.mock.NotesDocumentMock;
 import com.google.enterprise.connector.notes.client.mock.NotesItemMock;
 import com.google.enterprise.connector.notes.client.mock.SessionFactoryMock;
 
-import junit.framework.TestCase;
-
 import org.easymock.Capture;
+
+import junit.framework.TestCase;
 
 import java.sql.Connection;
 import java.util.ArrayList;
@@ -306,7 +306,7 @@ public class NotesCrawlerThreadTest extends TestCase {
     NotesDocumentMock srcDoc = new NotesDocumentMock();
     NotesCrawlerThread crawlerThread = new NotesCrawlerThread(null, null);
 
-    crawlerThread.setDocumentReaderNames(crawlDoc, srcDoc);
+    crawlerThread.getDocumentReaderNames(crawlDoc, srcDoc);
     assertEquals("",
         crawlDoc.getItemValueString(NCCONST.NCITM_DOCAUTHORREADERS));
 
@@ -314,7 +314,7 @@ public class NotesCrawlerThreadTest extends TestCase {
         "type", NotesItem.TEXT, "values", "reader 1");
     item.setReaders(true);
     srcDoc.addItem(item);
-    crawlerThread.setDocumentReaderNames(crawlDoc, srcDoc);
+    crawlerThread.getDocumentReaderNames(crawlDoc, srcDoc);
     assertEquals("reader 1",
         crawlDoc.getItemValueString(NCCONST.NCITM_DOCAUTHORREADERS));
 
@@ -322,7 +322,7 @@ public class NotesCrawlerThreadTest extends TestCase {
         "type", NotesItem.TEXT, "values", "reader 1", "reader 2");
     item.setReaders(true);
     srcDoc.replaceItemValue("readers", item);
-    crawlerThread.setDocumentReaderNames(crawlDoc, srcDoc);
+    crawlerThread.getDocumentReaderNames(crawlDoc, srcDoc);
     assertEquals("reader 1;reader 2",
         crawlDoc.getFirstItem(NCCONST.NCITM_DOCAUTHORREADERS).getText(100));
 
@@ -330,7 +330,7 @@ public class NotesCrawlerThreadTest extends TestCase {
         "values", "author 1");
     item.setAuthors(true);
     srcDoc.addItem(item);
-    crawlerThread.setDocumentReaderNames(crawlDoc, srcDoc);
+    crawlerThread.getDocumentReaderNames(crawlDoc, srcDoc);
     Vector values = crawlDoc.getItemValue(NCCONST.NCITM_DOCAUTHORREADERS);
     assertEquals(3, values.size());
     assertTrue(values.contains("reader 1"));
@@ -344,7 +344,7 @@ public class NotesCrawlerThreadTest extends TestCase {
     NotesDocumentMock srcDoc = new NotesDocumentMock();
     NotesCrawlerThread crawlerThread = new NotesCrawlerThread(null, null);
 
-    crawlerThread.setDocumentReaderNames(crawlDoc, srcDoc);
+    crawlerThread.getDocumentReaderNames(crawlDoc, srcDoc);
     assertEquals("",
         crawlDoc.getItemValueString(NCCONST.NCITM_DOCAUTHORREADERS));
 
@@ -357,7 +357,7 @@ public class NotesCrawlerThreadTest extends TestCase {
         "type", NotesItem.TEXT, "values", "reader 2");
     item.setReaders(true);
     srcDoc.addItem(item);
-    crawlerThread.setDocumentReaderNames(crawlDoc, srcDoc);
+    crawlerThread.getDocumentReaderNames(crawlDoc, srcDoc);
     Vector values = crawlDoc.getItemValue(NCCONST.NCITM_DOCAUTHORREADERS);
     assertEquals(2, values.size());
     assertTrue(values.contains("reader 1"));
@@ -372,7 +372,7 @@ public class NotesCrawlerThreadTest extends TestCase {
         "values", "author 2", "author 3");
     item.setAuthors(true);
     srcDoc.addItem(item);
-    crawlerThread.setDocumentReaderNames(crawlDoc, srcDoc);
+    crawlerThread.getDocumentReaderNames(crawlDoc, srcDoc);
     values = crawlDoc.getItemValue(NCCONST.NCITM_DOCAUTHORREADERS);
     assertEquals(5, values.size());
     assertTrue(values.contains("reader 1"));
@@ -389,21 +389,21 @@ public class NotesCrawlerThreadTest extends TestCase {
     crawlDoc.addItem(item);
 
     NotesCrawlerThread crawlerThread = new NotesCrawlerThread(null, null);
-    crawlerThread.setDocumentSecurity(crawlDoc);
+    crawlerThread.setDocumentSecurity(crawlDoc, null);
     assertEquals(Boolean.TRUE.toString(),
         crawlDoc.getItemValueString(NCCONST.ITM_ISPUBLIC));
 
     item = new NotesItemMock("name", NCCONST.NCITM_AUTHTYPE,
         "type", NotesItem.TEXT, "values", NCCONST.AUTH_ACL);
     crawlDoc.replaceItemValue(NCCONST.NCITM_AUTHTYPE, item);
-    crawlerThread.setDocumentSecurity(crawlDoc);
+    crawlerThread.setDocumentSecurity(crawlDoc, null);
     assertEquals(Boolean.FALSE.toString(),
         crawlDoc.getItemValueString(NCCONST.ITM_ISPUBLIC));
 
     item = new NotesItemMock("name", NCCONST.NCITM_AUTHTYPE,
         "type", NotesItem.TEXT, "values", NCCONST.AUTH_CONNECTOR);
     crawlDoc.replaceItemValue(NCCONST.NCITM_AUTHTYPE, item);
-    crawlerThread.setDocumentSecurity(crawlDoc);
+    crawlerThread.setDocumentSecurity(crawlDoc, null);
     assertEquals(Boolean.FALSE.toString(),
         crawlDoc.getItemValueString(NCCONST.ITM_ISPUBLIC));
   }

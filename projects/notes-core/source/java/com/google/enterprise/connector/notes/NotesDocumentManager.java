@@ -56,7 +56,7 @@ import java.util.logging.Logger;
  * Connector Manager to avoid table naming conflicts or duplicates.
  *
  */
-class NotesDocumentManager {
+public class NotesDocumentManager {
   private static final String CLASS_NAME =
       NotesDocumentManager.class.getName();
   private static final Logger LOGGER = Logger.getLogger(CLASS_NAME);

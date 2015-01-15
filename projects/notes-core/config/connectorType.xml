@@ -9,6 +9,8 @@
         <value>database</value>
         <value>server</value>
         <value>gsaNamesAreGlobal</value>
+        <value>gsaUsername</value>
+        <value>gsaPassword</value>
        </list>
     </property>
   </bean>

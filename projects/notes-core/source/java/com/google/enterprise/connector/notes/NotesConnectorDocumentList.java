@@ -23,7 +23,6 @@ import com.google.enterprise.connector.spi.DocumentList;
 import com.google.enterprise.connector.spi.RepositoryException;
 import com.google.enterprise.connector.spi.SpiConstants.ActionType;
 
-import java.io.File;
 import java.net.MalformedURLException;
 import java.sql.Connection;
 import java.util.Iterator;
@@ -145,10 +144,10 @@ class NotesConnectorDocumentList implements DocumentList {
       if (attachPath.length() > 0) {
         LOGGER.logp(Level.FINER, CLASS_NAME, METHOD,
             "Checkpoint cleaning up attachment: " + attachPath);
-        File f = new File(attachPath);
+        java.io.File f = new java.io.File(attachPath);
         f.delete();
         // Remove the parent directory for the document if it is empty
-        File parentDir = new File(
+        java.io.File parentDir = new java.io.File(
             attachPath.substring(0, attachPath.lastIndexOf('/')));
         String[] dirContents = parentDir.list();
         if (dirContents != null) {  // If this is a valid directory

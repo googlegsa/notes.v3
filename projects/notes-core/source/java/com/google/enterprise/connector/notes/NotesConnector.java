@@ -21,7 +21,6 @@ import com.google.enterprise.connector.spi.ConnectorPersistentStore;
 import com.google.enterprise.connector.spi.ConnectorPersistentStoreAware;
 import com.google.enterprise.connector.spi.ConnectorShutdownAware;
 import com.google.enterprise.connector.spi.RepositoryException;
-import com.google.enterprise.connector.spi.Session;
 import com.google.enterprise.connector.util.database.JdbcDatabase;
 
 import java.util.Vector;
@@ -36,17 +35,22 @@ public class NotesConnector implements Connector,
   private String server = null;
   private String database = null;
   private boolean gsaNamesAreGlobal = true;
+  private String workingDir = null;
   private String connectorName;
   private String policyAclPattern;
+  private String googleFeedHost;
+  private String gsaUsername;
+  private String gsaPassword;
   private String globalNamespace;
   private String localNamespace;
   private boolean shutdown = false;
   private boolean deleted = false;
-  private NotesConnectorSession ncs = null;
-  private NotesPollerNotifier npn = null;
-  @VisibleForTesting NotesMaintenanceThread maintThread = null;
-  @VisibleForTesting Vector<NotesCrawlerThread> vecCrawlerThreads = null;
-  private SessionFactory sessionFactory;
+  NotesConnectorSession ncs = null;
+  @VisibleForTesting
+  NotesMaintenanceThread maintThread = null;
+  NotesPollerNotifier npn = null;
+  Vector<NotesCrawlerThread> vecCrawlerThreads = null;
+  SessionFactory sessionFactory;
   private final Object peopleCacheLock = new Object();
   private ConnectorPersistentStore connectorPersistentStore;
   private JdbcDatabase jdbcDatabase;
@@ -70,7 +74,8 @@ public class NotesConnector implements Connector,
   }
 
   @Override
-  public Session login() throws RepositoryException {
+  public com.google.enterprise.connector.spi.Session login()
+      throws RepositoryException {
     final String METHOD = "login";
 
     // We always want to return ok here
@@ -145,8 +150,8 @@ public class NotesConnector implements Connector,
   public void setGoogleConnectorWorkDir(String googleConnectorWorkDir) {
     final String METHOD = "setGoogleConnectorWorkDir";
     LOGGER.logp(Level.CONFIG, CLASS_NAME, METHOD,
-        "Deprecated googleConnectorWorkDir property, set to "
-        + googleConnectorWorkDir + ", will be ignored");
+        "Connector config GoogleConnectorWorkDir = " + googleConnectorWorkDir);
+    workingDir = googleConnectorWorkDir;
   }
 
   public void setGoogleConnectorName(String googleConnectorName) {
@@ -166,21 +171,22 @@ public class NotesConnector implements Connector,
   public void setGoogleFeedHost(String googleFeedHost) {
     final String METHOD = "setGoogleFeedHost";
     LOGGER.logp(Level.CONFIG, CLASS_NAME, METHOD,
-        "Deprecated googleFeedHost property, set to " + googleFeedHost
-        + ", will be ignored");
+        "Connector config Google feed host = " + googleFeedHost);
+    this.googleFeedHost = googleFeedHost;
   }
 
   public void setGsaUsername(String gsaUsername) {
     final String METHOD = "setGsaUsername";
-    LOGGER.logp(Level.WARNING, CLASS_NAME, METHOD,
-        "Deprecated gsaUsername property, set to " + gsaUsername
-        + ", will be ignored");
+    LOGGER.logp(Level.CONFIG, CLASS_NAME, METHOD,
+        "Connector config gsaUsername = " + gsaUsername);
+    this.gsaUsername = gsaUsername;
   }
 
   public void setGsaPassword(String gsaPassword) {
     final String METHOD = "setGsaPassword";
-    LOGGER.logp(Level.WARNING, CLASS_NAME, METHOD,
-        "Deprecated gsaPassword property will be ignored");
+    LOGGER.logp(Level.CONFIG, CLASS_NAME, METHOD,
+        "Connector config gsaPassword set");
+    this.gsaPassword = gsaPassword;
   }
 
   public void setGoogleLocalNamespace(String namespace) {
@@ -238,12 +244,36 @@ public class NotesConnector implements Connector,
     return gsaNamesAreGlobal;
   }
 
+  public String getGoogleConnectorWorkDir(String googleConnectorWorkDir) {
+    return workingDir;
+  }
+
   public String getGoogleConnectorName() {
     return connectorName;
   }
 
   public String getPolicyAclPattern() {
     return policyAclPattern;
+  }
+
+  public String getGsaProtocol() {
+    return "http";
+  }
+
+  public String getGoogleFeedHost() {
+    return googleFeedHost;
+  }
+
+  public int getGsaPort() {
+    return 8000;
+  }
+
+  public String getGsaUsername() {
+    return gsaUsername;
+  }
+
+  public String getGsaPassword() {
+    return gsaPassword;
   }
 
   public String getGlobalNamespace() {
@@ -276,8 +306,7 @@ public class NotesConnector implements Connector,
     deleted = true;
   }
 
-  @VisibleForTesting
-  boolean getDelete() {
+  public boolean getDelete() {
     final String METHOD = "getDelete";
     LOGGER.entering(CLASS_NAME, METHOD);
     return deleted;
@@ -299,7 +328,7 @@ public class NotesConnector implements Connector,
         npn.wakeWorkers();
       }
       try {
-        Thread.sleep(5000);
+        java.lang.Thread.sleep(5000);
       } catch (Exception e) {
         LOGGER.log(Level.SEVERE, CLASS_NAME, e);
       }
@@ -308,8 +337,7 @@ public class NotesConnector implements Connector,
   }
 
   // TODO: consider renaming to isShutdown.
-  @VisibleForTesting
-  boolean getShutdown() {
+  public boolean getShutdown() {
     return shutdown;
   }
 
@@ -341,3 +369,4 @@ public class NotesConnector implements Connector,
     LOGGER.exiting(CLASS_NAME, METHOD);
   }
 }
+

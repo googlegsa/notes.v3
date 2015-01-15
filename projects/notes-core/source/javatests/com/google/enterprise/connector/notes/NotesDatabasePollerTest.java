@@ -35,6 +35,7 @@ import com.google.enterprise.connector.spi.SimpleTraversalContext;
 import junit.framework.TestCase;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -54,8 +55,12 @@ public class NotesDatabasePollerTest extends TestCase {
     }
 
     @Override
-    void logGsaPolicyAcl(NotesDocument dbdoc) throws RepositoryException {
+    boolean updateGsaPolicyAcl(NotesSession session,
+        NotesDatabase connectorDatabase, NotesDocument dbdoc,
+        Collection<String> permitUsers, Collection<String> permitGroups)
+        throws RepositoryException {
       calledUpdateGsaPolicyAcl = true;
+      return true;
     }
   }
 
