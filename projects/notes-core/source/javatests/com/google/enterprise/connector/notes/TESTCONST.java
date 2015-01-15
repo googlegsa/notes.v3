@@ -15,6 +15,23 @@
 package com.google.enterprise.connector.notes;
 
 public class TESTCONST {
+  public enum NotesVersion {
+    VERSION_8("Release 8.5.3FP6|November 22, 2013"),
+    VERSION_9("Release 9.0|March 08, 2013");
+  
+    private final String versionString;
+    
+    private NotesVersion(String versionString) {
+      this.versionString = versionString;
+    }
+
+    @Override
+    public String toString() {
+      return versionString;
+    }
+  }
+
+  public static final String NOTES_VERSION = "javatest.notesversion";
   public static final String SERVER_DOMINO = "dominoserver1/ou=mtv/o=us";
   public static final String SERVER_DOMINO_WEB = "dominoserver1";
   public static final String DOMAIN = ".gsa-connectors.com";

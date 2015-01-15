@@ -16,6 +16,7 @@ package com.google.enterprise.connector.notes.client;
 
 import com.google.enterprise.connector.spi.RepositoryException;
 
+import java.util.Date;
 import java.util.Vector;
 
 public interface NotesSession extends NotesBase {
@@ -27,6 +28,14 @@ public interface NotesSession extends NotesBase {
    * @throws RepositoryException
    */
   String getPlatform() throws RepositoryException;
+
+  /**
+   * Return the version string of Notes client the session is running on.
+   * 
+   * @return version string of Notes client
+   * @throws RepositoryException
+   */
+  String getNotesVersion() throws RepositoryException;
 
   /**
    * Returns the name of the user who created the session.
@@ -97,6 +106,15 @@ public interface NotesSession extends NotesBase {
    * @throws RepositoryException
    */
   NotesDateTime createDateTime(String date) throws RepositoryException;
+
+  /**
+   * Creates a NotesDateTime object from a java.util.Date object.
+   * 
+   * @param date the date
+   * @return a NotesDateTime object
+   * @throws RepositoryException
+   */
+  NotesDateTime createDateTime(Date date) throws RepositoryException;
 
   /**
    * Creates a NotesName object.

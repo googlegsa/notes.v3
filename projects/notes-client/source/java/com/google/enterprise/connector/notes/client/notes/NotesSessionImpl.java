@@ -24,6 +24,7 @@ import lotus.domino.Database;
 import lotus.domino.NotesException;
 import lotus.domino.Session;
 
+import java.util.Date;
 import java.util.Vector;
 
 class NotesSessionImpl extends NotesBaseImpl<Session>
@@ -38,6 +39,16 @@ class NotesSessionImpl extends NotesBaseImpl<Session>
   public String getPlatform() throws NotesConnectorExceptionImpl {
     try {
       return getNotesObject().getPlatform();
+    } catch (NotesException e) {
+      throw new NotesConnectorExceptionImpl(e);
+    }
+  }
+
+  /** {@inheritDoc} */
+  @Override
+  public String getNotesVersion() throws NotesConnectorExceptionImpl {
+    try {
+      return getNotesObject().getNotesVersion();
     } catch (NotesException e) {
       throw new NotesConnectorExceptionImpl(e);
     }
@@ -117,6 +128,17 @@ class NotesSessionImpl extends NotesBaseImpl<Session>
   /** {@inheritDoc} */
   @Override
   public NotesDateTime createDateTime(String date)
+      throws NotesConnectorExceptionImpl {
+    try {
+      return new NotesDateTimeImpl(getNotesObject().createDateTime(date));
+    } catch (NotesException e) {
+      throw new NotesConnectorExceptionImpl(e);
+    }
+  }
+
+  /** {@inheritDoc} */
+  @Override
+  public NotesDateTime createDateTime(Date date)
       throws NotesConnectorExceptionImpl {
     try {
       return new NotesDateTimeImpl(getNotesObject().createDateTime(date));

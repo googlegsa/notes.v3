@@ -44,6 +44,15 @@ public class NotesDateTimeMock extends NotesBaseMock
 
   /** {@inheritDoc} */
   @Override
+  public void adjustSecond(int seconds) throws RepositoryException {
+    Calendar cal = Calendar.getInstance();
+    cal.setTime(date);
+    cal.roll(Calendar.SECOND, seconds);
+    date = cal.getTime();
+  }
+
+  /** {@inheritDoc} */
+  @Override
   public Date toJavaDate() throws RepositoryException {
    LOGGER.entering(CLASS_NAME, "");
    return date;

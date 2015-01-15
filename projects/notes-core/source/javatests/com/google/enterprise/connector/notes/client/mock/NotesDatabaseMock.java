@@ -16,6 +16,7 @@ package com.google.enterprise.connector.notes.client.mock;
 
 import com.google.enterprise.connector.notes.NCCONST;
 import com.google.enterprise.connector.notes.NotesConnectorException;
+import com.google.enterprise.connector.notes.Util;
 import com.google.enterprise.connector.notes.client.NotesACL;
 import com.google.enterprise.connector.notes.client.NotesDatabase;
 import com.google.enterprise.connector.notes.client.NotesDateTime;
@@ -232,7 +233,7 @@ public class NotesDatabaseMock extends NotesBaseMock
   public NotesDocumentCollection search(String formula)
       throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "search");
-    return null;
+    return search(formula, null, 0);
   }
 
   /** {@inheritDoc} */
@@ -240,15 +241,41 @@ public class NotesDatabaseMock extends NotesBaseMock
   public NotesDocumentCollection search(String formula,
       NotesDateTime startDate) throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "search");
-    return null;
+    return search(formula, startDate, 0);
   }
 
   /** {@inheritDoc} */
   @Override
   public NotesDocumentCollection search(String formula,
       NotesDateTime startDate, int maxDocs) throws RepositoryException {
-    LOGGER.entering(CLASS_NAME, "search");
-    return new NotesDocumentCollectionMock(documents);
+    LOGGER.log(Level.INFO,
+        "Search formulas: {0}, start date: {1}, max docs: {2}",
+        new Object[] {formula, startDate, maxDocs});
+
+    List<NotesDocumentMock> sublist;
+    if (startDate == null) {
+      sublist = documents;
+    } else {
+      int count = 0;
+      sublist = new ArrayList<NotesDocumentMock>();
+      for (NotesDocumentMock doc : documents) {
+        if (maxDocs > 0 && count == maxDocs) {
+          break;
+        }
+        if (Util.isNotesVersionEightOrOlder(session.getNotesVersion())) {
+          if (doc.getLastModified().timeDifference(startDate) > 0) {
+            sublist.add(doc);
+          }
+        } else {
+          if (doc.getLastModified().timeDifference(startDate) >= 0) {
+            sublist.add(doc);
+          }
+        }
+        count++;
+      }
+    }
+    LOGGER.info("Number of documents: " + sublist.size());
+    return new NotesDocumentCollectionMock(sublist);
   }
 
   /** {@inheritDoc} */
@@ -263,7 +290,7 @@ public class NotesDatabaseMock extends NotesBaseMock
 
   /** {@inheritDoc} */
   @Override
-  public Vector getACLActivityLog() throws RepositoryException {
+  public Vector<?> getACLActivityLog() throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "getACLActivityLog");
     return aclActivityLog;
   }

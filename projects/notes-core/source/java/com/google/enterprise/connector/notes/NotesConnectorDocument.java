@@ -156,8 +156,6 @@ public class NotesConnectorDocument implements Document {
           NCCONST.ITM_DISPLAYURL,null);
       putBooleanItem(SpiConstants.PROPNAME_ISPUBLIC, NCCONST.ITM_ISPUBLIC, null);
       putTextItem(SpiConstants.PROPNAME_ACTION, NCCONST.ITM_ACTION, null);
-      // TODO: FIX THIS UPGRADE TO NEW SPI
-      //putBooleanItem("google:lock", NCCONST.ITM_LOCK, "true");
       putBooleanItem(SpiConstants.PROPNAME_LOCK, NCCONST.ITM_LOCK, "true");
 
       putTextItem(NCCONST.PROPNAME_DESCRIPTION,
@@ -185,10 +183,8 @@ public class NotesConnectorDocument implements Document {
       // inherited ACLs, construct the ACL. (GSA 7.0+)
       if (crawlDoc.getItemValueString(NCCONST.NCITM_AUTHTYPE)
           .equals(NCCONST.AUTH_ACL)
-          && ((NotesTraversalManager) notesConnectorSession
-              .getTraversalManager()).getTraversalContext()
+          && notesConnectorSession.getTraversalManager()
           .supportsInheritedAcls()) {
-
         LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
             "Creating GSA ACL for document: " + docid);
         String replicaUrl = new NotesDocId(docid).getReplicaUrl();

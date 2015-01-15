@@ -14,6 +14,7 @@
 
 package com.google.enterprise.connector.notes;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Charsets;
 import com.google.enterprise.connector.notes.client.NotesBase;
 import com.google.enterprise.connector.spi.RepositoryException;
@@ -28,14 +29,20 @@ import java.sql.Statement;
 import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.Pattern;
 
 /**
  * Helpers.
  */
-class Util {
+@VisibleForTesting
+public class Util {
   private static final String CLASS_NAME = Util.class.getName();
   private static final Logger LOGGER = Logger.getLogger(CLASS_NAME);
   private static final String DEFAULT_ALGORITHM = "SHA1";
+
+  // Refer to TESTCONST.NotesVersion class for examples of version string.
+  private static final Pattern VERSION_EIGHT_OR_OLDER =
+      Pattern.compile(" [1-8]\\.[0-9]");
 
   static void recycle(NotesBase obj) {
     if (null != obj) {
@@ -167,6 +174,11 @@ class Util {
           + " message digest");
       return null;
     }
+  }
+
+  @VisibleForTesting
+  public static boolean isNotesVersionEightOrOlder(String versionString) {
+    return VERSION_EIGHT_OR_OLDER.matcher(versionString).find();
   }
 
   /**

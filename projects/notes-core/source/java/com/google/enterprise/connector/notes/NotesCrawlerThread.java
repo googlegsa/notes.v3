@@ -560,8 +560,7 @@ public class NotesCrawlerThread extends Thread {
 
           // Continue processing doc if GSA supports inherited
           // ACLs. Return false if not; doc won't be indexed.
-          if (!((NotesTraversalManager) ncs.getTraversalManager())
-              .getTraversalContext().supportsInheritedAcls()) {
+          if (!ncs.getTraversalManager().supportsInheritedAcls()) {
             LOGGER.logp(Level.WARNING, CLASS_NAME, METHOD,
                 "Document " + NotesURL + " has document-level security, "
                 + "but the connector is configured to use database-level "

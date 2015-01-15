@@ -14,6 +14,7 @@
 
 package com.google.enterprise.connector.notes.client.mock;
 
+import com.google.enterprise.connector.notes.NCCONST;
 import com.google.enterprise.connector.notes.client.NotesDateTime;
 import com.google.enterprise.connector.notes.client.NotesDocument;
 import com.google.enterprise.connector.notes.client.NotesDocumentCollection;
@@ -267,14 +268,15 @@ public class NotesDocumentMock extends NotesBaseMock
   @Override
   public String getNotesURL() throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "getNotesURL");
-    return null;
+    NotesItemMock item = items.get(NCCONST.ITM_DOCID);
+    return (item != null) ? item.toString() : null;
   }
 
   /** {@inheritDoc} */
   @Override
   public String getUniversalID() throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "getUniversalID");
-    return getItemValueString("unid");
+    return getItemValueString(NCCONST.NCITM_UNID);
   }
 
   /** {@inheritDoc} */
@@ -304,6 +306,13 @@ public class NotesDocumentMock extends NotesBaseMock
   public NotesDateTime getLastModified() throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "getLastModified");
     return lastModified;
+  }
+
+  public void setLastModified(NotesDateTime lastModified) {
+    this.lastModified = lastModified;
+    items.put(NCCONST.ITM_LASTMODIFIED.toLowerCase(),
+        new NotesItemMock("name", NCCONST.ITM_LASTMODIFIED, "type",
+            NotesItem.DATETIMES, "values", lastModified));
   }
 
   /** {@inheritDoc} */

@@ -24,6 +24,8 @@ import com.google.enterprise.connector.notes.client.mock.NotesItemMock;
 import com.google.enterprise.connector.notes.client.mock.SessionFactoryMock;
 import com.google.enterprise.connector.spi.RepositoryException;
 
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -32,6 +34,8 @@ import java.util.Vector;
 public class MockFixture {
   private static int unidSeq = 0;
   private static final String UNID_PREFIX = "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX";
+  private static final SimpleDateFormat notesDateFormat =
+      new SimpleDateFormat("MM/dd/yyyy HH:mm:ss");
 
   public static String getUniqueId() {
     String sid = UNID_PREFIX + String.valueOf(++unidSeq);
@@ -140,7 +144,6 @@ public class MockFixture {
     for (int i = 0; i < (32 - digitCount1); i++){
       baseUnid.append("X");
     }
-    unidSeq = 0;
     for (int x = 0; x < count; x++) {
       String unid = getUniqueId();
       NotesDocumentMock docNew;
@@ -308,5 +311,11 @@ public class MockFixture {
     docMock.addItem(new NotesItemMock("name", NCCONST.NCITM_UNID, "type", 
         NotesItem.TEXT, "values", unid));
     return docMock;
+  }
+
+  public static NotesDateTimeMock parseTime(String timeString)
+      throws ParseException {
+    Date d = notesDateFormat.parse(timeString);
+    return new NotesDateTimeMock(d);
   }
 }
