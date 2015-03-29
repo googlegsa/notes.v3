@@ -36,7 +36,6 @@
   <property name="core.classes" location="../notes-core/build/classes"/>
   <property name="core.tests.classes"
             location="../notes-core/build/tests/classes" />
-  <property name="connector.thirdparty.jar.dir" value="../third_party/lib" />
 
   <property name="connector-manager-projects.dir"
             location="${build.connector.manager.home}/projects" />
@@ -138,9 +137,6 @@
   </target>
 
   <path id="run_tests_path">
-        <fileset dir="${connector.thirdparty.jar.dir}">
-          <include name="*.jar" />
-        </fileset>
         <fileset dir="${connector-manager.thirdparty.jar.dir}">
           <include name="prod/*.jar" />
           <include name="tests/junit.jar" />
@@ -224,11 +220,6 @@
     <copy file="${jarfile}"
           todir="${connector.manager.webapp.dir}/WEB-INF/lib"
           overwrite="true" />
-    <copy todir="${connector.manager.webapp.dir}/WEB-INF/lib">
-      <fileset dir="${connector.thirdparty.jar.dir}">
-        <include name="*.jar" />
-      </fileset>
-    </copy>
   </target>
 
   <target name="clean" depends="clean_coverage"

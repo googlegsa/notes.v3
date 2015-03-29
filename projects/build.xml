@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project name="google-enterprise-connector-notes" default="everything" basedir=".">
+<project name="google-enterprise-connector-notes" default="build" basedir=".">
 
   <!-- ========================= PROPERTIES ============================= -->
   <property file="version.properties"/>
@@ -7,11 +7,8 @@
 
   <!-- Define Directories. -->
   <property name="notes-core.dir" value="notes-core" />
-  <property name="install.dir" value="install" />
   <property name="notes-client.dir" value="notes-client" />
-  <property name="downloads.dir" value="downloads" />
-  <property name="build.dir" value="build" />
-  <property name="trunk.dir" value=".." />
+  <property name="downloads.dir" location="downloads" />
 
   <property name="connector-manager-projects.dir"
             location="${build.connector.manager.home}/projects" />
@@ -19,64 +16,26 @@
   <!-- =========================== TASKS =============================== -->
   <include file="${connector-manager-projects.dir}/svnbuild.xml" as="svn"/>
 
-  <target name="clean-all">
+  <target name="clean">
     <ant dir="${notes-core.dir}" target="clean" />
     <ant dir="${notes-client.dir}" target="clean" />
-    <delete dir="${build.dir}" />
-    <delete dir="${install.dir}" />
-    <delete dir="${downloads.dir}" />
   </target>
 
-  <target name="prebuild">
-    <mkdir dir="${build.dir}" />
-  </target>
-
-  <target name="notes-core" depends="prebuild">
+  <target name="build">
     <ant dir="${notes-core.dir}" />
-  </target>
-
-  <target name="notes-client" depends="notes-core">
     <ant dir="${notes-client.dir}" />
   </target>
 
-  <target name="build-all" depends="prebuild,notes-core,notes-client"/>
-
-  <target name="make-install-dir">
-    <mkdir dir="${install.dir}" />
-  </target>
-
-  <target name="install-notes-core" depends="notes-core,make-install-dir">
-    <mkdir dir="${install.dir}/notes-core" />
-    <copy todir="${install.dir}/notes-core" >
-      <fileset dir="${notes-core.dir}/dist"/>
-    </copy>
-  </target>
-
-  <target name="install-notes-client" depends="notes-client,make-install-dir">
-    <mkdir dir="${install.dir}/notes-client" />
-    <copy todir="${install.dir}/notes-client" >
-      <fileset dir="${notes-client.dir}/dist"/>
-    </copy>
-  </target>
-
-  <target name="install-all" depends="bin-archive">
-      <copy todir="${install.dir}" >
-        <fileset dir="${build.dir}">
-          <include name="${bin.archive}.zip"/>
-        </fileset>
-      </copy>
-    </target>
-
   <target name="init-package" depends="svn.svn-branch">
+    <mkdir dir="${downloads.dir}" />
     <property name="downloads.prefix" value="connector-notes-${svn.branch}" />
     <property name="repackage.prefix" value="connector-notes-${version}"/>
   </target>
 
-  <target name="bin-archive"
-    depends="prebuild,init-package,install-notes-core,install-notes-client">
+  <target name="bin-archive" depends="init-package">
     <property name="bin.archive" value="${downloads.prefix}" />
-    <zip destfile="${build.dir}/${bin.archive}.zip">
-      <zipfileset dir="${install.dir}/notes-client/jar"
+    <zip destfile="${downloads.dir}/${bin.archive}.zip">
+      <zipfileset dir="${notes-client.dir}/dist/jar"
         prefix="${bin.archive}" />
       <zipfileset file="../README"
         prefix="${bin.archive}" />
@@ -84,65 +43,20 @@
         prefix="${bin.archive}" />
       <zipfileset file="notes-core/config/logging.properties"
         prefix="${bin.archive}/Config" />
-      <zipfileset dir="third_party/lib"
-        prefix="${bin.archive}/Lib" />
       <zipfileset file="../COPYING"
         prefix="${bin.archive}/License" />
       <zipfileset file="notes-database/gsa-connector.ntf"
         fullpath="${bin.archive}/Etc/gsa-connector-${version}.ntf" />
     </zip>
-  </target>
-
-  <target name="src-archive" depends="prebuild,init-package">
-    <property name="src.archive" value="${downloads.prefix}-src" />
-
-    <!-- Use 'svn export' to create a clean version of the source tree
-         in the build dir.  You can adjust the behaviour of this by setting
-         some properties when invoking ant:
-
-         svn.export.revision - the revision of the tree to pull from svn.
-         svn.export.source - the source of the tree, either a svn repository
-                             URL, or a pathname of a working directory tree.
-
-         Note: you cannot specify both svn.export.revision and point
-         svn.export.source at a local working tree.
-         TODO: Make this work with svn.branch in src.archive value.
-    -->
-    <condition property="svn.export.revision.arg"
-               value="-r ${svn.export.revision}"
-               else="" >
-      <isset property="svn.export.revision"/>
-    </condition>
-    <property name="svn.export.source" value=".." />
-    <property name="svn.export.dir" value="${build.dir}/${src.archive}" />
-
-    <delete dir="${svn.export.dir}" quiet="true" />
-    <exec executable="svn">
-      <arg line="export ${svn.export.revision.arg} ${svn.export.source} ${svn.export.dir}" />
-    </exec>
-
-    <!-- Create .zip archive of the exported source tree. -->
-    <zip destfile="${build.dir}/${src.archive}.zip">
-          <zipfileset dir="${svn.export.dir}" prefix="${src.archive}" />
-    </zip>
-    <delete dir="${svn.export.dir}" quiet="true" />
-  </target>
-
-  <target name="make-downloads-dir">
-    <mkdir dir="${downloads.dir}" />
-  </target>
-
-  <target name="downloads-all"
-            depends="bin-archive,src-archive,make-downloads-dir">
-    <copy todir="${downloads.dir}" preservelastmodified="true">
-          <fileset dir="${build.dir}">
-            <include name="${src.archive}.zip"/>
-            <include name="${bin.archive}.zip"/>
-          </fileset>
-        </copy>
-    <checksum algorithm="SHA-1" file="${downloads.dir}/${src.archive}.zip"/>
     <checksum algorithm="SHA-1" file="${downloads.dir}/${bin.archive}.zip"/>
   </target>
+
+  <target name="src-archive" depends="init-package">
+    <archive-source downloads.dir="${downloads.dir}"
+                    downloads.prefix="${downloads.prefix}" />
+  </target>
+
+  <target name="downloads" depends="bin-archive,src-archive"/>
 
   <target name="repackage" depends="init-package"
           description="Repackage release candidate files for release.">
@@ -151,6 +65,6 @@
                          repackage.prefix="${repackage.prefix}" />
   </target>
 
-  <target name="everything" depends="clean-all,build-all,install-all,downloads-all"/>
+  <target name="everything" depends="clean,build,downloads"/>
 
 </project>

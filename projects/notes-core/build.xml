@@ -21,7 +21,6 @@
   <property name="classes" value="${build}/classes" />
   <property name="config" value="config" />
   <property name="config.build" value="${build}/config" />
-  <property name="connector.thirdparty.jar.dir" value="../third_party/lib" />
 
   <property name="tests.src" value="source/javatests" />
   <property name="tests.build" value="build/tests" />
@@ -96,9 +95,6 @@
       <bootclasspath path="${COMPILE_BOOTCLASSPATH}" />
       <classpath>
         <pathelement location="${spi.jarfile}" />
-        <fileset dir="${connector.thirdparty.jar.dir}">
-          <include name="*.jar" />
-        </fileset>
         <fileset dir="${connector-manager.thirdparty.jar.dir}">
           <include name="prod/*.jar" />
         </fileset>
@@ -136,9 +132,6 @@
   </target>
 
   <path id="run_tests_path">
-        <fileset dir="${connector.thirdparty.jar.dir}">
-          <include name="*.jar" />
-        </fileset>
         <fileset dir="${connector-manager.thirdparty.jar.dir}">
           <include name="prod/*.jar" />
           <include name="tests/*.jar" />
