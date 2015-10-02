@@ -6,8 +6,8 @@ repositories, such as enterprise content management systems. An
 enterprise content management (ECM) system provides a central
 repository for large numbers of documents.
 
-This connector for Lotus Notes provides access to documents and
-document meta-data stored in the Lotus Domino Server developed by
+The Connector for Lotus Notes provides access to documents and
+document metadata stored in the Lotus Domino Server developed by
 IBM.
 
 The connector communicates with the Lotus Domino Server using the
@@ -21,13 +21,13 @@ and are not included in this distribution.
 Documentation Links
 
     * Documentation for the Google Search Appliance Connectors
-      http://code.google.com/apis/searchappliance/documentation/connectors/index.html
+      https://support.google.com/gsa/topic/4566684?ref_topic=2709671
 
     * Google Search Appliance Connector for Lotus Notes
-      http://code.google.com/p/google-enterprise-connector-notes/
+      https://github.com/googlegsa/notes.v3
 
     * Google Search Appliance
-      http://code.google.com/apis/searchappliance/documentation/index.html
+      https://support.google.com/gsa/
 
     * Lotus Notes Java API documentation
       Lotus Notes Java API information is available on the IBM

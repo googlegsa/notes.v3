@@ -7,7 +7,34 @@ Connector for Lotus Notes. The following sections describe the release
 in detail and provide information that supplements the main
 documentation.
 
-Web Site: http://code.google.com/p/google-enterprise-connector-notes/
+Web Site: https://github.com/googlegsa/notes.v3
+
+
+Release 3.4.0, October 2015
+===========================
+This is a compatibility release for Connector Manager version 3.4.0.
+
+Issues Fixed Since 3.2.10
+-------------------------
+23228968 - Upgrade Guava to 11.0.2 to match the Adaptor Library. This
+           breaks the use of the GSA Admin API, specifically the GData
+           client API, and dependent functionality has been removed.
+
+           The Connector for Lotus Notes no longer supports policy ACLs.
+           Only per-URL ACLs are supported, and GSA 7.0 or newer is
+           required.
+
+           When the database ACL changes while the authentication type is
+           set to ACL, a warning is logged that any previously created
+           policy ACLs should be deleted or updated.
+
+Version Compatibility
+---------------------
+Connector instances from version 3.0.0 through 3.2.10 may be used with this
+version. This version works with Connector Manager version 3.2.4 or later.
+This version is required with Connector Manager version 3.4.0 or later.
+Earlier versions of the connector will not work with Connector Manager
+version 3.4.0 or later.
 
 
 Release 3.2.10, January 2015
