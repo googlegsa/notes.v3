@@ -179,12 +179,9 @@ public class NotesConnectorDocument implements Document {
       setCustomProperties();
       setMetaFields();
 
-      // If using ACLs for the database, and the GSA supports
-      // inherited ACLs, construct the ACL. (GSA 7.0+)
+      // If using ACLs for the database, construct the ACL (requires GSA 7.0+).
       if (crawlDoc.getItemValueString(NCCONST.NCITM_AUTHTYPE)
-          .equals(NCCONST.AUTH_ACL)
-          && notesConnectorSession.getTraversalManager()
-          .supportsInheritedAcls()) {
+          .equals(NCCONST.AUTH_ACL)) {
         LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
             "Creating GSA ACL for document: " + docid);
         String replicaUrl = new NotesDocId(docid).getReplicaUrl();

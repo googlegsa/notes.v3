@@ -20,8 +20,6 @@ import com.google.enterprise.connector.notes.client.NotesView;
 import com.google.enterprise.connector.notes.client.NotesViewEntry;
 import com.google.enterprise.connector.notes.client.NotesViewNavigator;
 import com.google.enterprise.connector.spi.DocumentList;
-import com.google.enterprise.connector.spi.TraversalContext;
-import com.google.enterprise.connector.spi.TraversalContextAware;
 import com.google.enterprise.connector.spi.TraversalManager;
 
 import java.util.ArrayList;
@@ -33,8 +31,7 @@ import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public class NotesTraversalManager implements TraversalManager,
-    TraversalContextAware {
+public class NotesTraversalManager implements TraversalManager {
 
   private static final String CLASS_NAME =
       NotesTraversalManager.class.getName();
@@ -42,25 +39,12 @@ public class NotesTraversalManager implements TraversalManager,
 
   private int batchHint = 10;
   private final NotesConnectorSession ncs;
-  private TraversalContext traversalContext;
   private final Map<String, Date> lastCrawlCache;
 
   public NotesTraversalManager(NotesConnectorSession session) {
     ncs = session;
     lastCrawlCache =
         Collections.synchronizedMap(new HashMap<String, Date>());
-  }
-
-  /** {@inheritDoc} */
-  @Override
-  public void setTraversalContext(TraversalContext traversalContext) {
-    this.traversalContext = traversalContext;
-    LOGGER.info("Got traversal context. Supports ACLs? "
-        + traversalContext.supportsInheritedAcls());
-  }
-
-  boolean supportsInheritedAcls() {
-    return traversalContext.supportsInheritedAcls();
   }
 
   @Override

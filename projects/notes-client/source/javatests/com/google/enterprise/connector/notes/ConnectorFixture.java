@@ -22,7 +22,6 @@ import com.google.enterprise.connector.spi.DocumentList;
 import com.google.enterprise.connector.spi.LocalDatabase;
 import com.google.enterprise.connector.spi.RepositoryException;
 import com.google.enterprise.connector.spi.RepositoryLoginException;
-import com.google.enterprise.connector.spi.SimpleTraversalContext;
 import com.google.enterprise.connector.spi.TraversalManager;
 import com.google.enterprise.connector.util.database.testing.TestLocalDatabase;
 
@@ -98,15 +97,7 @@ public class ConnectorFixture extends TestCase {
 
   public static NotesTraversalManager getTraversalManager(NotesConnectorSession
       connectorSession) throws RepositoryLoginException, RepositoryException {
-    NotesTraversalManager traversalManager =
-        connectorSession.getTraversalManager();
-    SimpleTraversalContext context = new SimpleTraversalContext();
-    // TODO: handle both versions of acl support within the tests
-    // and avoid manual property editing.
-    context.setSupportsInheritedAcls(
-        Boolean.getBoolean("javatest.supportsinheritedacls"));
-    traversalManager.setTraversalContext(context);
-    return traversalManager;
+    return connectorSession.getTraversalManager();
   }
 
   public static List<Document> traverseAll(NotesConnectorSession

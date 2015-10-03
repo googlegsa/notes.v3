@@ -183,40 +183,37 @@ class NotesDatabasePoller {
         noAccessGroups, notesSession);
 
       // If the database is configured to use ACLs for
-      // authorization, check to see if we should send
-      // inherited ACLs (GSA 7.0+).
+      // authorization, send inherited ACLs (requires GSA 7.0+).
       if (dbdoc.getItemValueString(NCCONST.DITM_AUTHTYPE)
           .contentEquals(NCCONST.AUTH_ACL)) {
-        if (notesConnectorSession.getTraversalManager()
-            .supportsInheritedAcls()) {
-          if (LOGGER.isLoggable(Level.FINER)) {
-            LOGGER.logp(Level.FINER, CLASS_NAME, METHOD,
-                "Creating ACL records for database "
-                + dbdoc.getItemValueString(NCCONST.DITM_DBNAME));
-          }
-          // We want two database ACLs, one for use when
-          // documents in the database have readers, one when
-          // they don't. Inserting a second database ACL
-          // document later will require a restructuring of the
-          // way NotesConnectorDocumentList works, so for now,
-          // simply create two database ACL crawl docs.
-          Collection<String> gsaPermitUsers =
-              notesConnectorSession.getUserGroupManager()
-              .mapNotesNamesToGsaNames(notesSession, permitUsers, false);
-          Collection<String> gsaNoAccessUsers =
-              notesConnectorSession.getUserGroupManager()
-              .mapNotesNamesToGsaNames(notesSession, noAccessUsers, false);
-          Collection<String> gsaPermitGroups =
-              GsaUtil.getGsaGroups(permitGroups,
-                  notesConnectorSession.getGsaGroupPrefix());
-          Collection<String> gsaNoAccessGroups =
-              GsaUtil.getGsaGroups(noAccessGroups,
-                  notesConnectorSession.getGsaGroupPrefix());
-          createDatabaseAclDocuments(connectorDatabase, dbdoc, gsaPermitUsers,
-              gsaNoAccessUsers, gsaPermitGroups, gsaNoAccessGroups);
-        } else {
-          logGsaPolicyAcl(dbdoc);
+        // Log a warning about policy ACLs, in case they were used previously.
+        logGsaPolicyAcl(dbdoc);
+
+        if (LOGGER.isLoggable(Level.FINER)) {
+          LOGGER.logp(Level.FINER, CLASS_NAME, METHOD,
+              "Creating ACL records for database "
+              + dbdoc.getItemValueString(NCCONST.DITM_DBNAME));
         }
+        // We want two database ACLs, one for use when
+        // documents in the database have readers, one when
+        // they don't. Inserting a second database ACL
+        // document later will require a restructuring of the
+        // way NotesConnectorDocumentList works, so for now,
+        // simply create two database ACL crawl docs.
+        Collection<String> gsaPermitUsers =
+            notesConnectorSession.getUserGroupManager()
+            .mapNotesNamesToGsaNames(notesSession, permitUsers, false);
+        Collection<String> gsaNoAccessUsers =
+            notesConnectorSession.getUserGroupManager()
+            .mapNotesNamesToGsaNames(notesSession, noAccessUsers, false);
+        Collection<String> gsaPermitGroups =
+            GsaUtil.getGsaGroups(permitGroups,
+                notesConnectorSession.getGsaGroupPrefix());
+        Collection<String> gsaNoAccessGroups =
+            GsaUtil.getGsaGroups(noAccessGroups,
+                notesConnectorSession.getGsaGroupPrefix());
+        createDatabaseAclDocuments(connectorDatabase, dbdoc, gsaPermitUsers,
+            gsaNoAccessUsers, gsaPermitGroups, gsaNoAccessGroups);
       }
 
       // Update the dbdoc.

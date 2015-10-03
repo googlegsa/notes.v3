@@ -25,13 +25,11 @@ import com.google.enterprise.connector.notes.client.mock.SessionFactoryMock;
 import com.google.enterprise.connector.spi.Document;
 import com.google.enterprise.connector.spi.Principal;
 import com.google.enterprise.connector.spi.Property;
-import com.google.enterprise.connector.spi.SimpleTraversalContext;
 import com.google.enterprise.connector.spi.SpiConstants;
 import com.google.enterprise.connector.spi.SpiConstants.ActionType;
 import com.google.enterprise.connector.spi.SpiConstants.CaseSensitivityType;
 import com.google.enterprise.connector.spi.SpiConstants.DocumentType;
 import com.google.enterprise.connector.spi.SpiConstants.PrincipalType;
-import com.google.enterprise.connector.spi.TraversalContextAware;
 import com.google.enterprise.connector.spi.Value;
 import com.google.enterprise.connector.spiimpl.PrincipalValue;
 
@@ -55,7 +53,6 @@ public class NotesConnectorDocumentTest extends TestCase {
   private static NotesSession session;
   private static NotesDatabaseMock namesDatabase;
   private static NotesDatabaseMock connectorDatabase;
-  private static boolean supportsInheritedAcls = false;
   private static final Calendar testCalendar;
   private static final Date testDate;
   static {
@@ -68,16 +65,10 @@ public class NotesConnectorDocumentTest extends TestCase {
     return new TestSetup(
         new TestSuite(NotesConnectorDocumentTest.class)) {
       @Override protected void setUp() throws Exception {
-        supportsInheritedAcls =
-            Boolean.getBoolean("javatest.supportsinheritedacls");
         connector = NotesConnectorTest.getConnector();
         factory = (SessionFactoryMock) connector.getSessionFactory();
         NotesConnectorSessionTest.configureFactoryForSession(factory);
         connectorSession = (NotesConnectorSession) connector.login();
-        SimpleTraversalContext context = new SimpleTraversalContext();
-        context.setSupportsInheritedAcls(supportsInheritedAcls);
-        ((TraversalContextAware) connectorSession.getTraversalManager())
-            .setTraversalContext(context);
         session = connectorSession.createNotesSession();
         connectorDatabase = (NotesDatabaseMock) session.getDatabase(
             connectorSession.getServer(), connectorSession.getDatabase());
@@ -208,7 +199,6 @@ public class NotesConnectorDocumentTest extends TestCase {
   public void testAddDocument() throws Exception {
     NotesDocumentMock crawlDoc = getCrawlDoc(false);
 
-    // TODO: move traversalContext to getConnector.
     NotesConnectorDocument document = new NotesConnectorDocument(
         connectorSession, session, connectorDatabase);
     document.setCrawlDoc("unid", crawlDoc);
@@ -229,14 +219,9 @@ public class NotesConnectorDocumentTest extends TestCase {
       1);
     assertPropertyEquals(Value.calendarToIso8601(testCalendar),
         document, SpiConstants.PROPNAME_LASTMODIFIED);
-    if (supportsInheritedAcls) {
-      assertPropertyEquals("http://host:42/replicaid/" +
-          NCCONST.DB_ACL_INHERIT_TYPE_PARENTOVERRIDES,
-          document, SpiConstants.PROPNAME_ACLINHERITFROM_DOCID);
-    } else {
-      assertNull(document.findProperty(
-          SpiConstants.PROPNAME_ACLINHERITFROM_DOCID));
-    }
+    assertPropertyEquals("http://host:42/replicaid/" +
+        NCCONST.DB_ACL_INHERIT_TYPE_PARENTOVERRIDES,
+        document, SpiConstants.PROPNAME_ACLINHERITFROM_DOCID);
     assertNull(document.findProperty(SpiConstants.PROPNAME_ACLUSERS));
     assertNull(document.findProperty(SpiConstants.PROPNAME_ACLGROUPS));
   }
@@ -285,34 +270,20 @@ public class NotesConnectorDocumentTest extends TestCase {
       1);
     assertPropertyEquals(Value.calendarToIso8601(testCalendar),
         document, SpiConstants.PROPNAME_LASTMODIFIED);
-    if (supportsInheritedAcls) {
-      assertPropertyEquals("http://host:42/replicaid/" +
-          NCCONST.DB_ACL_INHERIT_TYPE_ANDBOTH,
-          document, SpiConstants.PROPNAME_ACLINHERITFROM_DOCID);
-      assertEquals(ImmutableSet.of("jsmith"),
-          getPrincipalNames(document, SpiConstants.PROPNAME_ACLUSERS));
-      assertEquals(ImmutableSet.of("Domino%2F*", "Domino%2Freadergroup",
-              "Domino%2Freplicaid%2F%5Breaderrole%5D"),
-          getPrincipalNames(document, SpiConstants.PROPNAME_ACLGROUPS));
-    } else {
-      assertNull(document.findProperty(
-              SpiConstants.PROPNAME_ACLINHERITFROM_DOCID));
-      assertNull(document.findProperty(SpiConstants.PROPNAME_ACLUSERS));
-      assertNull(document.findProperty(SpiConstants.PROPNAME_ACLGROUPS));
-    }
+    assertPropertyEquals("http://host:42/replicaid/" +
+        NCCONST.DB_ACL_INHERIT_TYPE_ANDBOTH,
+        document, SpiConstants.PROPNAME_ACLINHERITFROM_DOCID);
+    assertEquals(ImmutableSet.of("jsmith"),
+        getPrincipalNames(document, SpiConstants.PROPNAME_ACLUSERS));
+    assertEquals(ImmutableSet.of("Domino%2F*", "Domino%2Freadergroup",
+            "Domino%2Freplicaid%2F%5Breaderrole%5D"),
+        getPrincipalNames(document, SpiConstants.PROPNAME_ACLGROUPS));
   }
 
   public void testDocumentPrincipalValues() throws Exception {
-    if (!supportsInheritedAcls) {
-      return;
-    }
     NotesDocumentMock crawlDoc = getCrawlDoc(true);
-    // TODO: move traversalContext to getConnector.
     NotesConnectorSession connectorSession =
         (NotesConnectorSession) connector.login();
-    SimpleTraversalContext context = new SimpleTraversalContext();
-    context.setSupportsInheritedAcls(supportsInheritedAcls);
-    connectorSession.getTraversalManager().setTraversalContext(context);
     NotesSession session = connectorSession.createNotesSession();
     NotesDatabaseMock connectorDatabase =
         (NotesDatabaseMock) session.getDatabase(
@@ -356,9 +327,6 @@ public class NotesConnectorDocumentTest extends TestCase {
   }
 
   public void testAddDatabaseAcl() throws Exception {
-    if (!supportsInheritedAcls) {
-      return;
-    }
     NotesDocumentMock crawlDoc = getCrawlDatabaseAcl();
     NotesConnectorSession connectorSession =
         (NotesConnectorSession) connector.login();
@@ -390,9 +358,6 @@ public class NotesConnectorDocumentTest extends TestCase {
   }
 
   public void testDatabaseAclPrincipalValues() throws Exception {
-    if (!supportsInheritedAcls) {
-      return;
-    }
     NotesDocumentMock crawlDoc = getCrawlDatabaseAcl();
     NotesConnectorSession connectorSession =
         (NotesConnectorSession) connector.login();
@@ -400,6 +365,7 @@ public class NotesConnectorDocumentTest extends TestCase {
     NotesDatabaseMock connectorDatabase =
         (NotesDatabaseMock) session.getDatabase(
         connectorSession.getServer(), connectorSession.getDatabase());
+
     NotesConnectorDocument document = new NotesConnectorDocument(
         connectorSession, session, connectorDatabase);
     document.setCrawlDoc("unid", crawlDoc);

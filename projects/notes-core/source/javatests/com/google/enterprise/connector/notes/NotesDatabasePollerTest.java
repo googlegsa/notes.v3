@@ -30,7 +30,6 @@ import com.google.enterprise.connector.notes.client.mock.NotesItemMock;
 import com.google.enterprise.connector.notes.client.mock.NotesSessionMock;
 import com.google.enterprise.connector.notes.client.mock.SessionFactoryMock;
 import com.google.enterprise.connector.spi.RepositoryException;
-import com.google.enterprise.connector.spi.SimpleTraversalContext;
 
 import junit.framework.TestCase;
 
@@ -83,7 +82,6 @@ public class NotesDatabasePollerTest extends TestCase {
   private SessionFactoryMock factory;
   private NotesConnectorSession connectorSession;
   private DatabasePollerTestable poller;
-  private boolean supportsInheritedAcls;
 
   public NotesDatabasePollerTest() {
     super();
@@ -92,18 +90,11 @@ public class NotesDatabasePollerTest extends TestCase {
   @Override
   protected void setUp() throws Exception {
     super.setUp();
-    // TODO: handle both versions of acl support within the tests
-    // and avoid manual property editing.
-    supportsInheritedAcls =
-        Boolean.getBoolean("javatest.supportsinheritedacls");
     connector = NotesConnectorTest.getConnector();
     factory = (SessionFactoryMock) connector.getSessionFactory();
     NotesConnectorSessionTest.configureFactoryForSession(factory);
     connectorSession =
         (NotesConnectorSession) connector.login();
-    SimpleTraversalContext context = new SimpleTraversalContext();
-    context.setSupportsInheritedAcls(supportsInheritedAcls);
-    connectorSession.getTraversalManager().setTraversalContext(context);
     poller = new DatabasePollerTestable(connectorSession);
   }
 
@@ -183,17 +174,12 @@ public class NotesDatabasePollerTest extends TestCase {
 
     NotesDocument aclCrawlDoc =
         getDocumentByUnid(connectorDatabase, "replica_id_16chr");
-    if (supportsInheritedAcls) {
-      assertNotNull(aclCrawlDoc);
-      assertEquals("true",
-          aclCrawlDoc.getItemValueString(NCCONST.NCITM_DBACL));
-      assertEquals("http://testserver.testdomain/replica_id_16chr/"
-          + NCCONST.DB_ACL_INHERIT_TYPE_ANDBOTH,
-          aclCrawlDoc.getItemValueString(NCCONST.ITM_DOCID));
-    } else {
-      assertTrue(poller.calledUpdateGsaPolicyAcl);
-      assertNull(aclCrawlDoc);
-    }
+    assertNotNull(aclCrawlDoc);
+    assertEquals("true",
+        aclCrawlDoc.getItemValueString(NCCONST.NCITM_DBACL));
+    assertEquals("http://testserver.testdomain/replica_id_16chr/"
+        + NCCONST.DB_ACL_INHERIT_TYPE_ANDBOTH,
+        aclCrawlDoc.getItemValueString(NCCONST.ITM_DOCID));
   }
 
   private NotesDocument getDocumentByUnid(NotesDatabase db, String replicaId) {

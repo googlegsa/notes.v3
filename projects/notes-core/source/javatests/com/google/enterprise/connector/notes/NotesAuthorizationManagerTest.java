@@ -30,10 +30,8 @@ import com.google.enterprise.connector.notes.client.mock.SessionFactoryMock;
 import com.google.enterprise.connector.spi.AuthorizationResponse;
 import com.google.enterprise.connector.spi.Property;
 import com.google.enterprise.connector.spi.SimpleAuthenticationIdentity;
-import com.google.enterprise.connector.spi.SimpleTraversalContext;
 import com.google.enterprise.connector.spi.SpiConstants;
 import com.google.enterprise.connector.spi.SpiConstants.ActionType;
-import com.google.enterprise.connector.spi.TraversalContextAware;
 import com.google.enterprise.connector.spi.Value;
 
 import junit.extensions.TestSetup;
@@ -299,10 +297,6 @@ public class NotesAuthorizationManagerTest extends TestCase {
 
   public void testCheckDocumentReadersWithRoles() throws Exception {
     super.setUp();
-    SimpleTraversalContext context = new SimpleTraversalContext();
-    context.setSupportsInheritedAcls(true);
-    ((TraversalContextAware) connectorSession.getTraversalManager())
-        .setTraversalContext(context);
 
     User user =
         connectorSession.getUserGroupManager().getUserByGsaName("jsmith");
