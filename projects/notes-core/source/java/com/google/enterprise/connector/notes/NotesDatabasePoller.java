@@ -496,15 +496,6 @@ class NotesDatabasePoller {
         LOGGER.log(Level.FINE, "Scan ACLs and update H2 for {0} replica",
             srcdb.getReplicaID());
         notesConnectorSession.getUserGroupManager().updateRoles(srcdb);
-
-        // If the ACL has changed and we are using per Document
-        // ACLs we need to resend all documents.
-        if (authType.contentEquals(NCCONST.AUTH_ACL)) {
-          LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
-              "Database ACL has changed - Resetting last update "
-              + "to reindex all document ACLs.");
-          lastUpdated = ns.createDateTime("1/1/1980");
-        }
       }
 
       // From the template, we get the search string to determine
