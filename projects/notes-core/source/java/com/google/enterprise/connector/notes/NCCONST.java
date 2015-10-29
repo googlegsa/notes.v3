@@ -27,7 +27,6 @@ public class NCCONST {
   public static final String VIEWCRAWLQ = "NCCrawlQ";
   public static final String VIEWSUBMITQ = "NCSubmitQ";
   public static final String VIEWINDEXED = "NCIndexed";
-  public static final String VIEWINCRAWL = "NCInCrawl";
   public static final String VIEWSYSTEMSETUP = "NCSystemSetup";
   public static final String VIEWSERVERS = "NCServers";
   public static final String VIEWSECURITY = "NCSecurity";
@@ -45,7 +44,6 @@ public class NCCONST {
   public static final String DITM_STOPPED = "Stopped";
   public static final String DITM_DOMAIN = "Domain";
   public static final String DITM_DBCATEGORIES = "DatabaseCategories";
-  public static final String DITM_DREPLICASERVERSS = "ReplicaServers";
   public static final String DITM_AUTHTYPE = "DbAuthType";
   public static final String DITM_REPLICAID = "DbRepID";
   public static final String DITM_SERVER = "Server";
@@ -65,8 +63,6 @@ public class NCCONST {
   public static final String TITM_SEARCHRESULTSFIELDS = "SearchResultsFields";
   public static final String TITM_DESCRIPTIONFIELDS = "DescriptionFields";
   public static final String TITM_METAFIELDS = "MetaFields";
-  //public static final String TITM_AUTOGENERATE = "AutoGenerate";  -- NOT USED
-  public static final String AUTOGENERATE_YES = "Yes";  // Size in MB
 
   //Item names used in forms documents
   public static final String FITM_LASTALIAS = "LastAlias";
@@ -96,9 +92,6 @@ public class NCCONST {
 
   //Item names used by the connector for crawling documents
 
-  /** The source database for this document */
-  public static final String NCITM_DB = "NC.Database";
-
   /** The UNID of the source document */
   public static final String NCITM_UNID = "NC.UNID";
 
@@ -126,15 +119,8 @@ public class NCCONST {
   /** Field set to the inherit type for database acl crawl documents. */
   public static final String NCITM_DBACLINHERITTYPE = "NC.DbAclInheritType";
 
-  /** Whether to lock the document or not */
-  public static final String NCITM_LOCK = "NC.Lock";
-
   /** The readers of this document */
-  /* Currently unused. */
   public static final String NCITM_DOCREADERS = "NC.DocReaders";
-
-  /** The readers of this document */
-  public static final String NCITM_DOCAUTHORS = "NC.DocAuthors";
 
   /** Users explicitly listed with no-access to the database */
   public static final String NCITM_DBNOACCESSUSERS = "NC.NoAccessUsers";
@@ -153,42 +139,31 @@ public class NCCONST {
   /** Groups with no database access */
   public static final String NCITM_DBNOACCESSGROUPS = "NC.DBNoAccessGroups";
 
-  /** Prefix for roles */
-  public static final String NCITM_ROLEPREFIX = "NC.DBROLES";
-
   /** Possible States for documents */
   public static final String STATENEW = "New";
-  // NOT USED Previously submitted document needs to be updated
-  //public static final String STATEUPDATED = "Update";
-  public static final String STATEDELETED =  "DeletePending";
   public static final String STATEINCRAWL = "InCrawl";
   public static final String STATEFETCHED = "Fetched";
-  // NOT USED
-  //public static final String STATEINSUBMIT = "InSubmit";
+  // TODO(jlacey): STATEINDEXED is used only by the tests.
   public static final String STATEINDEXED = "Indexed";
   public static final String STATEERROR = "Error";
-
 
   // The following item names map directly to the SPI constants
   // for document properties i.e. The value for PROPNAME_DOCID
   // should be stored in ITM_DOCID.  We can't use the PROPNAME
   // constants since the colon : is not allowed in field names
 
-  public static final String ITM_ACLGROUPS = "google.aclgroups";
-  public static final String ITM_ACLUSERS = "google.aclusers";
   public static final String ITM_ACTION = "google.action";
   public static final String ITM_CONTENT = "google.content";
 
   /** If this is an attachment, we store the path here */
   public static final String ITM_CONTENTPATH = "google.contentpath";
-  public static final String ITM_CONTENTURL = "google.contenturl";
+
   public static final String ITM_DISPLAYURL = "google.displayurl";
   public static final String ITM_DOCID = "google.docid";
   public static final String ITM_ISPUBLIC = "google.ispublic";
   public static final String ITM_LASTMODIFIED = "google.lastmodified";
   public static final String ITM_MIMETYPE = "google.mimetype";
   public static final String ITM_SEARCHURL = "google.searchurl" ;
-  public static final String ITM_SECURITYTOKEN = "google.securitytoken";
   public static final String ITM_TITLE = "google.title";
   public static final String ITM_LOCK = "google.lock";
 
@@ -209,20 +184,11 @@ public class NCCONST {
   /** The categories for a database in the connector configuration */
   public static final String ITM_GMETACATEGORIES = "lnmeta.categories";
 
-  /** The replica servers for a database in the connector config */
-  public static final String ITM_GMETASERVERS = "lnmeta.servers";
-
-  /** The HTTP URL */
-  public static final String ITM_GMETAWEBLINK = "lnmeta.weblink";
-
   /** The Notes URL */
   public static final String ITM_GMETANOTESLINK = "lnmeta.noteslink";
 
   /** The description generated by Search REsults path */
   public static final String ITM_GMETADESCRIPTION = "lnmeta.description";
-
-  /** The HTTP URL of this document */
-  public static final String ITM_GMETADOCPATH = "lnmeta.docpath";
 
   /** The names of any attachments in this document */
   public static final String ITM_GMETAATTACHMENTS = "lnmeta.attachments";
@@ -291,9 +257,6 @@ public class NCCONST {
   public static final String DEFAULT_ATTACHMENT_DIR = "gsaSpool";
   public static final String DEFAULT_MIMETYPE = "text/plain";
   public static final String DEFAULT_DOCMIMETYPE = "text/plain";
-  public static final String DEFAULT_TITLE = "Document title not found";
-  public static final String DEFAULT_DESCRIPTION =
-      "Document description not found";
   public static final String DEFAULT_USERNAMEFORMULA = "ShortName";
   public static final String DEFAULT_USERSELECTIONFORMULA =
       "Select Form = \"Person\"";
@@ -305,7 +268,6 @@ public class NCCONST {
   public static final String PROPNAME_NCCATEGORIES = "dom_dbcategories";
   public static final String PROPNAME_NCREPLICASERVERS = "dom_servers";
   public static final String PROPNAME_NCNOTESLINK = "dom_noteslink";
-  public static final String PROPNAME_NCDOCPATH = "dom_docpath";
   public static final String PROPNAME_NCATTACHMENTS = "dom_docattachments";
   public static final String PROPNAME_NCATTACHMENTFILENAME = "dom_attachmentfilename";
   public static final String PROPNAME_NCALLATTACHMENTS = "dom_docallattachments";
@@ -316,7 +278,7 @@ public class NCCONST {
   public static final String DB_ACL_INHERIT_TYPE_ANDBOTH = "AndBoth";
   public static final String DB_ACL_INHERIT_TYPE_PARENTOVERRIDES
       = "ParentOverrides";
-  
+
   // Constants for Indexed, Readers and Attachments tables
   public static final String TABLE_INDEXED_PREFIX = "NCIndexed_";
   public static final String TABLE_READERS_PREFIX = "NCIndexedReaders_";

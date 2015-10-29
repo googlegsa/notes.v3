@@ -237,7 +237,7 @@ public class MockFixture {
     docMock.addItem(new NotesItemMock("name", NCCONST.NCITM_SERVER, "type", 
         NotesItem.TEXT, "values","mickey1/mtv/us"));
     docMock.addItem(new NotesItemMock("name", NCCONST.NCITM_STATE, "type", 
-        NotesItem.TEXT, "values","Indexed"));
+        NotesItem.TEXT, "values", NCCONST.STATEINDEXED));
     docMock.addItem(new NotesItemMock("name", NCCONST.NCITM_TEMPLATE, "type", 
         NotesItem.TEXT, "values","Discussion"));
     docMock.addItem(new NotesItemMock("name", NCCONST.NCITM_UNID, "type", 
@@ -305,7 +305,7 @@ public class MockFixture {
     docMock.addItem(new NotesItemMock("name", NCCONST.NCITM_SERVER, "type", 
         NotesItem.TEXT, "values","mickey1/mtv/us"));
     docMock.addItem(new NotesItemMock("name", NCCONST.NCITM_STATE, "type", 
-        NotesItem.TEXT, "values","Indexed"));
+        NotesItem.TEXT, "values", NCCONST.STATEINDEXED));
     docMock.addItem(new NotesItemMock("name", NCCONST.NCITM_TEMPLATE, "type", 
         NotesItem.TEXT, "values","Discussion"));
     docMock.addItem(new NotesItemMock("name", NCCONST.NCITM_UNID, "type", 
