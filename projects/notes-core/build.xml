@@ -54,6 +54,7 @@
   <!-- =========================== PATHS =============================== -->
   <path id="compile.prod.classpath">
     <pathelement location="${spi.jarfile}" />
+    <pathelement location="${spi.jar.dir}/connector-logging.jar" />
     <fileset dir="${connector-manager.thirdparty.jar.dir}">
       <include name="prod/*.jar" />
     </fileset>

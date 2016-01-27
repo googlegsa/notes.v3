@@ -94,6 +94,7 @@ public class NotesConnector implements Connector,
 
     if (null == maintThread) {
       maintThread = new NotesMaintenanceThread(this, ncs);
+      maintThread.setName(NotesMaintenanceThread.class.getSimpleName());
       maintThread.start();
     }
 
