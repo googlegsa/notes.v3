@@ -15,6 +15,7 @@
 package com.google.enterprise.connector.notes;
 
 import com.google.common.base.Strings;
+import com.google.enterprise.connector.logging.NDC;
 import com.google.enterprise.connector.notes.client.NotesDatabase;
 import com.google.enterprise.connector.notes.client.NotesDateTime;
 import com.google.enterprise.connector.notes.client.NotesDocument;
@@ -80,6 +81,7 @@ public class NotesMaintenanceThread extends Thread {
 
   @Override
   public void run() {
+    NDC.push("Maintenance " + nc.getGoogleConnectorName());
     final String METHOD = "run";
     LOGGER.entering(CLASS_NAME, METHOD);
 

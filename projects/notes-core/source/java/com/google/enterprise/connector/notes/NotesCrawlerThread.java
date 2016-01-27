@@ -15,6 +15,7 @@
 package com.google.enterprise.connector.notes;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.enterprise.connector.logging.NDC;
 import com.google.enterprise.connector.notes.client.NotesDatabase;
 import com.google.enterprise.connector.notes.client.NotesDocument;
 import com.google.enterprise.connector.notes.client.NotesDocumentCollection;
@@ -914,6 +915,7 @@ public class NotesCrawlerThread extends Thread {
 
   @Override
   public void run() {
+    NDC.push("Crawler " + nc.getGoogleConnectorName());
     final String METHOD = "run";
     int exceptionCount = 0;
     LOGGER.entering(CLASS_NAME, METHOD);
