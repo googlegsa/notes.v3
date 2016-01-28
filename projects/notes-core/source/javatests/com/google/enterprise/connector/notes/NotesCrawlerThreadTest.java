@@ -408,7 +408,7 @@ public class NotesCrawlerThreadTest extends TestCase {
         crawlDoc.getItemValueString(NCCONST.ITM_ISPUBLIC));
   }
 
-  public void testGetContentFields() throws Exception {
+  private NotesDocumentMock getSourceDocument() throws Exception {
     NotesDocumentMock srcDoc = new NotesDocumentMock();
     NotesItemMock item = new NotesItemMock("name", "field 1",
         "type", NotesItem.TEXT, "values", "value for field 1");
@@ -416,23 +416,40 @@ public class NotesCrawlerThreadTest extends TestCase {
     item = new NotesItemMock("name", "field 2",
         "type", NotesItem.TEXT, "values", "value for field 2");
     srcDoc.addItem(item);
+    item = new NotesItemMock("name", "field 2",
+        "type", NotesItem.TEXT, "values", "same field2 - should not appear");
+    srcDoc.addItem(item);
     item = new NotesItemMock("name", "form",
         "type", NotesItem.TEXT, "values", "form - should not appear");
     srcDoc.addItem(item);
     item = new NotesItemMock("name", "$field",
         "type", NotesItem.TEXT, "values", "$field - should not appear");
     srcDoc.addItem(item);
+    item = new NotesItemMock("name", "attachment",
+        "type", NotesItem.ATTACHMENT,
+        "values", "attachment - should not appear");
+    srcDoc.addItem(item);
+    return srcDoc;
+  }
+
+  public void testGetContentFields_SourceDoc() throws Exception {
+    NotesDocumentMock srcDoc = getSourceDocument();
 
     NotesCrawlerThread crawlerThread = new NotesCrawlerThread(null, null);
     String content = crawlerThread.getContentFields(srcDoc);
     assertEquals("\nvalue for field 1\nvalue for field 2", content);
+  }
 
+  public void testGetContentFields_FormDoc() throws Exception {
+    NotesDocumentMock srcDoc = getSourceDocument();
+
+    NotesCrawlerThread crawlerThread = new NotesCrawlerThread(null, null);
     NotesDocumentMock formDoc = new NotesDocumentMock();
-    item = new NotesItemMock("name", NCCONST.FITM_FIELDSTOINDEX,
+    NotesItemMock item = new NotesItemMock("name", NCCONST.FITM_FIELDSTOINDEX,
         "type", NotesItem.TEXT, "values", "field 2");
     formDoc.addItem(item);
     crawlerThread.formDoc = formDoc;
-    content = crawlerThread.getContentFields(srcDoc);
+    String content = crawlerThread.getContentFields(srcDoc);
     assertEquals("\nvalue for field 2", content);
   }
 

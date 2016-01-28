@@ -32,6 +32,7 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.Vector;
@@ -460,33 +461,42 @@ class NotesCrawlerThread extends Thread {
     }
 
     // Otherwise we will index all allowable fields
+    LinkedHashSet<String> items = new LinkedHashSet<String>();
     Vector <?> vi = srcDoc.getItems();
-    for (int j = 0; j < vi.size(); j++) {
-      NotesItem itm = (NotesItem) vi.elementAt(j);
-      String ItemName = itm.getName();
-      if ((ItemName.charAt(0) == '$') || (ItemName.equalsIgnoreCase("form"))) {
-        continue;
+    try {
+      for (int j = 0; j < vi.size(); j++) {
+        NotesItem itm = (NotesItem) vi.elementAt(j);
+        String ItemName = itm.getName();
+        if ((ItemName.charAt(0) == '$')
+            || (ItemName.equalsIgnoreCase("form"))) {
+          continue;
+        }
+        int type = itm.getType();
+        switch (type) {
+          case NotesItem.TEXT:
+          case NotesItem.NUMBERS:
+          case NotesItem.DATETIMES:
+          case NotesItem.RICHTEXT:
+          case NotesItem.NAMES:
+          case NotesItem.AUTHORS:
+          case NotesItem.READERS:
+            items.add(ItemName);
+            break;
+          default:
+            break;
+        }
       }
-      int type = itm.getType();
-      switch (type) {
-        case NotesItem.TEXT:
-        case NotesItem.NUMBERS:
-        case NotesItem.DATETIMES:
-        case NotesItem.RICHTEXT:
-        case NotesItem.NAMES:
-        case NotesItem.AUTHORS:
-        case NotesItem.READERS:
-          content.append("\n");
-          NotesItem tmpItem = srcDoc.getFirstItem(ItemName);
-          if (null != tmpItem) {
-            // Must use getText to get more than 64k of text
-            content.append(tmpItem.getText(2 * 1024 * 1024));
-            tmpItem.recycle();
-          }
-          break;
-        default:
-          break;
+
+      for (String item : items) {
+        content.append("\n");
+        NotesItem tmpItem = srcDoc.getFirstItem(item);
+        if (null != tmpItem) {
+          // Must use getText to get more than 64k of text
+          content.append(tmpItem.getText(2 * 1024 * 1024));
+        }
       }
+    } finally {
+      Util.recycle(srcDoc,vi);
     }
     LOGGER.exiting(CLASS_NAME, METHOD);
     return content.toString();
@@ -607,7 +617,8 @@ class NotesCrawlerThread extends Thread {
 
       return true;
     } catch (Exception e) {
-      LOGGER.log(Level.SEVERE, CLASS_NAME, e);
+      LOGGER.logp(Level.SEVERE, CLASS_NAME, METHOD,
+          "Error prefetching document " + NotesURL, e);
       return false;
     } finally {
       LOGGER.exiting(CLASS_NAME, METHOD);
