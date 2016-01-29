@@ -223,7 +223,7 @@ private static HashMap<String, User> users = new HashMap<String, User>();
     hasDatabaseAccess(hogwartsDatabaseDocument, false, "fleur", "viktor");
   }
 
-  public void testDatabaseNestedGroupAccess() throws Exception {
+  public void testDatabaseNestedGroupAccess_parent() throws Exception {
     // TODO: create the database document using
     // NotesDatabasePoller.getPermitDeny instead of manually
     // recreating the data.
@@ -236,7 +236,9 @@ private static HashMap<String, User> users = new HashMap<String, User>();
     hasDatabaseAccess(hogwartsDatabaseDocument, true, "harry", "hermione",
         "ron");
     hasDatabaseAccess(hogwartsDatabaseDocument, false, "fleur", "viktor");
-    
+  }
+
+  public void testDatabaseNestedGroupAccess_child() throws Exception {
     // Since nested_group group is nested inside Gryffindor_Group group, all
     // members should not be mapped to nested_group
     hogwartsDatabaseDocument.addItem(new NotesItemMock("name",
