@@ -14,6 +14,8 @@
 
 package com.google.enterprise.connector.notes.client.mock;
 
+import com.google.common.collect.ArrayListMultimap;
+import com.google.common.collect.Multimap;
 import com.google.enterprise.connector.notes.NCCONST;
 import com.google.enterprise.connector.notes.client.NotesDateTime;
 import com.google.enterprise.connector.notes.client.NotesDocument;
@@ -24,10 +26,9 @@ import com.google.enterprise.connector.notes.client.NotesRichTextItem;
 import com.google.enterprise.connector.spi.RepositoryException;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Vector;
 import java.util.logging.Logger;
 
@@ -41,8 +42,8 @@ public class NotesDocumentMock extends NotesBaseMock
 
   private NotesDatabaseMock database;
 
-  private final Map<String, NotesItemMock> items =
-      new HashMap<String, NotesItemMock>();
+  private final Multimap<String, NotesItemMock> items =
+      ArrayListMultimap.create();
 
   private final List<NotesDocumentMock> responses =
       new ArrayList<NotesDocumentMock>();
@@ -77,11 +78,21 @@ public class NotesDocumentMock extends NotesBaseMock
     return items.containsKey(name.toLowerCase());
   }
 
+  /* Helper method to return the first value of the multi map */
+  private NotesItemMock getFirst(String name) {
+    Collection<NotesItemMock> values = items.get(name.toLowerCase());
+    if (values.isEmpty()) {
+      return null;
+    } else {
+      return values.iterator().next();
+    }
+  }
+
   /** {@inheritDoc} */
   @Override
   public String getItemValueString(String name) throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "getItemValueString");
-    NotesItemMock item = items.get(name.toLowerCase());
+    NotesItemMock item = getFirst(name);
     if (item == null) {
       return "";
     }
@@ -106,7 +117,7 @@ public class NotesDocumentMock extends NotesBaseMock
   @Override
   public int getItemValueInteger(String name) throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "getItemValueInteger");
-    NotesItemMock item = items.get(name.toLowerCase());
+    NotesItemMock item = getFirst(name);
     if (item == null) {
       return 0;
     }
@@ -126,7 +137,7 @@ public class NotesDocumentMock extends NotesBaseMock
   @Override
   public Vector getItemValue(String name) throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "getItemValue");
-    NotesItemMock item = items.get(name.toLowerCase());
+    NotesItemMock item = getFirst(name);
     if (item == null) {
       return new Vector();
     }
@@ -141,7 +152,7 @@ public class NotesDocumentMock extends NotesBaseMock
   @Override
   public NotesItem getFirstItem(String name) throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "getFirstItem");
-    return items.get(name.toLowerCase());
+    return getFirst(name);
   }
 
   /** {@inheritDoc} */
@@ -156,7 +167,7 @@ public class NotesDocumentMock extends NotesBaseMock
   public Vector getItemValueDateTimeArray(String name)
       throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "getItemValueDateTimeArray");
-    NotesItemMock item = items.get(name);
+    NotesItemMock item = getFirst(name);
     if (item == null) {
       return new Vector(); // TODO: check that this is right.
     }
@@ -177,6 +188,7 @@ public class NotesDocumentMock extends NotesBaseMock
   @Override
   public void removeItem(String name) throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "removeItem");
+    items.removeAll(name.toLowerCase());
   }
 
   /** {@inheritDoc} */
@@ -200,6 +212,7 @@ public class NotesDocumentMock extends NotesBaseMock
       item = new NotesItemMock("name", name.toLowerCase(),
           "type", getNotesType(value), "values", value);
     }
+    items.removeAll(name.toLowerCase());
     items.put(name.toLowerCase(), item);
     return item;
   }
@@ -209,16 +222,12 @@ public class NotesDocumentMock extends NotesBaseMock
   public NotesItem appendItemValue(String name, Object value)
       throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "appendItemValue");
-    NotesItemMock item = null;
-    for (Map.Entry<String, NotesItemMock> entry: items.entrySet()) {
-      if (entry.getKey().equals(name)) {
-        item = entry.getValue();
-        break;
-      }
-    }
+    NotesItemMock item = getFirst(name);
     if (item == null) {
       return replaceItemValue(name, value);
     }
+    // TODO(jlacey): This is not adding new items of the same name,
+    // but adding multiple values to a single item. The code is unused.
     if (value instanceof Vector) {
       item.appendToTextList((Vector) value);
     } else {
@@ -268,7 +277,7 @@ public class NotesDocumentMock extends NotesBaseMock
   @Override
   public String getNotesURL() throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "getNotesURL");
-    NotesItemMock item = items.get(NCCONST.ITM_DOCID);
+    NotesItemMock item = getFirst(NCCONST.ITM_DOCID);
     return (item != null) ? item.toString() : null;
   }
 
@@ -310,6 +319,7 @@ public class NotesDocumentMock extends NotesBaseMock
 
   public void setLastModified(NotesDateTime lastModified) {
     this.lastModified = lastModified;
+    items.removeAll(NCCONST.ITM_LASTMODIFIED.toLowerCase());
     items.put(NCCONST.ITM_LASTMODIFIED.toLowerCase(),
         new NotesItemMock("name", NCCONST.ITM_LASTMODIFIED, "type",
             NotesItem.DATETIMES, "values", lastModified));

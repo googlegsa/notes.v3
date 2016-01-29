@@ -78,30 +78,20 @@ public class MockFixture {
       configDb.addDocument(doc, NCCONST.VIEWDATABASES);
       configDb.setViewFields(NCCONST.VIEWDATABASES, NCCONST.DITM_REPLICAID);
     }
-    doc.addItem(new NotesItemMock("name", NCCONST.NCITM_UNID, "type",
-        NotesItem.TEXT, "values", TESTCONST.DBSRC_REPLICAID));
-    doc.addItem(new NotesItemMock("name", NCCONST.ITMFORM, "type",
-        NotesItem.TEXT, "values", "DATABASE"));
-    doc.addItem(new NotesItemMock("name", NCCONST.DITM_DBNAME, "type",
-        NotesItem.TEXT, "values", srcDb.getName()));
-    doc.addItem(new NotesItemMock("name", NCCONST.DITM_SERVER, "type",
-        NotesItem.TEXT, "values", srcDb.getServer()));
-    doc.addItem(new NotesItemMock("name", NCCONST.DITM_REPLICAID, "type",
-        NotesItem.TEXT, "values", srcDb.getReplicaID()));
-    doc.addItem(new NotesItemMock("name", NCCONST.DITM_AUTHTYPE, "type",
-        NotesItem.TEXT, "values", authType));
-    doc.addItem(new NotesItemMock("name", NCCONST.DITM_TEMPLATE, "type",
-        NotesItem.TEXT, "values", template));
-    doc.addItem(new NotesItemMock("name", NCCONST.DITM_CRAWLENABLED, "type",
-        NotesItem.NUMBERS, "values",
-        (enabled ? Integer.valueOf(1) : Integer.valueOf(0))));
-    doc.addItem(new NotesItemMock("name", NCCONST.DITM_LASTUPDATE, "type",
-        NotesItem.DATETIMES, "values", lastUpdate));
+    doc.replaceItemValue(NCCONST.NCITM_UNID, TESTCONST.DBSRC_REPLICAID);
+    doc.replaceItemValue(NCCONST.ITMFORM, "DATABASE");
+    doc.replaceItemValue(NCCONST.DITM_DBNAME, srcDb.getName());
+    doc.replaceItemValue(NCCONST.DITM_SERVER, srcDb.getServer());
+    doc.replaceItemValue(NCCONST.DITM_REPLICAID, srcDb.getReplicaID());
+    doc.replaceItemValue(NCCONST.DITM_AUTHTYPE, authType);
+    doc.replaceItemValue(NCCONST.DITM_TEMPLATE, template);
+    doc.replaceItemValue(NCCONST.DITM_CRAWLENABLED,
+        (enabled ? Integer.valueOf(1) : Integer.valueOf(0)));
+    doc.replaceItemValue(NCCONST.DITM_LASTUPDATE, lastUpdate);
 
     // Default values
     srcDb.setACLActivityLog(aclText);
-    doc.addItem(new NotesItemMock("name", NCCONST.DITM_ACLTEXT, "type",
-        NotesItem.TEXT, "values", aclText));
+    doc.replaceItemValue(NCCONST.DITM_ACLTEXT, aclText);
   }
 
   public static NotesDatabaseMock setupNotesTemplate(SessionFactoryMock factory,
