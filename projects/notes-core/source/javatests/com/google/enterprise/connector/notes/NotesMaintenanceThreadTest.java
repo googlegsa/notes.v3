@@ -49,7 +49,11 @@ public class NotesMaintenanceThreadTest extends TestCase {
     notesDocMgrDbTest.setUp();
   }
 
-  public void testCheckForDeletions() throws Exception {
+  /**
+   * If doc is null, the original document is removed. For non-null doc the
+   * original document is replaced by the given document.
+   */
+  private void testCheckForDeletions(NotesDocumentMock doc) throws Exception {
     // Setup deleted document
     String delUNID = "XXXXXXXXXXXXXXXXXXXXXXXXXXXX0000";
     NotesDatabaseMock srcDb = setupSourceDatabase("mickey1/mtv/us", "test.nsf",
@@ -57,6 +61,10 @@ public class NotesMaintenanceThreadTest extends TestCase {
         NCCONST.VIEWINDEXED);
     NotesDocument delDoc = srcDb.getDocumentByUNID(delUNID);
     delDoc.remove(true);
+    if (doc != null) {
+      doc.replaceItemValue(NCCONST.NCITM_UNID, delUNID);
+      srcDb.addDocument(doc, NCCONST.VIEWINDEXED);
+    }
     String docId = "http://" + TESTCONST.SERVER_DOMINO_WEB + TESTCONST.DOMAIN
         + "/" + TESTCONST.DBSRC_REPLICAID + "/0/" + delUNID;
 
@@ -86,6 +94,22 @@ public class NotesMaintenanceThreadTest extends TestCase {
     NotesDocumentMock docDeletedReq = docList.get(0);
     assertEquals(ActionType.DELETE.toString(),
         docDeletedReq.getItemValueString(NCCONST.ITM_ACTION));
+  }
+
+  public void testCheckForDeletions() throws Exception {
+    testCheckForDeletions(null);
+  }
+
+  public void testCheckForDeletions_invalidDoc() throws Exception {
+    testCheckForDeletions(new NotesDocumentMock() {
+        public boolean isValid() { return false; }
+    });
+  }
+
+  public void testCheckForDeletions_deletedDoc() throws Exception {
+    testCheckForDeletions(new NotesDocumentMock() {
+        public boolean isDeleted() { return true; }
+    });
   }
 
   public void testMissingSelectionCriteria() throws Exception {

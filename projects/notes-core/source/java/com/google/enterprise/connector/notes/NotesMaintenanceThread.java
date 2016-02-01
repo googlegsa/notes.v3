@@ -129,6 +129,7 @@ class NotesMaintenanceThread extends Thread {
 
     String lastdocid = startdocid;
     Map<String,NotesDocId> indexedDocuments = null;
+    NotesDocId notesId = null;
     try {
       LOGGER.logp(Level.INFO, CLASS_NAME, METHOD, "Checking for deletions ");
       ns = ncs.createNotesSession();
@@ -161,7 +162,7 @@ class NotesMaintenanceThread extends Thread {
         if (nc.getShutdown()) {
           break;
         }
-        NotesDocId notesId = entry.getValue();
+        notesId = entry.getValue();
         LOGGER.logp(Level.FINER, CLASS_NAME, METHOD,
             "MaintenanceThread: Checking deletion for document: " + notesId);
         try {
@@ -205,19 +206,25 @@ class NotesMaintenanceThread extends Thread {
           boolean isSrcDbOpened = openSourceDatabase(notesId);
           if (!isSrcDbOpened) {
             LOGGER.logp(Level.SEVERE, CLASS_NAME, METHOD,
-                "MaintenanceThread: Skipping document because source " +
-                "database could not be opened: " + notesId);
+                "MaintenanceThread: Skipping document because source "
+                    + "database could not be opened: " + notesId.getServer()
+                    + "!!" + notesId.getReplicaId());
             continue;
           }
 
           boolean isDocDeleted = loadSourceDocument(entry.getKey());
           if (isDocDeleted) {
+            LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD,
+                "Document has been deleted: " + notesId + ", UNID "
+                    + entry.getKey());
             sendDeleteRequest(notesId);
             continue;
           }
 
           boolean isConflict = SourceDocument.hasItem(NCCONST.NCITM_CONFLICT);
           if (isConflict) {
+            LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD,
+                "Deleting document due to conflict: " + notesId);
             sendDeleteRequest(notesId);
             continue;
           }
@@ -252,7 +259,8 @@ class NotesMaintenanceThread extends Thread {
         }
       }
     } catch (Exception e) {
-      LOGGER.log(Level.SEVERE, CLASS_NAME, e);
+      LOGGER.logp(Level.SEVERE, CLASS_NAME, METHOD,
+          "Aborting check for deletions at document: " + notesId, e);
     } finally {
       if (indexedDocuments != null) {
         indexedDocuments.clear();
@@ -354,10 +362,6 @@ class NotesMaintenanceThread extends Thread {
         notesId.getReplicaId());
     if (isSrcDbOpen) {
       OpenDbRepId = notesId.getReplicaId();
-    } else {
-      LOGGER.logp(Level.SEVERE, CLASS_NAME, METHOD,
-          "Maintenance thread can't open database: " + notesId.getServer()
-          + "!!" + notesId.getReplicaId());
     }
     LOGGER.exiting(CLASS_NAME, METHOD);
     return isSrcDbOpen;
@@ -459,14 +463,14 @@ class NotesMaintenanceThread extends Thread {
       SourceDocument = SrcDb.getDocumentByUNID(UNID);
     } catch (NotesConnectorException e) {
       if (e.getId() == NotesError.NOTES_ERR_BAD_UNID) {
-        LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD,
-            "Document has been deleted " + UNID);
         LOGGER.exiting(CLASS_NAME, METHOD);
         return true;
+      } else {
+        throw e;
       }
     }
     LOGGER.exiting(CLASS_NAME, METHOD);
-    return false;
+    return !SourceDocument.isValid() || SourceDocument.isDeleted();
   }
 
   /*

@@ -71,6 +71,16 @@ public class NotesDocumentMock extends NotesBaseMock
     this.responses.add(response);
   }
 
+  @Override
+  public boolean isDeleted() throws RepositoryException {
+    return false;
+  }
+
+  @Override
+  public boolean isValid() throws RepositoryException {
+    return true;
+  }
+
   /** {@inheritDoc} */
   @Override
   public boolean hasItem(String name) throws RepositoryException {
