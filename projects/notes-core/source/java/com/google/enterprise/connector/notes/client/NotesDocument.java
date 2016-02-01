@@ -20,6 +20,22 @@ import java.util.Vector;
 
 public interface NotesDocument extends NotesBase {
   /**
+   * Returns true if the document is deleted.
+   *
+   * @return true if the document is deleted
+   * @throws RepositoryException
+   */
+  boolean isDeleted() throws RepositoryException;
+
+  /**
+   * Returns true if the document is valid.
+   *
+   * @return true if the document is valid
+   * @throws RepositoryException
+   */
+  boolean isValid() throws RepositoryException;
+
+  /**
    * Returns true if the document has the given item.
    *
    * @param name the item name

@@ -37,6 +37,26 @@ class NotesDocumentImpl extends NotesBaseImpl<Document>
 
   /** {@inheritDoc} */
   @Override
+  public boolean isDeleted() throws NotesConnectorExceptionImpl {
+    try {
+      return getNotesObject().isDeleted();
+    } catch (NotesException e) {
+      throw new NotesConnectorExceptionImpl(e);
+    }
+  }
+
+  /** {@inheritDoc} */
+  @Override
+  public boolean isValid() throws NotesConnectorExceptionImpl {
+    try {
+      return getNotesObject().isValid();
+    } catch (NotesException e) {
+      throw new NotesConnectorExceptionImpl(e);
+    }
+  }
+
+  /** {@inheritDoc} */
+  @Override
   public boolean hasItem(String name) throws NotesConnectorExceptionImpl {
     try {
       return getNotesObject().hasItem(name);
