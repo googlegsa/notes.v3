@@ -110,15 +110,9 @@ class NotesCrawlerThread extends Thread {
               templateDoc.getItemValueString(NCCONST.TITM_TEMPLATENAME))) {
         return;
       }
-      templateDoc.recycle();
+      Util.recycle(templateDoc, formsdc, formDoc);
       templateDoc = null;
-      if (null != formsdc) {
-        formsdc.recycle();
-      }
       formsdc = null;
-      if (null != formDoc) {
-        formDoc.recycle();
-      }
       formDoc = null;
     }
     NotesView vw = cdb.getView(NCCONST.VIEWTEMPLATES);
@@ -404,9 +398,7 @@ class NotesCrawlerThread extends Thread {
         LOGGER.logp(Level.WARNING, CLASS_NAME, METHOD,
             "Error mapping MetaField " + mf, e);
       } finally {
-        if (null != item) {
-          item.recycle();
-        }
+        Util.recycle(item);
       }
     }
     LOGGER.exiting(CLASS_NAME, METHOD);
@@ -762,7 +754,7 @@ class NotesCrawlerThread extends Thread {
           getHTTPURL(crawlDoc), attachNameHash);
       attachDoc.replaceItemValue(NCCONST.ITM_DOCID, docURL);
       LOGGER.log(Level.FINEST, "Attachment document docid: {0}", docURL);
-      
+
       // Only if we have a supported mime type and file size is not exceeding
       // the limit do we send the content, or only metadata and file name will
       // be sent.
@@ -792,9 +784,7 @@ class NotesCrawlerThread extends Thread {
       LOGGER.logp(Level.SEVERE, CLASS_NAME, METHOD,
           "Error pre-fetching attachment: " + AttachmentName +
           " in document: " + srcDoc.getNotesURL(), e);
-      if (null != eo) {
-        eo.recycle();
-      }
+      Util.recycle(eo);
       if (null != attachDoc) {
         attachDoc.replaceItemValue(NCCONST.NCITM_STATE, NCCONST.STATEERROR);
         attachDoc.save();
@@ -844,43 +834,19 @@ class NotesCrawlerThread extends Thread {
     final String METHOD = "disconnectQueue";
     LOGGER.entering(CLASS_NAME, METHOD);
     try {
-      if (null != templateDoc) {
-        templateDoc.recycle();
-      }
+      Util.recycle(templateDoc, formDoc, formsdc, srcdb, crawlQueue, cdb);
       templateDoc = null;
-
-      if (null != formDoc) {
-        formDoc.recycle();
-      }
       formDoc = null;
-
-      if (null != formsdc) {
-        formsdc.recycle();
-      }
       formsdc = null;
-
-      if (null != srcdb) {
-        openDbRepId = "";
-        srcdb.recycle();
-        srcdb = null;
-      }
-
-      if (null != crawlQueue) {
-        crawlQueue.recycle();
-      }
+      openDbRepId = "";
+      srcdb = null;
       crawlQueue = null;
-
-      if (null != cdb) {
-        cdb.recycle();
-      }
       cdb = null;
 
       if (null != ns) {
         ncs.closeNotesSession(ns);
       }
       ns = null;
-    } catch (RepositoryException e) {
-      LOGGER.log(Level.WARNING, CLASS_NAME, e);
     } finally {
       LOGGER.exiting(CLASS_NAME, METHOD);
     }
@@ -938,10 +904,10 @@ class NotesCrawlerThread extends Thread {
         // while we are crawling We don't want to fill up the
         // logs with errors so go to sleep after 5 exceptions
         exceptionCount++;
-        
+
         // If we run into an exception we should close our session.
         disconnectQueue();
-        
+
         if (exceptionCount > 5) {
           LOGGER.logp(Level.WARNING, CLASS_NAME, METHOD,
               "Too many exceptions.  Crawler thread sleeping.");

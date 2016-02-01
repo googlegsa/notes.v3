@@ -226,12 +226,7 @@ class NotesDatabasePoller {
       // TODO: should we return false here?
       LOGGER.log(Level.SEVERE, CLASS_NAME, e);
     } finally {
-      if (null != acl) {
-        try {
-          acl.recycle();
-        } catch (RepositoryException e) {
-        }
-      }
+      Util.recycle(acl);
       LOGGER.exiting(CLASS_NAME, METHOD);
     }
     return true;
@@ -311,9 +306,7 @@ class NotesDatabasePoller {
       }
       aclDoc.save();
     } finally {
-      if (aclDoc != null) {
-        aclDoc.recycle();
-      }
+      Util.recycle(aclDoc);
     }
   }
 

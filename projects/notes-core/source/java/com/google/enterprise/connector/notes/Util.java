@@ -44,13 +44,15 @@ public class Util {
   private static final Pattern VERSION_EIGHT_OR_OLDER =
       Pattern.compile(" [1-8]\\.[0-9]");
 
-  static void recycle(NotesBase obj) {
-    if (null != obj) {
-      try {
-        obj.recycle();
-      } catch (RepositoryException e) {
-        LOGGER.logp(Level.WARNING, CLASS_NAME, "recycle(obj)",
-            "Error calling recycle on Notes object: " + obj, e);
+  static void recycle(NotesBase... objects) {
+    for (NotesBase obj : objects) {
+      if (null != obj) {
+        try {
+          obj.recycle();
+        } catch (RepositoryException e) {
+          LOGGER.logp(Level.WARNING, CLASS_NAME, "recycle(obj)",
+              "Error calling recycle on Notes object: " + obj, e);
+        }
       }
     }
   }

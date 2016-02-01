@@ -17,7 +17,6 @@ package com.google.enterprise.connector.notes;
 import com.google.common.base.Strings;
 import com.google.enterprise.connector.logging.NDC;
 import com.google.enterprise.connector.notes.client.NotesDatabase;
-import com.google.enterprise.connector.notes.client.NotesDateTime;
 import com.google.enterprise.connector.notes.client.NotesDocument;
 import com.google.enterprise.connector.notes.client.NotesError;
 import com.google.enterprise.connector.notes.client.NotesSession;
@@ -56,10 +55,8 @@ class NotesMaintenanceThread extends Thread {
   private NotesDocument DbConfigDoc = null;
   private NotesSession ns = null;
   private String DbConfigDocRepId = "";
-  private NotesDateTime CheckTime = null;
   private NotesDocument TemplateDoc = null;
   private NotesDocument SourceDocument = null;
-  private NotesDocument IndexedDoc = null;
 
   NotesMaintenanceThread(NotesConnector connector,
       NotesConnectorSession session) throws RepositoryException {
@@ -128,20 +125,21 @@ class NotesMaintenanceThread extends Thread {
     LOGGER.entering(CLASS_NAME, METHOD);
 
     String lastdocid = startdocid;
-    Map<String,NotesDocId> indexedDocuments = null;
     NotesDocId notesId = null;
     try {
       LOGGER.logp(Level.INFO, CLASS_NAME, METHOD, "Checking for deletions ");
       ns = ncs.createNotesSession();
-      CheckTime = ns.createDateTime("1/1/1900");
-      CheckTime.setNow();
+      // TODO(jlacey): See getStopped.
+      // CheckTime = ns.createDateTime("1/1/1900");
+      // CheckTime.setNow();
       cdb = ns.getDatabase(ncs.getServer(), ncs.getDatabase());
       NotesView DatabaseView = cdb.getView(NCCONST.VIEWDATABASES);
       DatabaseView.refresh();
       LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
           "MaintenanceThread: Entries in database view: " +
           DatabaseView.getEntryCount());
-      
+
+      Map<String, NotesDocId> indexedDocuments;
       if (Strings.isNullOrEmpty(startdocid)) {
         indexedDocuments = ncs.getNotesDocumentManager()
             .getIndexedDocuments(null, null, batchsize);
@@ -262,57 +260,19 @@ class NotesMaintenanceThread extends Thread {
       LOGGER.logp(Level.SEVERE, CLASS_NAME, METHOD,
           "Aborting check for deletions at document: " + notesId, e);
     } finally {
-      if (indexedDocuments != null) {
-        indexedDocuments.clear();
-      }
-      cleanUpNotesObjects();
+      Util.recycle(SourceDocument, TemplateDoc, DbConfigDoc, SrcDb, cdb);
+      SourceDocument = null;
+      TemplateDoc = null;
+      DbConfigDocRepId = "";
+      DbConfigDoc = null;
+      OpenDbRepId = "";
+      SrcDb = null;
+      cdb = null;
+
       ncs.closeNotesSession(ns);
       LOGGER.exiting(CLASS_NAME, METHOD);
     }
     return lastdocid;
-  }
-
-  protected void cleanUpNotesObjects() {
-    final String METHOD = "cleanUpNotesObjects";
-    LOGGER.entering(CLASS_NAME, METHOD);
-    try {
-      if (null != CheckTime) {
-        CheckTime.recycle();
-      }
-      CheckTime = null;
-      if (null != SourceDocument) {
-        SourceDocument.recycle();
-      }
-      SourceDocument = null;
-      if (null != TemplateDoc) {
-        TemplateDoc.recycle();
-      }
-      TemplateDoc = null;
-      if (null != IndexedDoc) {
-        IndexedDoc.recycle();
-      }
-      IndexedDoc = null;
-      DbConfigDocRepId = "";
-      if (null != DbConfigDoc) {
-        DbConfigDoc.recycle();
-      }
-      DbConfigDoc = null;
-      OpenDbRepId = "";
-      if (null != SrcDb) {
-        SrcDb.recycle();
-      }
-      SrcDb = null;
-
-      if (null != cdb) {
-        cdb.recycle();
-      }
-      cdb = null;
-    } catch (RepositoryException e) {
-      // TODO: changed log level to WARNING. Can an exception
-      // here be SEVERE?
-      LOGGER.log(Level.WARNING, CLASS_NAME, e);
-    }
-    LOGGER.exiting(CLASS_NAME, METHOD);
   }
 
   /*
@@ -320,10 +280,10 @@ class NotesMaintenanceThread extends Thread {
    *
    */
   protected boolean getStopped() throws RepositoryException {
-    final String METHOD = "getStopped";
 
     // TODO:  Think about adding variable to provide some grace time
     /*
+      final String METHOD = "getStopped";
       LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD,
           "CheckTime is: " + CheckTime);
       DateTime lm = DbConfigDoc.getLastModified();

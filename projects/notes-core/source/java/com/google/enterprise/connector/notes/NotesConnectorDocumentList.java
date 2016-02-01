@@ -66,9 +66,7 @@ class NotesConnectorDocumentList implements DocumentList {
     LOGGER.entering(CLASS_NAME, METHOD);
     try {
       // The connector manager has finished last doc so recycle it
-      if (null != crawldoc) {
-        crawldoc.recycle();
-      }
+      Util.recycle(crawldoc);
       if (null != ncdoc) {
         ncdoc.closeInputStream();
       }
@@ -274,12 +272,7 @@ class NotesConnectorDocumentList implements DocumentList {
             "Checkpoint for empty document list.");
       }
       // Without lifecycle methods, use the checkpoint to clean up our session
-      if (this.crawldoc != null) {
-        this.crawldoc.recycle();
-      }
-      if (this.db != null) {
-        this.db.recycle();
-      }
+      Util.recycle(crawldoc, db);
       if (this.ns != null) {
         ncs.closeNotesSession(ns);
       }
