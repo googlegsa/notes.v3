@@ -155,96 +155,16 @@ class NotesMaintenanceThread extends Thread {
         if (nc.getShutdown()) {
           break;
         }
+        String unid = entry.getKey();
         notesId = entry.getValue();
         LOGGER.log(Level.FINER, "Checking deletion for document: {0}", notesId);
         try {
           lastdocid = notesId.toString();
-          //Validate database config using replica ID
-          loadDbConfigDoc(notesId.getReplicaId(), DatabaseView);
-          if (DbConfigDoc == null) {
-            LOGGER.log(Level.SEVERE,
-                "Skipping document because no database config found for {0}",
-                notesId);
-            continue;
-          }
-          //When a database is in stopped mode we purge all documents
-          if (getStopped()) {
-            LOGGER.log(Level.FINER,
-                "Deleting document because database is being purged. {0}",
-                notesId);
-            sendDeleteRequest(notesId);
-            continue;
-          }
-          //Is this database configured to check for deletions?
-          String checkDeletions = DbConfigDoc.getItemValueString(
-              NCCONST.DITM_CHECKDELETIONS);
-          if (checkDeletions.toLowerCase().contentEquals("no")) {
-            LOGGER.log(Level.FINER,
-                "Skipping document because deletion checking is disabled. {0}",
-                notesId);
-            continue;
-          }
-          //Is crawling enabled for this database?  If not then
-          //skip to the next document
-          int isEnabled = DbConfigDoc.getItemValueInteger(
-              NCCONST.DITM_CRAWLENABLED);
-          if (isEnabled != 1) {
-            LOGGER.log(Level.FINER,
-                "Skipping document because database crawling is disabled. {0}",
-                notesId);
-            continue;
-          }
-          //Try and open the source database
-          boolean isSrcDbOpened = openSourceDatabase(notesId);
-          if (!isSrcDbOpened) {
-            LOGGER.log(Level.SEVERE, "Skipping document because source "
-                + "database could not be opened: {0}!!{1}",
-                new Object[] { notesId.getServer(), notesId.getReplicaId() });
-            continue;
-          }
-
-          boolean isDocDeleted = loadSourceDocument(entry.getKey());
-          if (isDocDeleted) {
-            LOGGER.log(Level.FINEST, "Document has been deleted: {0}, UNID {1}",
-                new Object[] { notesId, entry.getKey() });
-            sendDeleteRequest(notesId);
-            continue;
-          }
-
-          boolean isConflict = SourceDocument.hasItem(NCCONST.NCITM_CONFLICT);
-          if (isConflict) {
-            LOGGER.log(Level.FINEST,
-                "Deleting document due to conflict: {0}", notesId);
-            sendDeleteRequest(notesId);
-            continue;
-          }
-
-          String templateName =
-              DbConfigDoc.getItemValueString(NCCONST.DITM_TEMPLATE);
-          loadTemplateDoc(templateName);
-          if (null == TemplateDoc) {
-            // The tests check this, so avoid MessageFormat-style.
-            LOGGER.log(Level.SEVERE, "Skipping selection criteria check " +
-                "because template could not be opened: " + notesId +
-                ", Template: "+ templateName + ", Database: " +
-                notesId.getServer() + "!!" + SrcDb.getFilePath());
-            continue;
-          }
-
-          boolean meetsCriteria = checkSelectionCriteria();
-          if (!meetsCriteria) {
-            LOGGER.log(Level.FINER, "Deleting document because "
-                + "selection formula returned false: {0}, Database: {1}!!{2}",
-                new Object[] {
-                    notesId, notesId.getServer(), SrcDb.getFilePath() });
-            sendDeleteRequest(notesId);
-            continue;
-          }
+          checkForDeletion(unid, notesId, DatabaseView);
         } catch (RepositoryException e) {
           LOGGER.log(Level.WARNING,
               "Unable to process document: " + notesId, e);
           // Skip current UNID and process next.
-          continue;
         }
       }
     } catch (Exception e) {
@@ -265,6 +185,88 @@ class NotesMaintenanceThread extends Thread {
     }
     return lastdocid;
   }
+
+    private void checkForDeletion(String unid, NotesDocId notesId,
+        NotesView DatabaseView) throws RepositoryException {
+      //Validate database config using replica ID
+      loadDbConfigDoc(notesId.getReplicaId(), DatabaseView);
+      if (DbConfigDoc == null) {
+        LOGGER.log(Level.SEVERE,
+            "Skipping document because no database config found for {0}",
+            notesId);
+        return;
+      }
+      //When a database is in stopped mode we purge all documents
+      if (getStopped()) {
+        LOGGER.log(Level.FINER,
+            "Deleting document because database is being purged. {0}", notesId);
+        sendDeleteRequest(notesId);
+        return;
+      }
+      //Is this database configured to check for deletions?
+      String checkDeletions = DbConfigDoc.getItemValueString(
+          NCCONST.DITM_CHECKDELETIONS);
+      if (checkDeletions.toLowerCase().contentEquals("no")) {
+        LOGGER.log(Level.FINER,
+            "Skipping document because deletion checking is disabled. {0}",
+            notesId);
+        return;
+      }
+      //Is crawling enabled for this database?  If not then
+      //skip to the next document
+      int isEnabled = DbConfigDoc.getItemValueInteger(
+          NCCONST.DITM_CRAWLENABLED);
+      if (isEnabled != 1) {
+        LOGGER.log(Level.FINER,
+            "Skipping document because database crawling is disabled. {0}",
+            notesId);
+        return;
+      }
+      //Try and open the source database
+      boolean isSrcDbOpened = openSourceDatabase(notesId);
+      if (!isSrcDbOpened) {
+        LOGGER.log(Level.SEVERE, "Skipping document because source "
+            + "database could not be opened: {0}!!{1}",
+            new Object[] { notesId.getServer(), notesId.getReplicaId() });
+        return;
+      }
+
+      boolean isDocDeleted = loadSourceDocument(unid);
+      if (isDocDeleted) {
+        LOGGER.log(Level.FINEST, "Document has been deleted: {0}, UNID {1}",
+            new Object[] { notesId, unid });
+        sendDeleteRequest(notesId);
+        return;
+      }
+
+      boolean isConflict = SourceDocument.hasItem(NCCONST.NCITM_CONFLICT);
+      if (isConflict) {
+        LOGGER.log(Level.FINEST,
+            "Deleting document due to conflict: {0}", notesId);
+        sendDeleteRequest(notesId);
+        return;
+      }
+
+      String templateName =
+          DbConfigDoc.getItemValueString(NCCONST.DITM_TEMPLATE);
+      loadTemplateDoc(templateName);
+      if (null == TemplateDoc) {
+        // The tests check this, so avoid MessageFormat-style.
+        LOGGER.log(Level.SEVERE, "Skipping selection criteria check " +
+            "because template could not be opened: " + notesId +
+            ", Template: "+ templateName + ", Database: " +
+            notesId.getServer() + "!!" + SrcDb.getFilePath());
+        return;
+      }
+
+      boolean meetsCriteria = checkSelectionCriteria();
+      if (!meetsCriteria) {
+        LOGGER.log(Level.FINER, "Deleting document because "
+            + "selection formula returned false: {0}, Database: {1}!!{2}",
+            new Object[] { notesId, notesId.getServer(), SrcDb.getFilePath() });
+        sendDeleteRequest(notesId);
+      }
+    }
 
   /*
    *   Only start purging documents after a little while
