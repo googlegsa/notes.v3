@@ -24,48 +24,22 @@ class NotesPollerNotifier {
   private int NumThreads = 1;
 
   public NotesPollerNotifier(NotesConnector connector) {
-    final String METHOD="NotesPollerNotifier";
-    LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD,
-        "NotesPollerNotifier being created.");
     nc = connector;
-  }
-
-  /**
-   * Wrapper around java.lang.Object wait(timeout).
-   */
-  synchronized void waitForWork(long timeout) {
-    final String METHOD = "waitForWork";
-    try {
-      // If we are shutting down, don't wait
-      if (nc.getShutdown()) {
-        LOGGER.logp(Level.INFO, CLASS_NAME, METHOD,
-            "Connector is shutting down.");
-        return;
-      }
-      LOGGER.logp(Level.INFO, CLASS_NAME, METHOD,
-          "Thread waiting with timeout.");
-      wait(timeout);
-      LOGGER.logp(Level.FINE, CLASS_NAME, METHOD, "Thread resuming.");
-    } catch (InterruptedException e) {
-      LOGGER.log(Level.SEVERE, CLASS_NAME, e);
-    }
   }
 
   /**
    * Wrapper around java.lang.Object wait().
    */
   synchronized void waitForWork() {
-    final String METHOD = "waitForWork";
     try {
       // If we are shutting down, don't wait
       if (nc.getShutdown()) {
-        LOGGER.logp(Level.INFO, CLASS_NAME, METHOD,
-            "Connector is shutting down.");
+        LOGGER.log(Level.INFO, "Connector is shutting down.");
         return;
       }
-      LOGGER.logp(Level.FINE, CLASS_NAME, METHOD, "Thread waiting.");
+      LOGGER.log(Level.FINE, "Thread waiting.");
       wait();
-      LOGGER.logp(Level.FINE, CLASS_NAME, METHOD, "Thread resuming.");
+      LOGGER.log(Level.FINE, "Thread resuming.");
     } catch (InterruptedException e) {
       LOGGER.log(Level.SEVERE, CLASS_NAME, e);
     }
@@ -81,8 +55,7 @@ class NotesPollerNotifier {
    * (see NotesConnector where numThreads is set)).
    */
   synchronized void wakeWorkers() {
-    final String METHOD="wakeWorkers";
-    LOGGER.logp(Level.FINE, CLASS_NAME, METHOD, "Waking worker threads.");
+    LOGGER.log(Level.FINE, "Waking worker threads.");
     for (int i = 0; i < NumThreads; i++) {
       notifyAll();
     }

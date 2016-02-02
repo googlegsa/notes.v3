@@ -84,8 +84,6 @@ class NotesDocumentManager {
   }
 
   private void initializeDatabase() throws RepositoryException {
-    final String METHOD = "initializeDatabase";
-
     //Build DDL statement to create indexed table
     StringBuilder indexedDDL = new StringBuilder();
     indexedDDL.append("create table ").append(indexedTableName).append("(");
@@ -101,18 +99,17 @@ class NotesDocumentManager {
     indexedDDL.append("host varchar(")
         .append(NCCONST.COLUMN_SIZE_HOST).append(")");
     indexedDDL.append(")");
-    
+
     //Build create index statement for indexed table
     StringBuilder createIndexSQL = new StringBuilder();
     createIndexSQL.append("create index idx_" + indexedTableName);
     createIndexSQL.append(" on ").append(indexedTableName);
     createIndexSQL.append("(unid, replicaid)");
-    
+
     //Create table and index
     jdbcDatabase.verifyTableExists(indexedTableName,
         new String[]{indexedDDL.toString(), createIndexSQL.toString()});
-    LOGGER.logp(Level.FINE, CLASS_NAME, METHOD, "Create/verify " + 
-        indexedTableName);
+    LOGGER.log(Level.FINE, "Create/verify {0}", indexedTableName);
 
     //Verify or create readers table
     StringBuilder readersDDL = new StringBuilder();
@@ -125,8 +122,7 @@ class NotesDocumentManager {
     readersDDL.append(indexedTableName).append("(docid))");
     jdbcDatabase.verifyTableExists(readersTableName,
         new String[]{readersDDL.toString()});
-    LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
-        "Create/verify " + this.readersTableName);
+    LOGGER.log(Level.FINE, "Create/verify {0}", this.readersTableName);
 
     // Verify and create attachments table
     StringBuilder attachmentsDDL = new StringBuilder();
@@ -158,22 +154,20 @@ class NotesDocumentManager {
         releaseDatabaseConnection(conn);
       }
     }
-    LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
-        "Create/verify " + attachmentsTableName);
+    LOGGER.log(Level.FINE, "Create/verify {0}", attachmentsTableName);
   }
 
   /**
    * Helper method to set auto commit.
    */
   private boolean setAutoCommit(Connection conn, boolean isAutoCommit) {
-    final String METHOD = "setAutoCommit";
     boolean isSet = false;
     try {
       //Set default auto commit
       conn.setAutoCommit(isAutoCommit);
       isSet = true;
     } catch (SQLException sqle) {
-      LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
+      LOGGER.log(Level.FINE,
           "Failed to set auto commit to " + isAutoCommit, sqle);
     }
     return isSet;
@@ -184,8 +178,7 @@ class NotesDocumentManager {
    * updateSearchIndex method.
    */
   Connection getDatabaseConnection() throws SQLException {
-    final String METHOD = "getDatabaseConnection";
-    LOGGER.logp(Level.FINE, CLASS_NAME, METHOD, "Obtain connection from pool");
+    LOGGER.log(Level.FINE, "Obtain connection from pool");
     Connection connection = connectionPool.getConnection();
     return connection;
   }
@@ -195,9 +188,8 @@ class NotesDocumentManager {
    * updateSearchIndex method.
    */
   void releaseDatabaseConnection(Connection connection) {
-    final String METHOD = "releaseDatabaseConnection";
     connectionPool.releaseConnection(connection);
-    LOGGER.logp(Level.FINE, CLASS_NAME, METHOD, "Release connection to pool");
+    LOGGER.log(Level.FINE, "Release connection to pool");
   }
 
   /**
@@ -228,21 +220,20 @@ class NotesDocumentManager {
       unid = docIndexed.getItemValueString(NCCONST.NCITM_UNID);
       if (Strings.isNullOrEmpty(unid))
         return isUpdated;
-      LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD,
-          "Add indexed document UNID#" + unid + " to database");
+      LOGGER.log(Level.FINEST,
+          "Add indexed document UNID#{0} to database", unid);
       server = docIndexed.getItemValueString(NCCONST.NCITM_SERVER);
       if (server.length() > NCCONST.COLUMN_SIZE_SERVER) {
         server = server.substring(0, NCCONST.COLUMN_SIZE_SERVER);
       }
       gid = docIndexed.getItemValueString(NCCONST.ITM_DOCID);
     } catch (RepositoryException re) {
-      LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD,
+      LOGGER.log(Level.FINEST,
           "NC.UNID, NC.Server and google.docid fields are not accessible.");
       return isUpdated;
     }
     if (Strings.isNullOrEmpty(gid)) {
-      LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD,
-          "google.docid is null or empty");
+      LOGGER.log(Level.FINEST, "google.docid is null or empty");
       return isUpdated;
     }
 
@@ -251,8 +242,7 @@ class NotesDocumentManager {
     try {
       notesId = new NotesDocId(gid);
     } catch (MalformedURLException e2) {
-      LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD,
-          "Malformed docid: " + gid, e2);
+      LOGGER.log(Level.FINEST, "Malformed docid: " + gid, e2);
       notesId = new NotesDocId();
       notesId.setDocId(unid);
       String domain = docIndexed.getItemValueString(NCCONST.NCITM_DOMAIN);
@@ -298,7 +288,7 @@ class NotesDocumentManager {
         }
         pstmt.executeBatch();
         pstmt.close();
-        
+
         // Insert attachment names
         NotesItem itemAttachmentIds =
             docIndexed.getFirstItem(NCCONST.ITM_GMETAATTACHMENTDOCIDS);
@@ -313,8 +303,7 @@ class NotesDocumentManager {
               pstmt.setString(1, attachmentId);
               pstmt.setLong(2, docid);
               pstmt.addBatch();
-              LOGGER.log(Level.FINEST,
-                  "Insert attachment: {0}", attachmentId);
+              LOGGER.log(Level.FINEST, "Insert attachment: {0}", attachmentId);
             }
             pstmt.executeBatch();
             pstmt.close();
@@ -324,20 +313,18 @@ class NotesDocumentManager {
       connection.commit();
       isUpdated = true;
     } catch (SQLException sqle) {
-      LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
+      LOGGER.log(Level.FINE,
           "Unable to add indexed document to database (UNID: " + unid + ")",
           sqle);
       try {
         connection.rollback();
       } catch (SQLException sqle2) {
-        LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
-            "Failed to rollback transaction");
+        LOGGER.log(Level.FINE, "Failed to rollback transaction");
         throw new AssertionError(sqle2);
       }
     } finally {
       if (!setAutoCommit(connection, true)) {
-        LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
-          "Failed to enable auto commit");
+        LOGGER.log(Level.FINE, "Failed to enable auto commit");
       }
     }
     LOGGER.exiting(CLASS_NAME, METHOD);
@@ -366,8 +353,7 @@ class NotesDocumentManager {
       boolean isExisted = false;
       if (!Strings.isNullOrEmpty(startUnid)) {
         isExisted = hasIndexedDocument(startUnid, replicaId, conn);
-        LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
-            "Start unique ID#" + startUnid + " is found");
+        LOGGER.log(Level.FINE, "Start unique ID#{0} is found", startUnid);
       }
       PreparedStatement pstmt = conn.prepareStatement(
           "select unid, replicaid, server, host, protocol from " +
@@ -388,17 +374,17 @@ class NotesDocumentManager {
         if (isFound) {
           if (rs.isLast()) {
             rs.beforeFirst();
-            LOGGER.logp(Level.FINE, CLASS_NAME, METHOD, "Doc ID#" + unid +
-                " is at the end of collection; reset to first record");
+            LOGGER.log(Level.FINE, "Doc ID#{0}"
+                + " is at the end of collection; reset to first record", unid);
           } else {
             rs.previous();
-            LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
-                "Collection started with " + unid + " document ID");
+            LOGGER.log(Level.FINE,
+                "Collection started with {0} document ID", unid);
           }
         } else {
-          LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
-              "Document unique id was not found in " + indexedTableName +
-              " table");
+          LOGGER.log(Level.FINE,
+              "Document unique id was not found in {0} table",
+              indexedTableName);
           rs.beforeFirst();
         }
       }
@@ -417,9 +403,8 @@ class NotesDocumentManager {
       rs.close();
       pstmt.close();
     } catch (SQLException e) {
-      LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
-          "Failed to query " + indexedTableName + "table");
-      throw new RepositoryException(e);
+      throw new RepositoryException(
+          "Failed to query " + indexedTableName + "table", e);
     } finally {
       if (conn != null) {
         releaseDatabaseConnection(conn);
@@ -451,14 +436,14 @@ class NotesDocumentManager {
       rs.close();
       pstmt.close();
     } catch (SQLException e) {
-      LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
-          "Failed to lookup readers for " + unid + " document");
+      LOGGER.log(Level.FINE,
+          "Failed to lookup readers for " + unid + " document", e);
     } finally {
       if (conn != null) {
         releaseDatabaseConnection(conn);
       }
-      LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
-          "Found " + readers.size() + " reader(s) in " + unid + " document");
+      LOGGER.log(Level.FINE, "Found {0} reader(s) in {1} document",
+          new Object[] { readers.size(), unid });
     }
     LOGGER.exiting(CLASS_NAME, METHOD);
 
@@ -485,8 +470,8 @@ class NotesDocumentManager {
       rs.close();
       pstmt.close();
     } catch (SQLException e) {
-      LOGGER.logp(Level.FINE, CLASS_NAME, METHOD, "Failed to lookup " + unid +
-          " in " + indexedTableName + " table");
+      LOGGER.log(Level.FINE, "Failed to lookup " + unid +
+          " in " + indexedTableName + " table", e);
       throw new RepositoryException(e);
     }
     LOGGER.exiting(CLASS_NAME, METHOD);
@@ -494,8 +479,7 @@ class NotesDocumentManager {
     return hasItem;
   }
 
-  Set<String> getAttachmentIds(Connection conn, String unid,
-      String replicaid) {
+  Set<String> getAttachmentIds(Connection conn, String unid, String replicaid) {
     LOGGER.log(Level.FINE,
         "Get attachment names for document [UNID: {0}, REPLICAID: {1}]",
         new Object[] {unid, replicaid});
@@ -529,15 +513,14 @@ class NotesDocumentManager {
 
   boolean deleteDocument(String unid, String replicaid)
       throws RepositoryException {
-    final String METHOD = "deleteDocument";
     boolean isDeleted = false;
     Connection conn = null;
     try {
       conn = getDatabaseConnection();
       isDeleted = deleteDocument(unid, replicaid, conn);
     } catch (SQLException e) {
-      LOGGER.logp(Level.WARNING, CLASS_NAME, METHOD,
-          "Failed to obtain database connection from pool");
+      LOGGER.log(Level.WARNING,
+          "Failed to obtain database connection from pool", e);
     } finally {
       if (conn != null) {
         releaseDatabaseConnection(conn);
@@ -593,25 +576,23 @@ class NotesDocumentManager {
       try {
         conn.commit();
         isDeleted = true;
-        LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
-            "Document " + unid + " is deleted");
+        LOGGER.log(Level.FINE, "Document {0} is deleted", unid);
       } catch (SQLException sqle) {
         try {
-          LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
+          LOGGER.log(Level.FINE,
               "Failed to commit deleting " + unid + " document", sqle);
           conn.rollback();
         } catch (SQLException sqle2) {
-          LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
+          LOGGER.log(Level.FINE,
               "Failed to rollbak from deleting " + unid + " document", sqle2);
         }
       }
     } catch (SQLException sqle) {
-      LOGGER.logp(Level.WARNING, CLASS_NAME, METHOD,
+      LOGGER.log(Level.WARNING,
           "Failed to delete " + unid + " document", sqle);
     } finally {
       if (!setAutoCommit(conn, true)) {
-        LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
-            "Failed to enable auto commit");
+        LOGGER.log(Level.FINE, "Failed to enable auto commit");
       }
     }
     LOGGER.exiting(CLASS_NAME, METHOD);
@@ -623,7 +604,6 @@ class NotesDocumentManager {
    */
   private Set<String> getReaders(
       NotesDocument docIndexed, String...readerFieldNames) {
-    final String METHOD = "getDocumentReaders";
     Set<String> readers = new HashSet<String>();
     for (String readerFieldName : readerFieldNames) {
       try {
@@ -633,8 +613,9 @@ class NotesDocumentManager {
           readers.add(fieldValue);
         }
       } catch (RepositoryException e) {
-        LOGGER.logp(Level.FINE, CLASS_NAME, METHOD, readerFieldName +
-          " reader field is not existed in indexed document");
+        LOGGER.log(Level.FINE,
+            "{0} reader field does not exist in indexed document",
+            readerFieldName);
       }
     }
     return readers;
@@ -642,7 +623,6 @@ class NotesDocumentManager {
 
   private void executeUpdates(boolean autoCommit, String...statements)
       throws SQLException {
-    final String METHOD = "executeUpdates";
     Connection connection = getDatabaseConnection();
     Statement stmt = null;
     try {
@@ -651,30 +631,27 @@ class NotesDocumentManager {
       connection.setTransactionIsolation(Connection.TRANSACTION_SERIALIZABLE);
       for (String statement : statements) {
         stmt.executeUpdate(statement);
-        LOGGER.logp(Level.FINE, CLASS_NAME, METHOD, "Executed " + statement);
+        LOGGER.log(Level.FINE, "Executed {0}", statement);
       }
       if (autoCommit == false) {
         try {
           connection.commit();
-          LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
-              "Committed all transactions successfully");
+          LOGGER.log(Level.FINE, "Committed all transactions successfully");
         } catch (SQLException sqle) {
           connection.rollback();
-          LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
-              "Rolled back all transactions");
+          LOGGER.log(Level.FINE, "Rolled back all transactions");
           throw sqle;
         }
       }
     } catch (SQLException e) {
-      LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
-          "Failed to update H2 database", e);
+      LOGGER.log(Level.FINE, "Failed to update H2 database", e);
       throw e;
     } finally {
       if (stmt != null) {
         try {
           stmt.close();
         } catch (SQLException e) {
-          LOGGER.logp(Level.WARNING, CLASS_NAME, METHOD, e.getMessage());
+          LOGGER.log(Level.WARNING, e.getMessage());
         }
       }
       if (connection != null) {
@@ -695,12 +672,10 @@ class NotesDocumentManager {
       };
       executeUpdates(false, statements);
       isClear = true;
-      LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
-          "All data in " + indexedTableName + " and " + readersTableName +
-          " tables are purged");
+      LOGGER.log(Level.FINE, "All data in {0} and {1} tables are purged",
+          new Object[] { indexedTableName, readersTableName });
     } catch (SQLException e) {
-      LOGGER.logp(Level.FINE, CLASS_NAME, METHOD, "Failed to clear all data");
-      throw new RepositoryException(e);
+      throw new RepositoryException("Failed to clear all data", e);
     }
     LOGGER.exiting(CLASS_NAME, METHOD);
     return isClear;
@@ -719,12 +694,10 @@ class NotesDocumentManager {
       };
       executeUpdates(false, statements);
       isDropped = true;
-      LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
-          indexedTableName + " and " + readersTableName +
-          " tables were dropped");
+      LOGGER.log(Level.FINE, "{0} and {1} tables were dropped",
+          new Object[] { indexedTableName, readersTableName });
     } catch (SQLException e) {
-      LOGGER.logp(Level.FINE, CLASS_NAME, METHOD, "Failed to drop tables");
-      throw new RepositoryException(e);
+      throw new RepositoryException("Failed to drop tables", e);
     }
     LOGGER.exiting(CLASS_NAME, METHOD);
     return isDropped;

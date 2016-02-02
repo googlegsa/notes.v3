@@ -137,11 +137,12 @@ public class NotesMaintenanceThreadTest extends TestCase {
 
     // Test log message
     assertEquals(BATCH_SIZE, logs.size());
-    assertTrue("Source server is not logged",
+    assertTrue("Source server is not logged: " + logs,
         logs.get(0).contains("mickey1/mtv/us"));
-    assertTrue("Source database is not logged",
+    assertTrue("Source database is not logged: " + logs,
         logs.get(0).contains("test.nsf"));
-    assertTrue(logs.get(0).contains(TESTCONST.DBSRC_REPLICAID));
+    assertTrue(logs.toString(),
+        logs.get(0).contains(TESTCONST.DBSRC_REPLICAID));
   }
 
   public void testValidSelectionCriteriaFormulas() throws Exception {
@@ -174,7 +175,7 @@ public class NotesMaintenanceThreadTest extends TestCase {
 
     // Test log message
     assertTrue(logs.size() > 0);
-    assertTrue(logs.get(0).contains(searchString));
+    assertTrue(logs.toString(), logs.get(0).contains(searchString));
   }
 
   private NotesDatabaseMock setupSourceDatabase(String server, String filePath,

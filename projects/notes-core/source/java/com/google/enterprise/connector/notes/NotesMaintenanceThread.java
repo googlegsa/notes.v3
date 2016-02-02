@@ -60,9 +60,7 @@ class NotesMaintenanceThread extends Thread {
 
   NotesMaintenanceThread(NotesConnector connector,
       NotesConnectorSession session) throws RepositoryException {
-    final String METHOD = "NotesMaintenanceThread";
-    LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD,
-        "NotesMaintenanceThread being created.");
+    LOGGER.log(Level.FINEST, "NotesMaintenanceThread being created.");
 
     nc = connector;
     ncs = session;
@@ -81,17 +79,17 @@ class NotesMaintenanceThread extends Thread {
     NotesPollerNotifier npn = ncs.getNotifier();
     while (nc.getShutdown() == false) {
       try {
-        LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
+        LOGGER.log(Level.FINE,
             "Maintenance thread is updating User Group Cache.");
         nugm.updateUsersGroups();
-        LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
-            "Maintenance thread checking for deletions [Batch Size: " + 
-            batchsize + "]");
+        LOGGER.log(Level.FINE,
+            "Maintenance thread checking for deletions [Batch Size: {0}]",
+            batchsize);
         lastdocid = checkForDeletions(lastdocid, batchsize);
-        LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
+        LOGGER.log(Level.FINE,
             "Maintenance thread sleeping after checking for deletions.");
         npn.waitForWork();
-        LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
+        LOGGER.log(Level.FINE,
             "Maintenance thread resuming to check for deletions.");
       } catch (Exception e) {
         LOGGER.log(Level.SEVERE, CLASS_NAME, e);
@@ -100,16 +98,16 @@ class NotesMaintenanceThread extends Thread {
         // logs with errors so go to sleep after 5 exceptions
         exceptionCount++;
         if (exceptionCount > 5) {
-          LOGGER.logp(Level.WARNING, CLASS_NAME, METHOD,
-              "Too many exceptions.  Maintenance thread sleeping.");
+          LOGGER.log(Level.WARNING,
+              "Too many exceptions. Maintenance thread sleeping.");
           npn.waitForWork();
-          LOGGER.logp(Level.WARNING, CLASS_NAME, METHOD,
+          LOGGER.log(Level.WARNING,
               "Maintenance thread resuming after too many exceptions " +
               "were encountered.");
         }
       }
     }
-    LOGGER.logp(Level.INFO, CLASS_NAME, METHOD,
+    LOGGER.log(Level.INFO,
         "Maintenance thread exiting after connector shutdown.");
     LOGGER.exiting(CLASS_NAME, METHOD);
   }
@@ -127,7 +125,7 @@ class NotesMaintenanceThread extends Thread {
     String lastdocid = startdocid;
     NotesDocId notesId = null;
     try {
-      LOGGER.logp(Level.INFO, CLASS_NAME, METHOD, "Checking for deletions ");
+      LOGGER.log(Level.INFO, "Checking for deletions");
       ns = ncs.createNotesSession();
       // TODO(jlacey): See getStopped.
       // CheckTime = ns.createDateTime("1/1/1900");
@@ -135,16 +133,14 @@ class NotesMaintenanceThread extends Thread {
       cdb = ns.getDatabase(ncs.getServer(), ncs.getDatabase());
       NotesView DatabaseView = cdb.getView(NCCONST.VIEWDATABASES);
       DatabaseView.refresh();
-      LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
-          "MaintenanceThread: Entries in database view: " +
+      LOGGER.log(Level.FINE, "Entries in database view: {0}",
           DatabaseView.getEntryCount());
 
       Map<String, NotesDocId> indexedDocuments;
       if (Strings.isNullOrEmpty(startdocid)) {
         indexedDocuments = ncs.getNotesDocumentManager()
             .getIndexedDocuments(null, null, batchsize);
-        LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
-            "MaintenanceThread: Restarting deletion check.");
+        LOGGER.log(Level.FINE, "Restarting deletion check.");
       } else {
         NotesDocId startNotesId = new NotesDocId(startdocid);
         indexedDocuments = ncs.getNotesDocumentManager()
@@ -152,8 +148,7 @@ class NotesMaintenanceThread extends Thread {
                 startNotesId.getReplicaId(), batchsize);
 
         if (!indexedDocuments.containsKey(startNotesId.getDocId())) {
-          LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
-              "MaintenanceThread: Restarting deletion check.");
+          LOGGER.log(Level.FINE, "Restarting deletion check.");
         }
       }
       for (Map.Entry<String, NotesDocId> entry : indexedDocuments.entrySet()) {
@@ -161,23 +156,22 @@ class NotesMaintenanceThread extends Thread {
           break;
         }
         notesId = entry.getValue();
-        LOGGER.logp(Level.FINER, CLASS_NAME, METHOD,
-            "MaintenanceThread: Checking deletion for document: " + notesId);
+        LOGGER.log(Level.FINER, "Checking deletion for document: {0}", notesId);
         try {
           lastdocid = notesId.toString();
           //Validate database config using replica ID
           loadDbConfigDoc(notesId.getReplicaId(), DatabaseView);
           if (DbConfigDoc == null) {
-            LOGGER.logp(Level.SEVERE, CLASS_NAME, METHOD,
-                "MaintenanceThread: Skipping document because no " +
-                "database config found for " + notesId);
+            LOGGER.log(Level.SEVERE,
+                "Skipping document because no database config found for {0}",
+                notesId);
             continue;
           }
           //When a database is in stopped mode we purge all documents
           if (getStopped()) {
-            LOGGER.logp(Level.FINER, CLASS_NAME, METHOD,
-                "MaintenanceThread: Deleting document because database " +
-                "is being purged. " + notesId);
+            LOGGER.log(Level.FINER,
+                "Deleting document because database is being purged. {0}",
+                notesId);
             sendDeleteRequest(notesId);
             continue;
           }
@@ -185,9 +179,9 @@ class NotesMaintenanceThread extends Thread {
           String checkDeletions = DbConfigDoc.getItemValueString(
               NCCONST.DITM_CHECKDELETIONS);
           if (checkDeletions.toLowerCase().contentEquals("no")) {
-            LOGGER.logp(Level.FINER, CLASS_NAME, METHOD,
-                "MaintenanceThread: Skipping document because " +
-                "deletion checking is not enabled. " + notesId);
+            LOGGER.log(Level.FINER,
+                "Skipping document because deletion checking is disabled. {0}",
+                notesId);
             continue;
           }
           //Is crawling enabled for this database?  If not then
@@ -195,34 +189,32 @@ class NotesMaintenanceThread extends Thread {
           int isEnabled = DbConfigDoc.getItemValueInteger(
               NCCONST.DITM_CRAWLENABLED);
           if (isEnabled != 1) {
-            LOGGER.logp(Level.FINER, CLASS_NAME, METHOD,
-                "MaintenanceThread: Skipping document because " +
-                "database crawling is disabled. " + notesId);
+            LOGGER.log(Level.FINER,
+                "Skipping document because database crawling is disabled. {0}",
+                notesId);
             continue;
           }
           //Try and open the source database
           boolean isSrcDbOpened = openSourceDatabase(notesId);
           if (!isSrcDbOpened) {
-            LOGGER.logp(Level.SEVERE, CLASS_NAME, METHOD,
-                "MaintenanceThread: Skipping document because source "
-                    + "database could not be opened: " + notesId.getServer()
-                    + "!!" + notesId.getReplicaId());
+            LOGGER.log(Level.SEVERE, "Skipping document because source "
+                + "database could not be opened: {0}!!{1}",
+                new Object[] { notesId.getServer(), notesId.getReplicaId() });
             continue;
           }
 
           boolean isDocDeleted = loadSourceDocument(entry.getKey());
           if (isDocDeleted) {
-            LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD,
-                "Document has been deleted: " + notesId + ", UNID "
-                    + entry.getKey());
+            LOGGER.log(Level.FINEST, "Document has been deleted: {0}, UNID {1}",
+                new Object[] { notesId, entry.getKey() });
             sendDeleteRequest(notesId);
             continue;
           }
 
           boolean isConflict = SourceDocument.hasItem(NCCONST.NCITM_CONFLICT);
           if (isConflict) {
-            LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD,
-                "Deleting document due to conflict: " + notesId);
+            LOGGER.log(Level.FINEST,
+                "Deleting document due to conflict: {0}", notesId);
             sendDeleteRequest(notesId);
             continue;
           }
@@ -231,8 +223,8 @@ class NotesMaintenanceThread extends Thread {
               DbConfigDoc.getItemValueString(NCCONST.DITM_TEMPLATE);
           loadTemplateDoc(templateName);
           if (null == TemplateDoc) {
-            LOGGER.logp(Level.SEVERE, CLASS_NAME, METHOD,
-                "MaintenanceThread: Skipping selection criteria check " +
+            // The tests check this, so avoid MessageFormat-style.
+            LOGGER.log(Level.SEVERE, "Skipping selection criteria check " +
                 "because template could not be opened: " + notesId +
                 ", Template: "+ templateName + ", Database: " +
                 notesId.getServer() + "!!" + SrcDb.getFilePath());
@@ -241,23 +233,22 @@ class NotesMaintenanceThread extends Thread {
 
           boolean meetsCriteria = checkSelectionCriteria();
           if (!meetsCriteria) {
-            LOGGER.logp(Level.FINER, CLASS_NAME, METHOD,
-                "MaintenanceThread: Deleting document because " +
-                "selection formula returned false: " + notesId +
-                ", Database: " + notesId.getServer() + "!!" +
-                SrcDb.getFilePath());
+            LOGGER.log(Level.FINER, "Deleting document because "
+                + "selection formula returned false: {0}, Database: {1}!!{2}",
+                new Object[] {
+                    notesId, notesId.getServer(), SrcDb.getFilePath() });
             sendDeleteRequest(notesId);
             continue;
           }
         } catch (RepositoryException e) {
-          LOGGER.logp(Level.WARNING, CLASS_NAME, METHOD,
+          LOGGER.log(Level.WARNING,
               "Unable to process document: " + notesId, e);
           // Skip current UNID and process next.
           continue;
         }
       }
     } catch (Exception e) {
-      LOGGER.logp(Level.SEVERE, CLASS_NAME, METHOD,
+      LOGGER.log(Level.SEVERE,
           "Aborting check for deletions at document: " + notesId, e);
     } finally {
       Util.recycle(SourceDocument, TemplateDoc, DbConfigDoc, SrcDb, cdb);
@@ -280,19 +271,14 @@ class NotesMaintenanceThread extends Thread {
    *
    */
   protected boolean getStopped() throws RepositoryException {
-
     // TODO:  Think about adding variable to provide some grace time
     /*
-      final String METHOD = "getStopped";
-      LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD,
-          "CheckTime is: " + CheckTime);
+      LOGGER.log(Level.FINEST, "CheckTime is: {0}", CheckTime);
       DateTime lm = DbConfigDoc.getLastModified();
-      LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD,
-          "Last Modified is: " + lm);
+      LOGGER.log(Level.FINEST, "Last Modified is: {0}", lm);
 
       int timediff = CheckTime.timeDifference(lm);
-      LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD,
-          "Time Diff is: " + timediff);
+      LOGGER.log(Level.FINEST, "Time Diff is: {0}", timediff);
       if (CheckTime.timeDifference(lm) < 300) {
         return false;
       }
@@ -331,15 +317,13 @@ class NotesMaintenanceThread extends Thread {
       throws RepositoryException {
     final String METHOD = "loadTemplateDoc";
     LOGGER.entering(CLASS_NAME, METHOD);
-    LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD,
-        "Loading template: " + TemplateName);
+    LOGGER.log(Level.FINEST, "Loading template: {0}", TemplateName);
     // Is a template document all ready loaded?
     if (null != TemplateDoc) {
       // Is this the one we need?
       String existingTemplate = TemplateDoc.getItemValueString(
           NCCONST.TITM_TEMPLATENAME);
-      LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD,
-          "Existing template is: " + TemplateName);
+      LOGGER.log(Level.FINEST, "Existing template is: {0}", TemplateName);
       if (TemplateName.equals(existingTemplate)) {
         return;
       }
@@ -350,8 +334,7 @@ class NotesMaintenanceThread extends Thread {
     TemplateDoc = vw.getDocumentByKey(TemplateName, true);
     vw.recycle();
     if (null != TemplateDoc) {
-      LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD,
-          "Loaded template: " +
+      LOGGER.log(Level.FINEST, "Loaded template: {0}",
           TemplateDoc.getItemValueString(NCCONST.TITM_TEMPLATENAME));
     }
     LOGGER.exiting(CLASS_NAME, METHOD);
@@ -371,8 +354,8 @@ class NotesMaintenanceThread extends Thread {
     }
     DbConfigDoc = DatabaseView.getDocumentByKey(ReplicaId);
     if (null == DbConfigDoc) {
-      LOGGER.logp(Level.SEVERE, CLASS_NAME, METHOD,
-          "Maintenance thread can't find database config for replica : " +
+      LOGGER.log(Level.SEVERE,
+          "Maintenance thread can't find database config for replica: {0}",
           ReplicaId);
       return;
     }
@@ -388,20 +371,18 @@ class NotesMaintenanceThread extends Thread {
 
     String SelectionFormula = TemplateDoc.getItemValueString(
         NCCONST.TITM_SEARCHSTRING);
-    LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD,
-        "Using selection formula: " + SelectionFormula);
+    // The tests check this, so avoid MessageFormat-style.
+    LOGGER.log(Level.FINEST, "Using selection formula: " + SelectionFormula);
 
     Vector<Double> VecEvalResult =  (Vector<Double>)
         ns.evaluate(SelectionFormula, SourceDocument);
     // A Selection formula will return a vector of doubles.
     if (1 == VecEvalResult.elementAt(0)) {
-      LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD,
-          "Selection formula returned true");
+      LOGGER.log(Level.FINEST, "Selection formula returned true");
       LOGGER.exiting(CLASS_NAME, METHOD);
       return true;
     }
-    LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD,
-        "Selection formula returned false");
+    LOGGER.log(Level.FINEST, "Selection formula returned false");
     LOGGER.exiting(CLASS_NAME, METHOD);
     return false;
   }
@@ -439,8 +420,8 @@ class NotesMaintenanceThread extends Thread {
   private void createDeleteRequest(String googleDocId) throws RepositoryException {
     final String METHOD = "createDeleteRequest";
     LOGGER.entering(CLASS_NAME, METHOD);
-    LOGGER.logp(Level.FINER, CLASS_NAME, METHOD, 
-        "Send deletion request to GSA for " + googleDocId);
+    LOGGER.log(Level.FINER,
+        "Send deletion request to GSA for {0}", googleDocId);
     NotesDocument DeleteReq = cdb.createDocument();
     DeleteReq.appendItemValue(NCCONST.ITMFORM, NCCONST.FORMCRAWLREQUEST);
     DeleteReq.replaceItemValue(NCCONST.ITM_ACTION, ActionType.DELETE.toString());

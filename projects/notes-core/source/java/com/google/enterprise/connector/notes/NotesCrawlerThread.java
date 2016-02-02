@@ -45,6 +45,7 @@ import java.util.regex.Pattern;
 class NotesCrawlerThread extends Thread {
   private static final String CLASS_NAME = NotesCrawlerThread.class.getName();
   private static final Logger LOGGER = Logger.getLogger(CLASS_NAME);
+
   static final String META_FIELDS_PREFIX = "x.";
 
   private final NotesConnector nc;
@@ -65,9 +66,7 @@ class NotesCrawlerThread extends Thread {
   List<MetaField> metaFields;
 
   NotesCrawlerThread(NotesConnector Connector, NotesConnectorSession Session) {
-    final String METHOD = "NotesCrawlerThread";
-    LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD,
-        "NotesCrawlerThread being created.");
+    LOGGER.finest("NotesCrawlerThread being created.");
 
     nc = Connector;
     ncs = Session;
@@ -79,21 +78,19 @@ class NotesCrawlerThread extends Thread {
   @VisibleForTesting
   static synchronized NotesDocument getNextFromCrawlQueue(
       NotesSession ns, NotesView crawlQueue) {
-    final String METHOD = "getNextFromCrawlQueue";
     try {
       crawlQueue.refresh();
       NotesDocument nextDoc = crawlQueue.getFirstDocument();
       if (nextDoc == null) {
         return null;
       }
-      LOGGER.logp(Level.FINER, CLASS_NAME, METHOD, "Prefetching document");
+      LOGGER.finer("Prefetching document");
       nextDoc.replaceItemValue(NCCONST.NCITM_STATE, NCCONST.STATEINCRAWL);
       nextDoc.save(true);
 
       return nextDoc;
     } catch (Exception e) {
-      LOGGER.log(Level.SEVERE, CLASS_NAME, e);
-    } finally {
+      LOGGER.log(Level.SEVERE, "Aborting crawl", e);
     }
     return null;
   }
@@ -202,10 +199,9 @@ class NotesCrawlerThread extends Thread {
         }
       }
 
-      LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD,
-          "Document readers for "
-          + crawlDoc.getItemValueString(NCCONST.ITM_DOCID)
-          + " are " + authorReaders);
+      LOGGER.log(Level.FINEST, "Document readers for {0} are {1}",
+          new Object[] {
+            crawlDoc.getItemValueString(NCCONST.ITM_DOCID), authorReaders});
       if (authorReaders.size() > 0) {
         crawlDoc.replaceItemValue(NCCONST.NCITM_DOCAUTHORREADERS,
             authorReaders);
@@ -218,12 +214,11 @@ class NotesCrawlerThread extends Thread {
 
   private boolean copyValues(NotesItem item, Vector<String> destination,
       String description) throws RepositoryException {
-    final String METHOD = "copyValues";
     Vector values = item.getValues();
     int count = 0;
     if (null != values) {
-      LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD,
-          "Adding " + description + " " + values.toString());
+      LOGGER.log(Level.FINEST, "Adding {0} {1}",
+          new Object[] { description, values });
       for (; count < values.size(); count++) {
         destination.add(values.elementAt(count).toString().toLowerCase());
       }
@@ -252,15 +247,14 @@ class NotesCrawlerThread extends Thread {
     Vector<?> VecEvalResult = null;
     String Result = null;
     try {
-      LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD,
-          "Evaluating formula for item " + ItemName + " : src is: " + formula);
+      LOGGER.log(Level.FINEST, "Evaluating formula for item {0} : src is: {1}",
+          new Object[] { ItemName, formula });
       VecEvalResult = ns.evaluate(formula, srcDoc);
       // Make sure we dont' get an empty vector or an empty string
       if (VecEvalResult != null) {
         if (VecEvalResult.size() > 0) {
           Result = VecEvalResult.elementAt(0).toString();
-          LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD,
-              "Evaluating formula result is: " + Result);
+          LOGGER.log(Level.FINEST, "Evaluating formula result is: {0}", Result);
         }
       }
       if (null == Result) {
@@ -270,7 +264,8 @@ class NotesCrawlerThread extends Thread {
         Result = Default;
       }
     } catch (RepositoryException e) {
-      LOGGER.log(Level.SEVERE, CLASS_NAME, e);
+      LOGGER.log(Level.SEVERE, "Skipping {0}: Unable to evaluate formula: {1}",
+          new Object[] { ItemName, formula });
     } finally {
       crawlDoc.replaceItemValue(ItemName, Result);
     }
@@ -339,8 +334,7 @@ class NotesCrawlerThread extends Thread {
       try {
         if (null == mf.getFieldName()) {
           if (LOGGER.isLoggable(Level.FINEST)) {
-            LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD,
-                "Skipping null fieldname");
+            LOGGER.log(Level.FINEST, "Skipping null fieldname");
           }
           continue;
         }
@@ -349,7 +343,7 @@ class NotesCrawlerThread extends Thread {
           String docForm = srcDoc.getItemValueString(NCCONST.ITMFORM);
           if (!configForm.equalsIgnoreCase(docForm)) {
             if (LOGGER.isLoggable(Level.FINEST)) {
-              LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD,
+              LOGGER.log(Level.FINEST,
                   "Skipping metafields because configured form {0} does not "
                   + "match doc form {1}",
                   new Object[] { configForm, docForm });
@@ -359,8 +353,8 @@ class NotesCrawlerThread extends Thread {
         }
         if (!srcDoc.hasItem(mf.getFieldName())) {
           if (LOGGER.isLoggable(Level.FINEST)) {
-            LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD,
-                "Source doc does not have field: " + mf.getFieldName());
+            LOGGER.log(Level.FINEST,
+                "Source doc does not have field: {0}", mf.getFieldName());
           }
           continue;
         }
@@ -370,8 +364,8 @@ class NotesCrawlerThread extends Thread {
         item = srcDoc.getFirstItem(mf.getFieldName());
         if (null == item.getValues()) {
           if (LOGGER.isLoggable(Level.FINEST)) {
-            LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD,
-                "Source doc does not have value for: " + mf.getFieldName());
+            LOGGER.log(Level.FINEST,
+                "Source doc does not have value for: {0}", mf.getFieldName());
           }
           continue;
         }
@@ -380,7 +374,7 @@ class NotesCrawlerThread extends Thread {
           content = item.getText(2 * 1024);
         }
         if (crawlDoc.hasItem(META_FIELDS_PREFIX + mf.getMetaName())) {
-          LOGGER.logp(Level.WARNING, CLASS_NAME, METHOD,
+          LOGGER.log(Level.WARNING,
               "Mapping meta fields: meta field {0} already exists in crawl doc",
               mf.getMetaName());
           // If multiple Notes fields are mapped to the same meta
@@ -390,13 +384,11 @@ class NotesCrawlerThread extends Thread {
         crawlDoc.replaceItemValue(META_FIELDS_PREFIX + mf.getMetaName(),
             content);
         if (LOGGER.isLoggable(Level.FINEST)) {
-          LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD,
-              "Mapped meta field : " + META_FIELDS_PREFIX
-              + mf.getMetaName() + " =  " + content);
+          LOGGER.log(Level.FINEST, "Mapped meta field : {0}{1} = {2}",
+              new Object[] { META_FIELDS_PREFIX, mf.getMetaName(), content });
         }
       } catch (RepositoryException e) {
-        LOGGER.logp(Level.WARNING, CLASS_NAME, METHOD,
-            "Error mapping MetaField " + mf, e);
+        LOGGER.log(Level.WARNING, "Error mapping MetaField " + mf, e);
       } finally {
         Util.recycle(item);
       }
@@ -503,14 +495,12 @@ class NotesCrawlerThread extends Thread {
     NotesDocument srcDoc = null;
     try {
       NotesURL = crawlDoc.getItemValueString(NCCONST.ITM_GMETANOTESLINK);
-      LOGGER.logp(Level.FINER, CLASS_NAME, METHOD,
-          "Prefetching document " + NotesURL);
+      LOGGER.log(Level.FINER, "Prefetching document {0}" + NotesURL);
 
       // Get the template for this document
       loadTemplateDoc(crawlDoc.getItemValueString(NCCONST.NCITM_TEMPLATE));
       if (null == templateDoc) {
-        LOGGER.logp(Level.FINER, CLASS_NAME, METHOD,
-            "No template found for document " +
+        LOGGER.log(Level.FINER, "No template found for document {0}",
             crawlDoc.getItemValueString(NCCONST.ITM_GMETANOTESLINK));
         return false;
       }
@@ -538,9 +528,9 @@ class NotesCrawlerThread extends Thread {
       // Get the form configuration for this document
       loadForm(srcDoc.getItemValueString(NCCONST.ITMFORM));
       if (null == formDoc) {
-        LOGGER.logp(Level.FINER, CLASS_NAME, METHOD,
+        LOGGER.log(Level.FINER,
             "No form definition found.  Using template definition " +
-            "to process document " + NotesURL);
+            "to process document {0}", NotesURL);
       }
 
       setDocumentReaderNames(crawlDoc, srcDoc);
@@ -581,8 +571,8 @@ class NotesCrawlerThread extends Thread {
                 "Attachment document was not created for {0}", attachName);
           }
         } else {
-          LOGGER.logp(Level.FINER, CLASS_NAME, METHOD,
-              "Excluding attachment in " + NotesURL + " : " + attachName);
+          LOGGER.log(Level.FINER, "Excluding attachment in {0} : {1}",
+              new Object[] { NotesURL, attachName });
         }
       }
       crawlDoc.replaceItemValue(NCCONST.ITM_GMETAALLATTACHMENTS, va);
@@ -610,8 +600,7 @@ class NotesCrawlerThread extends Thread {
 
       return true;
     } catch (Exception e) {
-      LOGGER.logp(Level.SEVERE, CLASS_NAME, METHOD,
-          "Error prefetching document " + NotesURL, e);
+      LOGGER.log(Level.SEVERE, "Error prefetching document " + NotesURL, e);
       return false;
     } finally {
       LOGGER.exiting(CLASS_NAME, METHOD);
@@ -710,17 +699,16 @@ class NotesCrawlerThread extends Thread {
 
       if (eo.getType() != NotesEmbeddedObject.EMBED_ATTACHMENT) {
         // The object is not an attachment - could be an OLE object or link
-        LOGGER.logp(Level.FINER, CLASS_NAME, METHOD,
-            "Ignoring embedded object " + AttachmentName);
+        LOGGER.log(Level.FINER, "Ignoring embedded object {0}", AttachmentName);
         eo.recycle();
         return null;
       }
 
       // Don't send attachments larger than the limit
       if (eo.getFileSize() > ncs.getMaxFileSize()) {
-        LOGGER.logp(Level.FINER, CLASS_NAME, METHOD,
+        LOGGER.log(Level.FINER,
             "Attachment larger than the configured limit and content " +
-            "will not be sent. " + AttachmentName);
+            "will not be sent. {0}", AttachmentName);
       }
 
       attachDoc = cdb.createDocument();
@@ -781,7 +769,7 @@ class NotesCrawlerThread extends Thread {
       LOGGER.exiting(CLASS_NAME, METHOD);
       return attachNameHash;
     } catch (Exception e) {
-      LOGGER.logp(Level.SEVERE, CLASS_NAME, METHOD,
+      LOGGER.log(Level.SEVERE,
           "Error pre-fetching attachment: " + AttachmentName +
           " in document: " + srcDoc.getNotesURL(), e);
       Util.recycle(eo);
@@ -865,30 +853,30 @@ class NotesCrawlerThread extends Thread {
         // Only get from the queue if there is more than 300MB in the
         // spool directory
         File spoolDir = new File(ncs.getSpoolDir());
-        LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
-            "Spool free space is " + spoolDir.getFreeSpace());
+        LOGGER.log(Level.FINE,
+            "Spool free space is {0}", spoolDir.getFreeSpace());
         if (spoolDir.getFreeSpace()/1000000 < 300) {
-          LOGGER.logp(Level.WARNING, CLASS_NAME, METHOD,
+          LOGGER.log(Level.WARNING,
               "Insufficient space in spool directory to process " +
               "new documents.  Need at least 300MB.");
           npn.waitForWork();
-          LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
+          LOGGER.log(Level.FINE,
               "Crawler thread resuming after spool directory had " +
               "insufficient space.");
           continue;
         }
-        LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD,
-            "Connecting to crawl queue.");
+        LOGGER.log(Level.FINEST, "Connecting to crawl queue.");
         connectQueue();
         crawlDoc = getNextFromCrawlQueue(ns, crawlQueue);
         if (crawlDoc == null) {
-          LOGGER.logp(Level.FINE, CLASS_NAME, METHOD, this.getName() +
-              ": Crawl queue is empty.  Crawler thread sleeping.");
+          LOGGER.log(Level.FINE, 
+              "{0}: Crawl queue is empty. Crawler thread sleeping.", getName());
           // If we have finished processing the queue shutdown our connections
           disconnectQueue();
           npn.waitForWork();
-          LOGGER.logp(Level.FINE, CLASS_NAME, METHOD, this.getName() +
-              "Crawler thread resuming after crawl queue was empty.");
+          LOGGER.log(Level.FINE,
+              "{0} Crawler thread resuming after crawl queue was empty.",
+              getName());
           continue;
         }
         if (prefetchDoc(crawlDoc)) {
@@ -909,18 +897,17 @@ class NotesCrawlerThread extends Thread {
         disconnectQueue();
 
         if (exceptionCount > 5) {
-          LOGGER.logp(Level.WARNING, CLASS_NAME, METHOD,
+          LOGGER.log(Level.WARNING,
               "Too many exceptions.  Crawler thread sleeping.");
           npn.waitForWork();
-          LOGGER.logp(Level.WARNING, CLASS_NAME, METHOD,
+          LOGGER.log(Level.WARNING,
               "Crawler thread resuming after too many exceptions " +
               "were encountered.");
         }
       }
     }
     disconnectQueue();
-    LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
-        "Connector shutdown - NotesCrawlerThread exiting.");
+    LOGGER.log(Level.FINE, "Connector shutdown - NotesCrawlerThread exiting.");
     LOGGER.exiting(CLASS_NAME, METHOD);
   }
 
@@ -938,7 +925,6 @@ class NotesCrawlerThread extends Thread {
     private String metaName;
 
     MetaField(String configString) {
-      String METHOD = "MetaField";
       if (configString == null) {
         return;
       }
@@ -966,9 +952,9 @@ class NotesCrawlerThread extends Thread {
         metaName = fieldName;
         return;
       }
-      LOGGER.logp(Level.WARNING, CLASS_NAME, METHOD,
-          "Unable to parse custom meta field definition; skipping: "
-          + configString);
+      LOGGER.log(Level.WARNING,
+          "Unable to parse custom meta field definition; skipping: {0}",
+          configString);
     }
 
     String getFormName() {

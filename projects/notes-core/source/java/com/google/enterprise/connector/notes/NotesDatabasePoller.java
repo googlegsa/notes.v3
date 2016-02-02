@@ -59,9 +59,9 @@ class NotesDatabasePoller {
       srcdbView.refresh();
       NotesDocument srcdbDoc = srcdbView.getFirstDocument();
       while (null != srcdbDoc) {
-        LOGGER.logp(Level.FINER, CLASS_NAME, METHOD,
-            "Connector reset - Resetting database last update date for "
-            + srcdbDoc.getItemValue(NCCONST.DITM_DBNAME));
+        LOGGER.log(Level.FINER,
+            "Connector reset - Resetting database last update date for {0}",
+            srcdbDoc.getItemValue(NCCONST.DITM_DBNAME));
         srcdbDoc.removeItem(NCCONST.DITM_LASTUPDATE);
         srcdbDoc.removeItem(NCCONST.DITM_ACLTEXT);
         srcdbDoc.save(true);
@@ -73,12 +73,10 @@ class NotesDatabasePoller {
 
       // Reset last cache update date time for directory update
       if (ncs.getUserGroupManager().resetLastCacheUpdate()) {
-        LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
-            "Last cache update date time is reset");
+        LOGGER.log(Level.FINE, "Last cache update date time is reset");
       }
     } catch (Exception e) {
-      LOGGER.logp(Level.SEVERE, CLASS_NAME, METHOD,
-          "Error resetting connector.", e);
+      LOGGER.log(Level.SEVERE, "Error resetting connector", e);
     } finally {
       ncs.closeNotesSession(ns);
       LOGGER.exiting(CLASS_NAME, METHOD);
@@ -116,17 +114,16 @@ class NotesDatabasePoller {
         vwSubmitQ.refresh();
         vwCrawlQ.refresh();
         int qDepth = vwSubmitQ.getEntryCount() + vwCrawlQ.getEntryCount();
-        LOGGER.logp(Level.FINER, CLASS_NAME, METHOD,
-            "Total documents in crawl and submit queues is: " + qDepth);
+        LOGGER.log(Level.FINER,
+            "Total documents in crawl and submit queues is: {0}", qDepth);
         if (vwSubmitQ.getEntryCount() + vwCrawlQ.getEntryCount() > maxDepth) {
-          LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
-              "Queue threshold reached.  Suspending polling. size/max="
-              + qDepth + "/" + maxDepth);
+          LOGGER.log(Level.FINE,
+              "Queue threshold reached.  Suspending polling. size/max={0}/{1}",
+              new Object[] { qDepth, maxDepth });
           srcdbDoc.recycle();
           break;
         }
-        LOGGER.logp(Level.FINER, CLASS_NAME, METHOD,
-            "Source Database Config Document " +
+        LOGGER.log(Level.FINER, "Source Database Config Document {0}",
             srcdbDoc.getItemValue(NCCONST.DITM_DBNAME));
         pollSourceDatabase(ns, cdb, srcdbDoc, templateView, pollTime,
             nextBatch);
@@ -166,12 +163,11 @@ class NotesDatabasePoller {
           .firstElement().toString();
       if (aclActivityText.contentEquals(
               dbdoc.getItemValueString(NCCONST.DITM_ACLTEXT))) {
-        LOGGER.logp(Level.FINER, CLASS_NAME, METHOD,
-            "ACL has not changed.  Skipping ACL processing. ");
+        LOGGER.log(Level.FINER,
+            "ACL has not changed. Skipping ACL processing.");
         return false;
       }
-      LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD,
-          "New ACL Text is. " + aclActivityText);
+      LOGGER.log(Level.FINEST, "New ACL Text is. {0}", aclActivityText);
 
       // Build the lists of allowed/denied users and groups.
       acl = srcdb.getACL();
@@ -190,9 +186,8 @@ class NotesDatabasePoller {
         logGsaPolicyAcl(dbdoc);
 
         if (LOGGER.isLoggable(Level.FINER)) {
-          LOGGER.logp(Level.FINER, CLASS_NAME, METHOD,
-              "Creating ACL records for database "
-              + dbdoc.getItemValueString(NCCONST.DITM_DBNAME));
+          LOGGER.log(Level.FINER, "Creating ACL records for database {0}",
+              dbdoc.getItemValueString(NCCONST.DITM_DBNAME));
         }
         // We want two database ACLs, one for use when
         // documents in the database have readers, one when
@@ -237,8 +232,6 @@ class NotesDatabasePoller {
       Collection<String> gsaPermitUsers, Collection<String> gsaNoAccessUsers,
       Collection<String> gsaPermitGroups,
       Collection<String> gsaNoAccessGroups) {
-    final String METHOD = "createDatabaseAclDocuments";
-
     try {
       createDatabaseAclDocument(connectorDatabase, dbdoc,
           NCCONST.DB_ACL_INHERIT_TYPE_ANDBOTH, gsaPermitUsers,
@@ -248,8 +241,7 @@ class NotesDatabasePoller {
           gsaNoAccessUsers, gsaPermitGroups, gsaNoAccessGroups);
       return true;
     } catch (Throwable t) {
-      LOGGER.logp(Level.WARNING, CLASS_NAME, METHOD,
-          "Failed to cache updated ACL for database", t);
+      LOGGER.log(Level.WARNING, "Failed to cache updated ACL for database", t);
       return false;
     }
   }
@@ -262,7 +254,6 @@ class NotesDatabasePoller {
       Collection<String> gsaPermitUsers, Collection<String> gsaNoAccessUsers,
       Collection<String> gsaPermitGroups,
       Collection<String> gsaNoAccessGroups) throws Exception {
-    final String METHOD = "createDatabaseAclDocument";
     NotesDocument aclDoc = connectorDatabase.createDocument();
     try {
       String server = dbdoc.getItemValueString(NCCONST.DITM_SERVER);
@@ -297,12 +288,10 @@ class NotesDatabasePoller {
       updateTextList(aclDoc, NCCONST.NCITM_DBNOACCESSGROUPS,
           gsaNoAccessGroups);
       if (LOGGER.isLoggable(Level.FINE)) {
-        String message = "Database acl: " + id
-            + "\nallow users: " + gsaPermitUsers
-            + "\nallow groups: " + gsaPermitGroups
-            + "\ndeny users: " + gsaNoAccessUsers
-            + "\ndeny groups: " + gsaNoAccessGroups;
-        LOGGER.logp(Level.FINE, CLASS_NAME, METHOD, message);
+        LOGGER.log(Level.FINE, "Database acl: {0}\nallow users: {1}"
+            + "\nallow groups: {2}\ndeny users: {3}\ndeny groups: {4}",
+            new Object[] { id, gsaPermitUsers,
+                gsaPermitGroups, gsaNoAccessUsers, gsaNoAccessGroups });
       }
       aclDoc.save();
     } finally {
@@ -327,11 +316,9 @@ class NotesDatabasePoller {
   void getPermitDeny(NotesACL acl, List<String> permitUsers,
       List<String> permitGroups, List<String> noAccessUsers,
       List<String> noAccessGroups, NotesSession ns) throws RepositoryException {
-    final String METHOD = "getPermitDeny";
     NotesACLEntry ae = acl.getFirstEntry();
     while (ae != null) {
-      LOGGER.logp(Level.FINER, CLASS_NAME, METHOD,
-          "Checking ACL Entry: " + ae.getName());
+      LOGGER.log(Level.FINER, "Checking ACL Entry: {0}", ae.getName());
       int userType = ae.getUserType();
       // If this is a user explicitly listed with NO ACCESS
       if (NotesACL.LEVEL_DEPOSITOR > ae.getLevel()) {
@@ -341,8 +328,8 @@ class NotesDatabasePoller {
         // to authenticated users.
         if ((userType == NotesACLEntry.TYPE_PERSON) ||
             (userType == NotesACLEntry.TYPE_UNSPECIFIED)) {
-          LOGGER.logp(Level.FINER, CLASS_NAME, METHOD,
-              "Adding the user entry to deny list: " + ae.getName());
+          LOGGER.log(Level.FINER,
+              "Adding the user entry to deny list: {0}", ae.getName());
           noAccessUsers.add(ae.getName().toLowerCase());
         }
         // Skip unspecified groups such as -Default- and Anonymous.
@@ -354,16 +341,16 @@ class NotesDatabasePoller {
         // Add to the PERMIT USERS if they are a user
         if ((userType == NotesACLEntry.TYPE_PERSON) ||
             (userType == NotesACLEntry.TYPE_UNSPECIFIED)) {
-          LOGGER.logp(Level.FINER, CLASS_NAME, METHOD,
-              "Adding the user entry to person allow list: " + ae.getName());
+          LOGGER.log(Level.FINER,
+              "Adding the user entry to person allow list: {0}", ae.getName());
           permitUsers.add(ae.getName().toLowerCase());
         }
         // Add to the PERMIT GROUPS if they are a group
         if  ((userType == NotesACLEntry.TYPE_MIXED_GROUP) ||
             (userType == NotesACLEntry.TYPE_PERSON_GROUP) ||
             (userType == NotesACLEntry.TYPE_UNSPECIFIED)) {
-          LOGGER.logp(Level.FINER, CLASS_NAME, METHOD,
-              "Adding the user entry to group allow list: " + ae.getName());
+          LOGGER.log(Level.FINER,
+              "Adding the user entry to group allow list: {0}", ae.getName());
           permitGroups.add(ae.getName().toLowerCase());
         }
       }
@@ -413,13 +400,11 @@ class NotesDatabasePoller {
       // There are configuration options to stop and disable databases
       // In either of these states, we skip processing the database
       if (1 != srcdbDoc.getItemValueInteger(NCCONST.DITM_CRAWLENABLED)) {
-        LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
-            "Skipping database - Database is DISABLED.");
+        LOGGER.log(Level.FINE, "Skipping database - Database is DISABLED.");
         return;
       }
       if (1 == srcdbDoc.getItemValueInteger(NCCONST.DITM_STOPPED)) {
-        LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
-            "Skipping database - Database is STOPPED.");
+        LOGGER.log(Level.FINE, "Skipping database - Database is STOPPED.");
         return;
       }
 
@@ -427,8 +412,7 @@ class NotesDatabasePoller {
       lastUpdatedV = srcdbDoc.getItemValue(NCCONST.DITM_LASTUPDATE);
       if (0 < lastUpdatedV.size()) {
         lastUpdated = (NotesDateTime) lastUpdatedV.firstElement();
-        LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
-            "Last processed time was " + lastUpdated);
+        LOGGER.log(Level.FINE, "Last processed time was {0}", lastUpdated);
         searchLastUpdated = ns.createDateTime(lastUpdated.toJavaDate());
         if (Util.isNotesVersionEightOrOlder(ns.getNotesVersion())) {
           // Adjust -1 second to include documents whose last modified time is
@@ -441,20 +425,18 @@ class NotesDatabasePoller {
       } else {
         lastUpdated = ns.createDateTime("1/1/1980");
         searchLastUpdated = ns.createDateTime(lastUpdated.toJavaDate());
-        LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
-            "Database has never been processed.");
+        LOGGER.log(Level.FINE, "Database has never been processed.");
       }
 
       // What's our poll interval?
       double pollInterval = srcdbDoc.getItemValueInteger(
           NCCONST.DITM_UPDATEFREQUENCY);
       double elapsedMinutes = pollTime.timeDifference(lastUpdated) / 60;
-      LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
-          "Time difference is : " + elapsedMinutes);
+      LOGGER.log(Level.FINE, "Time difference is: {0}", elapsedMinutes);
 
       // Check poll interval
       if (pollInterval > elapsedMinutes) {
-        LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
+        LOGGER.log(Level.FINE,
             "Skipping database - Poll interval has not yet elapsed.");
         lastUpdated.recycle();
         searchLastUpdated.recycle();
@@ -470,7 +452,7 @@ class NotesDatabasePoller {
 
       // Did the database open succeed? If not exit
       if (!srcdb.isOpen()) {
-        LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
+        LOGGER.log(Level.FINE,
             "Skipping database - Database could not be opened.");
         lastUpdated.recycle();
         searchLastUpdated.recycle();
@@ -497,8 +479,7 @@ class NotesDatabasePoller {
           srcdbDoc.getItemValueString(NCCONST.DITM_TEMPLATE), true);
       String searchString = templateDoc.getItemValueString(
           NCCONST.TITM_SEARCHSTRING);
-      LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
-          "Search string is: " + searchString);
+      LOGGER.log(Level.FINE, "Search string is: {0}", searchString);
 
       NotesDocumentCollection dc =
           srcdb.search(searchString, searchLastUpdated, 0);
@@ -523,8 +504,7 @@ class NotesDatabasePoller {
           continue;
         }
         if (curDoc.hasItem(NCCONST.NCITM_CONFLICT)) {
-          LOGGER.logp(Level.FINER, CLASS_NAME, METHOD,
-              "Skipping conflict document " + NotesURL);
+          LOGGER.log(Level.FINER, "Skipping conflict document {0}", NotesURL);
           curDoc = nextDocument(dc, curDoc);
           continue;
         }
