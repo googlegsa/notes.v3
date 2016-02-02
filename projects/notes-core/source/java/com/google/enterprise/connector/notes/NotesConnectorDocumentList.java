@@ -52,9 +52,8 @@ class NotesConnectorDocumentList implements DocumentList {
 
   public NotesConnectorDocumentList(NotesConnectorSession doclistncs,
       List<String> documents) {
-    final String METHOD = "Constructor";
-    LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD,
-        "NotesConnectorDocumentList being created: " + documents);
+    LOGGER.log(Level.FINEST,
+        "NotesConnectorDocumentList being created: {0}", documents);
     this.unidList = documents;
     this.iterator = documents.iterator();
     this.ncs = doclistncs;
@@ -126,7 +125,7 @@ class NotesConnectorDocumentList implements DocumentList {
     try {
       aclDoc.remove(true);
     } catch (Exception e) {
-      LOGGER.logp(Level.WARNING, CLASS_NAME, METHOD,
+      LOGGER.log(Level.WARNING,
           "Failed to delete ACL document from connector queue", e);
     }
     LOGGER.exiting(CLASS_NAME, METHOD);
@@ -141,8 +140,8 @@ class NotesConnectorDocumentList implements DocumentList {
     String attachPath = indexedDoc.getItemValueString(NCCONST.ITM_CONTENTPATH);
     if (null != attachPath) {
       if (attachPath.length() > 0) {
-        LOGGER.logp(Level.FINER, CLASS_NAME, METHOD,
-            "Checkpoint cleaning up attachment: " + attachPath);
+        LOGGER.log(Level.FINER,
+            "Checkpoint cleaning up attachment: {0}", attachPath);
         File f = new File(attachPath);
         f.delete();
         // Remove the parent directory for the document if it is empty
@@ -173,14 +172,14 @@ class NotesConnectorDocumentList implements DocumentList {
     if (!ncs.getRetainMetaData()) {
       if (!NCCONST.AUTH_CONNECTOR.equals(
           indexedDoc.getItemValueString(NCCONST.NCITM_AUTHTYPE))) {
-        LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD,
-              "Deleting metadata for indexed doc not using connector authz: "
-              + docid);
+        LOGGER.log(Level.FINEST,
+            "Deleting metadata for indexed doc not using connector authz: {0}",
+            docid);
         isRetained = false;
       } else if (indexedDoc.getItemValue(NCCONST.NCITM_DOCAUTHORREADERS)
           .size() == 0) {
-        LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD,
-              "Deleting metadata for indexed doc with no readers: " + docid);
+        LOGGER.log(Level.FINEST,
+            "Deleting metadata for indexed doc with no readers: {0}", docid);
         isRetained = false;
       }
     }
@@ -188,28 +187,22 @@ class NotesConnectorDocumentList implements DocumentList {
       if (this.ncs.getNotesDocumentManager().addIndexedDocument(
           indexedDoc, databaseConnection) == true) {
         indexedDoc.remove(true);
-        LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD,
-          "Retain indexed document in database");
+        LOGGER.log(Level.FINEST, "Retain indexed document in database");
       } else {
-        LOGGER.logp(Level.WARNING, CLASS_NAME, METHOD,
-            "Failed to add document to database (DocID: " + docid + ")");
+        LOGGER.log(Level.WARNING,
+            "Failed to add document to database (DocID: {0})", docid);
       }
     } else {
       indexedDoc.remove(true);
-      LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD,
-        "Delete indexed document from Notes");
+      LOGGER.log(Level.FINEST, "Delete indexed document from Notes");
     }
     LOGGER.exiting(CLASS_NAME, METHOD);
   }
 
   @Override
   public String checkpoint() throws RepositoryException {
-    final String METHOD = "checkpoint";
     String checkPointUnid = null;
     try {
-      LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
-          "Connector checkpoint documents.");
-
       // If we don't have a new checkpoint we return null
       if (ncdoc != null) {
         try {
@@ -231,8 +224,8 @@ class NotesConnectorDocumentList implements DocumentList {
           String indexedDocUnid = "";
           for (Iterator<String> ci = unidList.iterator(); ci.hasNext();) {
             indexedDocUnid = ci.next();
-            LOGGER.logp(Level.FINER, CLASS_NAME, METHOD,
-                "Checkpointing document: " + indexedDocUnid);
+            LOGGER.log(Level.FINER,
+                "Checkpointing document: {0}", indexedDocUnid);
             try {
               NotesDocument indexedDoc = db.getDocumentByUNID(indexedDocUnid);
               if (indexedDoc.getItemValueString(NCCONST.ITM_ACTION)
@@ -255,12 +248,12 @@ class NotesConnectorDocumentList implements DocumentList {
                 break;
               }
             } catch (Exception e) {
-              LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD,
+              LOGGER.log(Level.FINEST,
                   "Error checkpointing document: " + indexedDocUnid, e);
             }
           }
         } catch (RepositoryException re) {
-          LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD,
+          LOGGER.log(Level.FINEST,
               "Failed to update search index in database", re);
         } finally {
           //Release database connection
@@ -268,8 +261,7 @@ class NotesConnectorDocumentList implements DocumentList {
             .releaseDatabaseConnection(databaseConnection);
         }
       } else {
-        LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
-            "Checkpoint for empty document list.");
+        LOGGER.log(Level.FINE, "Checkpoint for empty document list.");
       }
       // Without lifecycle methods, use the checkpoint to clean up our session
       Util.recycle(crawldoc, db);
@@ -281,7 +273,6 @@ class NotesConnectorDocumentList implements DocumentList {
       this.crawldoc = null;
     } catch (Exception e) {
       LOGGER.log(Level.SEVERE, CLASS_NAME, e);
-    } finally {
     }
 
     LOGGER.log(Level.FINE, CLASS_NAME, "Checkpoint: " + checkPointUnid);

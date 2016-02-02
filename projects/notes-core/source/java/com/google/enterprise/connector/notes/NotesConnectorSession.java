@@ -72,8 +72,7 @@ public class NotesConnectorSession implements Session {
     NotesSession ns = null;
     boolean configValidated = false;
     LOGGER.entering(CLASS_NAME, METHOD);
-    LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD,
-        "NotesConnectorSession being created.");
+    LOGGER.log(Level.FINEST, "NotesConnectorSession being created.");
 
     try {
       // Create and recycle sessions as we need them to avoid memory leaks
@@ -82,29 +81,20 @@ public class NotesConnectorSession implements Session {
       ns = createNotesSession();
 
       LOGGER.log(Level.INFO, "Notes version is {0}", ns.getNotesVersion());
-      LOGGER.logp(Level.CONFIG, CLASS_NAME, METHOD,
-          "Connector platform is " + ns.getPlatform());
-      LOGGER.logp(Level.CONFIG, CLASS_NAME, METHOD,
-          "Connector config database on server: " + server);
-      LOGGER.logp(Level.CONFIG, CLASS_NAME, METHOD,
-          "Connector config database path: " + database);
-      LOGGER.logp(Level.CONFIG, CLASS_NAME, METHOD,
-          "Connector local data directory: " +
+      LOGGER.log(Level.CONFIG, "Connector platform is {0}", ns.getPlatform());
+      LOGGER.log(Level.CONFIG, "Connector config database on server: {0}",
+          server);
+      LOGGER.log(Level.CONFIG, "Connector config database path: {0}", database);
+      LOGGER.log(Level.CONFIG, "Connector local data directory: {0}",
           ns.getEnvironmentString(NCCONST.INIDIRECTORY, true));
-      LOGGER.logp(Level.CONFIG, CLASS_NAME, METHOD,
-          "Connector kittype: " +
+      LOGGER.log(Level.CONFIG, "Connector kittype: {0}",
           ns.getEnvironmentString(NCCONST.INIKITTYPE, true));
-      LOGGER.logp(Level.CONFIG, CLASS_NAME, METHOD,
-          "Connector keyfilename: " +
+      LOGGER.log(Level.CONFIG, "Connector keyfilename: {0}",
           ns.getEnvironmentString(NCCONST.INIKEYFILENAME, true));
-      LOGGER.logp(Level.CONFIG, CLASS_NAME, METHOD,
-          "Connector user: " +
-          ns.getCommonUserName());
-      LOGGER.logp(Level.CONFIG, CLASS_NAME, METHOD,
-          "Connector serverkeyfilename: " +
+      LOGGER.log(Level.CONFIG, "Connector user: {0}", ns.getCommonUserName());
+      LOGGER.log(Level.CONFIG, "Connector serverkeyfilename: {0}",
           ns.getEnvironmentString(NCCONST.INISERVERKEYFILENAME, true));
-      LOGGER.logp(Level.CONFIG, CLASS_NAME, METHOD,
-          "Connector debug_outfile: " +
+      LOGGER.log(Level.CONFIG, "Connector debug_outfile: {0}",
           ns.getEnvironmentString(NCCONST.INIDEBUGOUTFILE, true));
 
       NotesDatabase db = ns.getDatabase(server, database);
@@ -113,7 +103,6 @@ public class NotesConnectorSession implements Session {
       db.recycle();
       notesDocManager = new NotesDocumentManager(this);
     } catch (Exception e) {
-      LOGGER.log(Level.SEVERE, CLASS_NAME, e);
       throw new RepositoryException("NotesConnectorSession error", e);
     } finally {
       closeNotesSession(ns);
@@ -122,9 +111,8 @@ public class NotesConnectorSession implements Session {
     // If we could not validate our config then let the connector
     // manager know session creation has failed.
     if (!configValidated) {
-      LOGGER.logp(Level.SEVERE, CLASS_NAME, METHOD,
-          "!!!!!   Invalid Notes Connector System Configuration. !!!!!");
-      throw new RepositoryException("Invalid system setup document.");
+      throw new RepositoryException(
+          "Invalid Notes Connector System Configuration.");
     }
     LOGGER.exiting(CLASS_NAME, METHOD);
   }
@@ -138,14 +126,13 @@ public class NotesConnectorSession implements Session {
     LOGGER.entering(CLASS_NAME, METHOD);
 
     try {
-      LOGGER.logp(Level.CONFIG, CLASS_NAME, METHOD,
+      LOGGER.log(Level.CONFIG,
           "Loading configuration from system setup document.");
 
       NotesView vw = db.getView(NCCONST.VIEWSYSTEMSETUP);
       NotesDocument systemDoc = vw.getFirstDocument();
       if (null == systemDoc) {
-        LOGGER.logp(Level.SEVERE, CLASS_NAME, METHOD,
-            "System configuration document not found.");
+        LOGGER.log(Level.SEVERE, "System configuration document not found.");
         return false;
       }
 
@@ -153,9 +140,9 @@ public class NotesConnectorSession implements Session {
       ExcludedExtns = (Vector<String>)
           systemDoc.getItemValue(NCCONST.SITM_EXCLUDEDEXTENSIONS);
       for (int i = 0; i < ExcludedExtns.size(); i++ ) {
-        LOGGER.logp(Level.CONFIG, CLASS_NAME, METHOD,
-            "The following file extensions will be excluded " +
-            ExcludedExtns.elementAt(i).toString());
+        LOGGER.log(Level.CONFIG,
+            "The following file extensions will be excluded {0}",
+            ExcludedExtns.elementAt(i));
         if (ExcludedExtns.elementAt(i).equals(".")) {
           ExcludedExtns.set(i, "");
         }
@@ -163,8 +150,7 @@ public class NotesConnectorSession implements Session {
 
       MaxFileSize = 1024 * 1024 *
           systemDoc.getItemValueInteger(NCCONST.SITM_MAXFILESIZE);
-      LOGGER.logp(Level.CONFIG, CLASS_NAME, METHOD,
-          "Maximum attachment size is " + MaxFileSize);
+      LOGGER.log(Level.CONFIG, "Maximum attachment size is {0}", MaxFileSize);
 
       // If 0, use the default value
       if (0 == MaxFileSize)
@@ -182,41 +168,39 @@ public class NotesConnectorSession implements Session {
       // Make the directory and make sure we can write to it
       sdir.mkdirs();
       if (!sdir.isDirectory() || !sdir.canWrite()) {
-        LOGGER.logp(Level.SEVERE, CLASS_NAME, METHOD,
-            "Can't write to spool directory " + SpoolDir);
+        LOGGER.log(Level.SEVERE,
+            "Can't write to spool directory {0}", SpoolDir);
         return false;
       }
-      LOGGER.logp(Level.CONFIG, CLASS_NAME, METHOD,
-          "Attachment spool directory is set to " + SpoolDir);
+      LOGGER.log(Level.CONFIG,
+          "Attachment spool directory is set to {0}", SpoolDir);
 
       // Threshhold for polling
       maxCrawlQDepth = systemDoc.getItemValueInteger(
           NCCONST.SITM_MAXCRAWLQDEPTH);
       if (maxCrawlQDepth < 1)  {
-        LOGGER.logp(Level.SEVERE, CLASS_NAME, METHOD,
-            "Invalid setting for maxCrawlQDepth: " + maxCrawlQDepth);
+        LOGGER.log(Level.SEVERE,
+            "Invalid setting for maxCrawlQDepth: {0}", maxCrawlQDepth);
         return false;
       }
-      LOGGER.logp(Level.CONFIG, CLASS_NAME, METHOD,
-          "maxCrawlQDepth is " + maxCrawlQDepth);
+      LOGGER.log(Level.CONFIG, "maxCrawlQDepth is {0}", maxCrawlQDepth);
 
       // Time between user/group cache updates
       cacheUpdateInterval = systemDoc.getItemValueInteger(
           NCCONST.SITM_CACHEUPDATEINTERVAL);
       if (cacheUpdateInterval < 1)  {
-        LOGGER.logp(Level.SEVERE, CLASS_NAME, METHOD,
-            "Invalid setting for cache update interval: "
-            + cacheUpdateInterval);
+        LOGGER.log(Level.SEVERE,
+            "Invalid setting for cache update interval: {0}",
+            cacheUpdateInterval);
         return false;
       }
-      LOGGER.logp(Level.CONFIG, CLASS_NAME, METHOD,
-          "cacheUpdateInterval is " + cacheUpdateInterval);
+      LOGGER.log(Level.CONFIG,
+          "cacheUpdateInterval is {0}", cacheUpdateInterval);
 
       // Get the directory and see if we can open it
       directory = systemDoc.getItemValueString(
           NCCONST.SITM_DIRECTORY);
-      LOGGER.logp(Level.CONFIG, CLASS_NAME, METHOD,
-          "Path to Domino directory: " + directory);
+      LOGGER.log(Level.CONFIG, "Path to Domino directory: {0}", directory);
 
       NotesDatabase dirDb = ns.getDatabase(this.getServer(), directory);
       dirDb.recycle();
@@ -224,12 +208,10 @@ public class NotesConnectorSession implements Session {
       userNameFormula = systemDoc.getItemValueString(
           NCCONST.SITM_USERNAMEFORMULA);
       if (0 == userNameFormula.length()) {
-        LOGGER.logp(Level.CONFIG, CLASS_NAME, METHOD,
-            "User Name formula is empty - using default");
+        LOGGER.log(Level.CONFIG, "User Name formula is empty - using default");
         userNameFormula = NCCONST.DEFAULT_USERNAMEFORMULA;
       }
-      LOGGER.logp(Level.CONFIG, CLASS_NAME, METHOD,
-            "User Name formula: " + userNameFormula);
+      LOGGER.log(Level.CONFIG, "User Name formula: {0}", userNameFormula);
 
       String usernameTypeConfig = systemDoc.getItemValueString(
           NCCONST.SITM_USERNAMETYPE);
@@ -237,50 +219,47 @@ public class NotesConnectorSession implements Session {
         usernameType = NotesUsernameType.findUsernameType(
             usernameTypeConfig.toUpperCase());
       }
-      LOGGER.log(Level.CONFIG, "Notes username type: " + usernameType.name());
+      LOGGER.log(Level.CONFIG, "Notes username type: {0}", usernameType.name());
 
       userSelectionFormula = systemDoc.getItemValueString(
           NCCONST.SITM_USERSELECTIONFORMULA);
       if (0 == userSelectionFormula.length()) {
-        LOGGER.logp(Level.CONFIG, CLASS_NAME, METHOD,
+        LOGGER.log(Level.CONFIG,
             "User Selection formula is empty - using default");
         userSelectionFormula = NCCONST.DEFAULT_USERSELECTIONFORMULA;
       }
-      LOGGER.logp(Level.CONFIG, CLASS_NAME, METHOD,
-          "User Selection formula: " + userSelectionFormula);
+      LOGGER.log(Level.CONFIG,
+          "User Selection formula: {0}", userSelectionFormula);
 
       gsaGroupPrefix =
           systemDoc.getItemValueString(NCCONST.SITM_GSAGROUPPREFIX);
       if (null != gsaGroupPrefix) {
         gsaGroupPrefix = gsaGroupPrefix.trim();
       }
-      LOGGER.logp(Level.CONFIG, CLASS_NAME, METHOD,
-          "Group prefix: " + gsaGroupPrefix);
+      LOGGER.log(Level.CONFIG, "Group prefix: {0}", gsaGroupPrefix);
 
       // Number of docs to check when deleting
       deletionBatchSize = systemDoc.getItemValueInteger(
           NCCONST.SITM_DELETIONBATCHSIZE);
       if (deletionBatchSize < 1)  {
-        LOGGER.logp(Level.SEVERE, CLASS_NAME, METHOD,
-            "Invalid setting for deletionBatchSize: " + deletionBatchSize);
+        LOGGER.log(Level.SEVERE,
+            "Invalid setting for deletionBatchSize: {0}", deletionBatchSize);
         return false;
       }
-      LOGGER.logp(Level.CONFIG, CLASS_NAME, METHOD,
-          "deletionBatchSize is " + deletionBatchSize);
+      LOGGER.log(Level.CONFIG, "deletionBatchSize is {0}", deletionBatchSize);
 
       // Number of crawler threads to spawn
       numCrawlerThreads = systemDoc.getItemValueInteger(
           NCCONST.SITM_NUMCRAWLERTHREADS);
       if ((numCrawlerThreads < 0) || (numCrawlerThreads > 5)) {
-        LOGGER.logp(Level.SEVERE, CLASS_NAME, METHOD,
-            "Invalid setting for numCrawlerThreads: " + numCrawlerThreads);
+        LOGGER.log(Level.SEVERE,
+            "Invalid setting for numCrawlerThreads: {0}", numCrawlerThreads);
         return false;
       }
-      LOGGER.logp(Level.CONFIG, CLASS_NAME, METHOD,
-          "numCrawlerThreads is " + numCrawlerThreads);
+      LOGGER.log(Level.CONFIG, "numCrawlerThreads is {0}", numCrawlerThreads);
 
       // Load server regions
-      LOGGER.logp(Level.CONFIG, CLASS_NAME, METHOD, "Loading server domains.");
+      LOGGER.log(Level.CONFIG, "Loading server domains.");
       NotesView serversView = db.getView(NCCONST.VIEWSERVERS);
       serversView.refresh();
       NotesViewNavigator svn = serversView.createViewNav();
@@ -308,16 +287,15 @@ public class NotesConnectorSession implements Session {
         } else if (serverObject instanceof Vector) {
           Vector serverVector = (Vector) serverObject;
           if (serverVector.size() == 0) {
-            LOGGER.logp(Level.CONFIG, CLASS_NAME, METHOD, "Empty server value");
+            LOGGER.log(Level.CONFIG, "Empty server value");
             continue;
           }
           server = ((String) serverVector.elementAt(0)).toLowerCase();
         } else {
-            LOGGER.logp(Level.CONFIG, CLASS_NAME, METHOD,
-                "Unknown server value " + serverObject);
+            LOGGER.log(Level.CONFIG, "Unknown server value {0}", serverObject);
             continue;
         }
-        LOGGER.logp(Level.CONFIG, CLASS_NAME, METHOD,
+        LOGGER.log(Level.CONFIG,
             "Server {0} is in domain {1}", new Object[] { server, domain });
         serverDomainMap.put(server, domain);
         NotesViewEntry tmpsve = svn.getNext();
@@ -327,14 +305,14 @@ public class NotesConnectorSession implements Session {
       svn.recycle();
       serversView.recycle();
       if (0 == serverDomainMap.size()) {
-        LOGGER.logp(Level.SEVERE, CLASS_NAME, METHOD,
+        LOGGER.log(Level.SEVERE,
             "No regions have been configured for this connector.");
         return false;
       }
 
       // Load the mimetypes
       // TODO:  Fix the extension list to include new ones like .docx
-      LOGGER.logp(Level.CONFIG, CLASS_NAME, METHOD, "Loading mimetypes.");
+      LOGGER.log(Level.CONFIG, "Loading mimetypes.");
       Vector<?> mimeTypeData = systemDoc.getItemValue(NCCONST.SITM_MIMETYPES);
       HashMap<String, String> tmpMimeExtnMap = new HashMap<String, String>();
       for (int i = 0; i < mimeTypeData.size(); i++) {
@@ -342,9 +320,8 @@ public class NotesConnectorSession implements Session {
         String ext = mimerecord.substring(0,
             mimerecord.indexOf('@')).toLowerCase();
         String mimetype = mimerecord.substring(mimerecord.indexOf('@') + 1);
-        String TmpMsg = String.format(
-            "File extension %s is set for mimetype %s", ext, mimetype);
-        LOGGER.logp(Level.CONFIG, CLASS_NAME, METHOD, TmpMsg);
+        LOGGER.log(Level.CONFIG, "File extension {0} is set for mimetype {1}",
+            new Object[] { ext, mimetype });
         tmpMimeExtnMap.put(ext, mimetype);
       }
       // Load into a new map then reassign to minimize threading issues
@@ -353,14 +330,12 @@ public class NotesConnectorSession implements Session {
       String retainMetaDataConfig =
           systemDoc.getItemValueString(NCCONST.SITM_RETAINMETADATA);
       retainMetaData = "yes".equalsIgnoreCase(retainMetaDataConfig);
-      LOGGER.logp(Level.CONFIG, CLASS_NAME, METHOD,
-          "RetainMetaData configured value: " + retainMetaDataConfig);
-      LOGGER.logp(Level.CONFIG, CLASS_NAME, METHOD,
-          "RetainMetaData: " + retainMetaData);
+      LOGGER.log(Level.CONFIG,
+          "RetainMetaData configured value: {0}", retainMetaDataConfig);
+      LOGGER.log(Level.CONFIG, "RetainMetaData: {0}", retainMetaData);
 
       systemDoc.recycle();
-      LOGGER.logp(Level.CONFIG, CLASS_NAME, METHOD,
-          "Configuration successfully loaded.");
+      LOGGER.log(Level.CONFIG, "Configuration successfully loaded.");
     } catch (Exception e) {
       LOGGER.log(Level.SEVERE, CLASS_NAME, e);
       return false;
@@ -534,8 +509,7 @@ public class NotesConnectorSession implements Session {
       try {
         connector.getSessionFactory().getNotesThread().stermThread();
       } catch (Throwable t) {
-        LOGGER.logp(Level.WARNING, CLASS_NAME, METHOD,
-            "Error closing session", t);
+        LOGGER.log(Level.WARNING, "Error closing session", t);
       }
 
       LOGGER.exiting(CLASS_NAME, METHOD);

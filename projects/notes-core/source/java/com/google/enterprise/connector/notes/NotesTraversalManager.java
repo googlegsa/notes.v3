@@ -49,14 +49,11 @@ public class NotesTraversalManager implements TraversalManager {
 
   @Override
   public void setBatchHint(int hint) {
-    final String METHOD = "setBatchHint";
-    LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD, "batchHint set to : " + hint);
     batchHint = hint;
   }
 
   @Override
   public DocumentList startTraversal() {
-    LOGGER.info("Start traversal");
     // This will reset the start date on all connector
     NotesDatabasePoller.resetDatabases(ncs);
     lastCrawlCache.clear();
@@ -87,8 +84,7 @@ public class NotesTraversalManager implements TraversalManager {
         return null;
       }
 
-      LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
-          "Resuming from checkpoint: " + checkpoint);
+      LOGGER.log(Level.FINE, "Resuming from checkpoint: {0}", checkpoint);
 
       ns = ncs.createNotesSession();
       NotesDatabase cdb = ns.getDatabase(ncs.getServer(), ncs.getDatabase());
@@ -115,8 +111,7 @@ public class NotesTraversalManager implements TraversalManager {
       while (( ve != null) && (batchSize < batchHint)) {
         batchSize++;
         String unid = ve.getColumnValues().elementAt(1).toString();
-        LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD,
-            "Adding document to list: " + unid);
+        LOGGER.log(Level.FINEST, "Adding document to list: {0}", unid);
         unidList.add(unid);
         NotesViewEntry prevVe = ve;
         ve = submitQNav.getNext(prevVe);

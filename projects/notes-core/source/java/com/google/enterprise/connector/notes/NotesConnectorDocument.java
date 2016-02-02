@@ -69,9 +69,7 @@ public class NotesConnectorDocument implements Document {
 
   NotesConnectorDocument(NotesConnectorSession notesConnectorSession,
       NotesSession notesSession, NotesDatabase connectorDatabase) {
-    final String METHOD = "NotesConnectorDocument";
-    LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD,
-        "NotesConnectorDocument being created.");
+    LOGGER.log(Level.FINEST, "NotesConnectorDocument being created.");
     this.notesConnectorSession = notesConnectorSession;
     this.notesSession = notesSession;
     this.connectorDatabase = connectorDatabase;
@@ -120,8 +118,8 @@ public class NotesConnectorDocument implements Document {
     try {
       docProps = new HashMap<String, List<Value>>();
       docid = crawlDoc.getItemValueString(NCCONST.ITM_DOCID);
-      LOGGER.logp(Level.FINER, CLASS_NAME, METHOD,
-          "Delete Request document properties for " + docid);
+      LOGGER.log(Level.FINER,
+          "Delete Request document properties for {0}", docid);
       putTextItem(SpiConstants.PROPNAME_DOCID, NCCONST.ITM_DOCID, null);
       putTextItem(SpiConstants.PROPNAME_ACTION, NCCONST.ITM_ACTION, null);
     } catch (Exception e) {
@@ -137,8 +135,7 @@ public class NotesConnectorDocument implements Document {
     try {
       docProps = new HashMap<String, List<Value>>();
       docid = crawlDoc.getItemValueString(NCCONST.ITM_DOCID);
-      LOGGER.logp(Level.FINER, CLASS_NAME, METHOD,
-          "Loading document properties for " + docid);
+      LOGGER.log(Level.FINER, "Loading document properties for {0}", docid);
       isAttachment = docid.contains("/$File/");
 
       // Load the Connector Manager SPI Properties first
@@ -182,8 +179,7 @@ public class NotesConnectorDocument implements Document {
       // If using ACLs for the database, construct the ACL (requires GSA 7.0+).
       if (crawlDoc.getItemValueString(NCCONST.NCITM_AUTHTYPE)
           .equals(NCCONST.AUTH_ACL)) {
-        LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
-            "Creating GSA ACL for document: " + docid);
+        LOGGER.log(Level.FINE, "Creating GSA ACL for document: {0}", docid);
         String replicaUrl = new NotesDocId(docid).getReplicaUrl();
         Vector readers =
             crawlDoc.getItemValue(NCCONST.NCITM_DOCAUTHORREADERS);
@@ -204,22 +200,15 @@ public class NotesConnectorDocument implements Document {
 
   private void createSecureDocumentWithoutReaders(String replicaUrl)
       throws RepositoryException {
-    final String METHOD = "createSecureDocumentWithoutReaders";
-
     docProps.put(SpiConstants.PROPNAME_ACLINHERITFROM_DOCID,
         asList(Value.getStringValue(
         replicaUrl + "/" + NCCONST.DB_ACL_INHERIT_TYPE_PARENTOVERRIDES)));
-    if (LOGGER.isLoggable(Level.FINEST)) {
-      LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD,
-          "inherit from: " + replicaUrl
-          + "/" + NCCONST.DB_ACL_INHERIT_TYPE_PARENTOVERRIDES);
-    }
+    LOGGER.log(Level.FINEST, "inherit from: {0}/{1}", new Object[] {
+        replicaUrl, NCCONST.DB_ACL_INHERIT_TYPE_PARENTOVERRIDES });
   }
 
   private void createSecureDocumentWithReaders(String replicaUrl,
       Vector readers) throws RepositoryException {
-    final String METHOD = "createSecureDocumentWithReaders";
-
     docProps.put(SpiConstants.PROPNAME_ACLINHERITFROM_DOCID,
         asList(Value.getStringValue(
         replicaUrl + "/" + NCCONST.DB_ACL_INHERIT_TYPE_ANDBOTH)));
@@ -273,15 +262,12 @@ public class NotesConnectorDocument implements Document {
     docProps.put(SpiConstants.PROPNAME_ACLGROUPS, values);
 
     if (LOGGER.isLoggable(Level.FINEST)) {
-      LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD,
-          "inherit from: " + replicaUrl
-          + "/" + NCCONST.DB_ACL_INHERIT_TYPE_ANDBOTH);
-      LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD,
-          "readers:users: " + gsaReaders);
-      LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD,
-          "Using namespace for user names: " + userNamespace);
-      LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD,
-          "readers:groups: " + gsaGroups);
+      LOGGER.log(Level.FINEST, "inherit from: {0}/{1}", new Object[] {
+          replicaUrl, NCCONST.DB_ACL_INHERIT_TYPE_ANDBOTH });
+      LOGGER.log(Level.FINEST, "readers:users: {0}", gsaReaders);
+      LOGGER.log(Level.FINEST, "Using namespace for user names: {0}",
+          userNamespace);
+      LOGGER.log(Level.FINEST, "readers:groups: {0}", gsaGroups);
     }
   }
 
@@ -311,8 +297,8 @@ public class NotesConnectorDocument implements Document {
         // Since we create the crawl docs, this would be a
         // development-time error rather than a possible run-time
         // error.
-        LOGGER.logp(Level.WARNING, CLASS_NAME, METHOD,
-            "Unexpected inheritance type: " + inheritType);
+        LOGGER.log(Level.WARNING, "Unexpected inheritance type: {0}",
+            inheritType);
       }
       String userNamespace;
       PrincipalType principalType;
@@ -325,8 +311,8 @@ public class NotesConnectorDocument implements Document {
             notesConnectorSession.getConnector().getLocalNamespace();
         principalType = PrincipalType.UNQUALIFIED;
       }
-      LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD,
-          "Using namespace for user names: " + userNamespace);
+      LOGGER.log(Level.FINEST,
+          "Using namespace for user names: {0}", userNamespace);
 
       putAclPrincipals(principalType, NCCONST.NCITM_DBPERMITUSERS,
           SpiConstants.PROPNAME_ACLUSERS, userNamespace);
@@ -391,16 +377,13 @@ public class NotesConnectorDocument implements Document {
   }
 
   protected void setDateProperties() throws RepositoryException {
-    final String METHOD = "setDateProperties";
-
     NotesDateTime dt = (NotesDateTime) crawlDoc
         .getItemValueDateTimeArray(NCCONST.ITM_GMETALASTUPDATE).elementAt(0);
     Calendar tmpCal = Calendar.getInstance();
     tmpCal.setTime(dt.toJavaDate());
     docProps.put(SpiConstants.PROPNAME_LASTMODIFIED,
         asList(Value.getDateValue(tmpCal)));
-    LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD,
-        "Last update is " + tmpCal.toString());
+    LOGGER.log(Level.FINEST, "Last update is {0}", tmpCal.toString());
 
     SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd' 'HH:mm:ss' 'Z");
     String nclastupdate = sdf.format(dt.toJavaDate());
@@ -418,11 +401,10 @@ public class NotesConnectorDocument implements Document {
 
   protected void putTextListItem(String PropName, String ItemName,
       String defaultText) throws RepositoryException {
-    final String METHOD = "putTextItem";
     Vector<?> vText = crawlDoc.getItemValue(ItemName);
     if (0 == vText.size()) {
-      LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD,
-          "Using default value document. " + PropName + " in " + docid);
+      LOGGER.log(Level.FINEST, "Using default value document. {0} in {1}",
+          new Object[] { PropName, docid });
       if (defaultText != null) {
         docProps.put(PropName, asList(Value.getStringValue(defaultText)));
       }
@@ -437,8 +419,8 @@ public class NotesConnectorDocument implements Document {
         }
       }
     }
-    LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD,
-        "Adding property " + PropName + " ::: " + list);
+    LOGGER.log(Level.FINEST,
+        "Adding property {0} ::: {1}", new Object[] { PropName, list });
     docProps.put(PropName, list);
   }
 
@@ -446,7 +428,6 @@ public class NotesConnectorDocument implements Document {
   // Items with multiple values are separated by semicolons
   protected void putTextItem(String PropName, String ItemName,
       String defaultText) throws RepositoryException {
-    final String METHOD = "putTextItem";
     String text = null;
     NotesItem itm = crawlDoc.getFirstItem(ItemName);
 
@@ -461,8 +442,8 @@ public class NotesConnectorDocument implements Document {
     // Get the text of the item
     text = itm.getText(1024 * 1024 * 2);  // Maximum of 2mb of text
     if (Strings.isNullOrEmpty(text)) { // Does this field exist?
-      LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD,
-          "Using default value document. " + PropName + " in " + docid);
+      LOGGER.log(Level.FINEST, "Using default value document. {0} in {1}",
+          new Object[] { PropName, docid });
       if (defaultText != null) {
         text = defaultText;
       }
@@ -470,19 +451,17 @@ public class NotesConnectorDocument implements Document {
         return;
       }
     }
-    LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD,
-        "Adding property " + PropName);
+    LOGGER.log(Level.FINEST, "Adding property {0}", PropName);
     docProps.put(PropName, asList(Value.getStringValue(text)));
   }
 
   protected void putBooleanItem(String PropName, String ItemName,
       String defaultText) throws RepositoryException {
-    final String METHOD = "putTextItem";
     String text = crawlDoc.getItemValueString(ItemName);
     if (Strings.isNullOrEmpty(text)) { // Does this field exist?
       // At this point there is nothing we can do except log an error
-      LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD,
-          "Using default value document. " + PropName + " in " + docid);
+      LOGGER.log(Level.FINEST, "Using default value document. {0} in {1}",
+          new Object[] { PropName, docid });
       text = defaultText;
     }
     docProps.put(PropName, asList(Value.getBooleanValue(text)));
@@ -497,7 +476,6 @@ public class NotesConnectorDocument implements Document {
    */
   private void putItemValues(String propName, String itemName)
       throws RepositoryException {
-    final String METHOD = "putItemValues";
     Vector<?> values = crawlDoc.getItemValue(itemName);
     if (0 == values.size()) {
       return;
@@ -522,15 +500,15 @@ public class NotesConnectorDocument implements Document {
         list.add(Value.getDateValue(cal));
       } else {
         if (LOGGER.isLoggable(Level.FINEST)) {
-          LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD,
-              "Unexpected item value type: " + value.getClass().getName());
+          LOGGER.log(Level.FINEST,
+              "Unexpected item value type: {0}", value.getClass().getName());
         }
       }
     }
     if (list.size() > 0) {
       if (LOGGER.isLoggable(Level.FINEST)) {
-        LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD,
-            "Adding property " + propName + " ::: " + list);
+        LOGGER.log(Level.FINEST,
+            "Adding property {0} ::: {1}", new Object[] { propName, list });
       }
       docProps.put(propName, list);
     }
@@ -539,7 +517,6 @@ public class NotesConnectorDocument implements Document {
   private void putAclPrincipals(PrincipalType principalType,
       String principalItemName, String propertyName, String namespace)
       throws RepositoryException {
-    final String METHOD = "putAclPrincipals";
     Vector values = crawlDoc.getItemValue(principalItemName);
     if (values.size() == 0) {
       return;

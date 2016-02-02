@@ -43,7 +43,6 @@ class NotesDomainNames {
 
   public LinkedHashMap<String, Long> getSubDomainNames(
       String domainName) {
-    final String METHOD = "getSubDomainNames";
     LinkedHashMap<String, Long> lmap = new LinkedHashMap<String, Long>();
     String reversedName = reverse(domainName.toLowerCase());
       SortedMap<String, Long> subs = domainTree.tailMap(reversedName);
@@ -52,8 +51,8 @@ class NotesDomainNames {
         break;
       lmap.put(reverse(key), subs.get(key));
     }
-    LOGGER.logp(Level.FINE, CLASS_NAME, METHOD, "Sub domain names for " + 
-        domainName + ": " + lmap.keySet().toString());
+    LOGGER.log(Level.FINE, "Sub domain names for {0}: {1}",
+        new Object[] { domainName, lmap.keySet() });
     return lmap;
   }
 
@@ -89,7 +88,6 @@ class NotesDomainNames {
    * Compute person's expanded domain hierarchies.
    */
   public List<String> computeExpandedWildcardDomainNames(String canonicalName) {
-    final String METHOD = "computeWildcardDomainNames";
     List<String> ous = new ArrayList<String>();
     for (int index = canonicalName.indexOf('/'); index != -1; 
         index = canonicalName.indexOf('/')) {
@@ -97,8 +95,8 @@ class NotesDomainNames {
       canonicalName = ou;
       ous.add("*/" + ou);
     }
-    LOGGER.logp(Level.FINE, CLASS_NAME, METHOD, "Domains for " + 
-        canonicalName + ": " + ous);
+    LOGGER.log(Level.FINE, "Domains for {0}: {1}",
+        new Object[] { canonicalName, ous });
     return ous;
   }
 }

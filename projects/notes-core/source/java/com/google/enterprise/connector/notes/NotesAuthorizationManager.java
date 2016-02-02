@@ -41,9 +41,6 @@ class NotesAuthorizationManager implements AuthorizationManager {
   private final NotesConnectorSession ncs;
 
   public NotesAuthorizationManager(NotesConnectorSession session) {
-    final String METHOD = "NotesAuthorizationManager";
-    LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD,
-        "NotesAuthorizationManager being created.");
     ncs = session;
   }
 
@@ -79,7 +76,6 @@ class NotesAuthorizationManager implements AuthorizationManager {
   @SuppressWarnings("unchecked")
   public Collection<AuthorizationResponse> authorizeDocids(
       Collection<String> docIds, AuthenticationIdentity id) {
-    final String METHOD = "authorizeDocids";
     long elapsedTimeMillis = 0;
     long startTime = System.currentTimeMillis();
 
@@ -90,19 +86,19 @@ class NotesAuthorizationManager implements AuthorizationManager {
       String gsaName = ncs.getUsernameType().getUsername(id);
       User user = ncs.getUserGroupManager().getUserByGsaName(gsaName);
       if (user == null) {
-        LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
-            "Person not found in connector user database: " + gsaName +
-            " using " + ncs.getUsernameType() + " username type");
+        LOGGER.log(Level.FINE, "Person not found in connector user database:"
+            + " {0} using {1} username type",
+            new Object[] { gsaName, ncs.getUsernameType() });
         for (String docId : docIds) {
           authorized.add(new AuthorizationResponse(false, docId));
         }
       } else {
-        LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
-            "Authorizing documents for user " + gsaName +
-            " using " + ncs.getUsernameType() + " username type");
+        LOGGER.log(Level.FINE,
+            "Authorizing documents for user {0} using {1} username type",
+            new Object[] { gsaName, ncs.getUsernameType() });
         ArrayList<String> userGroups = new ArrayList<String>(user.getGroups());
-        LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
-            "Groups for " + gsaName + " are: " + userGroups);
+        LOGGER.log(Level.FINE, "Groups for {0} are: {1}",
+            new Object[] { gsaName, userGroups });
 
         NotesSession ns = null;
         try {
@@ -117,8 +113,8 @@ class NotesAuthorizationManager implements AuthorizationManager {
               // Extract the database and UNID from the URL
               String repId = getRepIdFromDocId(docId);
               String unid = getUNIDFromDocId(docId);
-              LOGGER.logp(Level.FINER, CLASS_NAME, METHOD,
-                  "Authorizing document: " + repId + " : " + unid);
+              LOGGER.log(Level.FINER, "Authorizing document: {0} : {1}",
+                  new Object[] { repId, unid });
 
               // Get the category from the security view for this
               // database. The first document in the category is
@@ -140,16 +136,16 @@ class NotesAuthorizationManager implements AuthorizationManager {
                 if (readers.size() > 0) {
                   docallow = checkDocumentReaders(user, readers, repId);
                 } else {
-                  LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD,
-                      "No document level security for " + unid);
+                  LOGGER.log(Level.FINEST,
+                      "No document level security for {0}", unid);
                 }
               }
               boolean allow = docallow && dballow;
-              LOGGER.logp(Level.FINER, CLASS_NAME, METHOD,
-                  "Final auth decision is " + allow + " " + unid);
+              LOGGER.log(Level.FINER, "Final auth decision is {0} {1}",
+                  new Object[] { allow, unid });
               authorized.add(new AuthorizationResponse(allow, docId));
             } catch (Throwable t) {
-              LOGGER.logp(Level.WARNING, CLASS_NAME, METHOD,
+              LOGGER.log(Level.WARNING,
                   "Failed to complete check for: " + docId, t);
               authorized.add(new AuthorizationResponse(
                       AuthorizationResponse.Status.INDETERMINATE, docId));
@@ -159,9 +155,9 @@ class NotesAuthorizationManager implements AuthorizationManager {
               // Log timing for each document.
               if (LOGGER.isLoggable(Level.FINER)) {
                 elapsedTimeMillis = System.currentTimeMillis() - startTime;
-                LOGGER.logp(Level.FINER, CLASS_NAME, METHOD,
-                    "ElapsedAuthorizationResponseTime: " + elapsedTimeMillis
-                    + " Documents authorized: " + authorized.size());
+                LOGGER.log(Level.FINER, "ElapsedAuthorizationResponseTime: {0}"
+                    + " Documents authorized: {1}",
+                    new Object[] { elapsedTimeMillis, authorized.size() });
               }
             }
           }
@@ -173,19 +169,12 @@ class NotesAuthorizationManager implements AuthorizationManager {
       LOGGER.log(Level.SEVERE, CLASS_NAME, e);
     }
 
-    if (LOGGER.isLoggable(Level.FINER)) {
-      for (int i = 0; i < authorized.size(); i++) {
-        AuthorizationResponse ar = authorized.get(i);
-        LOGGER.logp(Level.FINER, CLASS_NAME, METHOD,
-            "AuthorizationResponse: " + ar.getDocid() + " : " + ar.isValid());
-      }
-    }
     // Get elapsed time in milliseconds
     elapsedTimeMillis = System.currentTimeMillis() - startTime;
-    LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
-        "TotalAuthorizationResponseTime: " + elapsedTimeMillis
-        + " milliseconds.  Documents in batch: " + docIds.size() +
-        " Documents authorized: " + authorized.size());
+    LOGGER.log(Level.FINE,
+        "TotalAuthorizationResponseTime: {0} milliseconds."
+        + " Documents in batch: {1} Documents authorized: {2}",
+        new Object[] { elapsedTimeMillis, docIds.size(), authorized.size() });
     return authorized;
   }
 
@@ -205,29 +194,28 @@ class NotesAuthorizationManager implements AuthorizationManager {
     final String METHOD = "checkDocumentReaders";
     LOGGER.entering(CLASS_NAME, METHOD);
 
-    LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD,
-        "Document reader list is " + readers);
+    LOGGER.log(Level.FINEST, "Document reader list is {0}", readers);
     try {
       // Check using the Notes name
       if (readers.contains(user.getNotesName())) {
-        LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD,
-            "ALLOWED: User is in document readers" + user.getNotesName());
+        LOGGER.log(Level.FINEST,
+            "ALLOWED: User is in document readers: {0}", user.getNotesName());
         return true;
       }
 
       // Check using the common name
       String commonName = getCommonName(user.getNotesName());
       if (readers.contains(commonName)) {
-          LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD,
-              "ALLOWED: User is in document readers " + commonName);
+          LOGGER.log(Level.FINEST,
+              "ALLOWED: User is in document readers: {0}", commonName);
           return true;
       }
 
       // Check using groups
       for (String group : user.getGroups()) {
         if (readers.contains(group)) {
-          LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD,
-              "ALLOWED: Group is in document readers " + group);
+          LOGGER.log(Level.FINEST,
+              "ALLOWED: Group is in document readers: {0}", group);
           return true;
         }
       }
@@ -241,14 +229,13 @@ class NotesAuthorizationManager implements AuthorizationManager {
       // membership.
       for (String role : user.getRolesByDatabase(repId)) {
         if (readers.contains(role)) {
-          LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD,
-              "ALLOWED: Role is in document readers " + role);
+          LOGGER.log(Level.FINEST,
+              "ALLOWED: Role is in document readers: {0}", role);
           return true;
         }
       }
 
-      LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD,
-          "DENIED: User's security principals are not in "
+      LOGGER.log(Level.FINEST, "DENIED: User's security principals are not in "
           + "document access lists.");
       return false;
     } finally {
@@ -290,13 +277,12 @@ class NotesAuthorizationManager implements AuthorizationManager {
     try {
       ArrayList<String> allowGroups =
           toLowerCase(dbdoc.getItemValue(NCCONST.NCITM_DBPERMITGROUPS));
-      LOGGER.logp(Level.FINER, CLASS_NAME, METHOD,
-          "Allow groups are: " + allowGroups.toString());
+      LOGGER.log(Level.FINER, "Allow groups are: {0}", allowGroups);
 
       for (String group: userGroups) {
         if (allowGroups.contains(group)) {
-          LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD,
-              "ALLOWED: User is allowed through group " + group);
+          LOGGER.log(Level.FINEST,
+              "ALLOWED: User is allowed through group {0}", group);
           return true;
         }
       }
@@ -317,14 +303,13 @@ class NotesAuthorizationManager implements AuthorizationManager {
           toLowerCase(dbdoc.getItemValue(NCCONST.NCITM_DBPERMITUSERS));
       boolean result = false;
       if (allowList.contains("-default-")) {
-        LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD,
-            "ALLOWED: -Default- is allowed");
+        LOGGER.log(Level.FINEST, "ALLOWED: -Default- is allowed");
         result = true;
       } else {
         for (String userName : userNames) {
           if (allowList.contains(userName)) {
-            LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD,
-                "ALLOWED: User is explictly allowed " + userName);
+            LOGGER.log(Level.FINEST,
+                "ALLOWED: User is explictly allowed {0}", userName);
             result = true;
             break;
           }
@@ -346,8 +331,8 @@ class NotesAuthorizationManager implements AuthorizationManager {
           toLowerCase(dbdoc.getItemValue(NCCONST.NCITM_DBNOACCESSUSERS));
       for (String userName : userNames) {
         if (denyList.contains(userName)) {
-          LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD,
-              "DENIED: User is explictly denied " + userName);
+          LOGGER.log(Level.FINEST,
+              "DENIED: User is explictly denied {0}", userName);
           return true;
         }
       }

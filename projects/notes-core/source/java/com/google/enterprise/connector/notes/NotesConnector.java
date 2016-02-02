@@ -57,9 +57,7 @@ public class NotesConnector implements Connector,
   }
 
   NotesConnector(String sessionFactoryClass) {
-    final String METHOD = "NotesConnector";
-    LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD,
-        "NotesConnector being created.");
+    LOGGER.log(Level.FINEST, "NotesConnector being created.");
     try {
       sessionFactory = (SessionFactory)
           Class.forName(sessionFactoryClass).newInstance();
@@ -71,8 +69,6 @@ public class NotesConnector implements Connector,
 
   @Override
   public Session login() throws RepositoryException {
-    final String METHOD = "login";
-
     // We always want to return ok here
 
     // If we are all ready logged in, return the existing session
@@ -105,8 +101,8 @@ public class NotesConnector implements Connector,
         vecCrawlerThreads.add(new NotesCrawlerThread(this, ncs));
         NotesCrawlerThread tmpThread = vecCrawlerThreads.elementAt(i);
         tmpThread.setName(NotesCrawlerThread.class.getSimpleName() + i);
-        LOGGER.logp(Level.INFO, CLASS_NAME, METHOD,
-            "Starting crawler thread " + tmpThread.getName());
+        LOGGER.log(Level.INFO,
+            "Starting crawler thread {0}", tmpThread.getName());
         tmpThread.start();
       }
     }
@@ -116,100 +112,82 @@ public class NotesConnector implements Connector,
 
   // The following setters are necessary for Spring to pass configuration to us
   public void setIdPassword(String idPassword) {
-    final String METHOD = "setIdPassword";
-    LOGGER.logp(Level.CONFIG, CLASS_NAME, METHOD,
-        "Connector config Password being set");
+    LOGGER.log(Level.CONFIG, "Connector config Password being set");
     password = idPassword;
   }
 
   public void setServer(String server) {
-    final String METHOD = "setServer";
-    LOGGER.logp(Level.CONFIG, CLASS_NAME, METHOD,
-        "Connector config Server = " + server);
+    LOGGER.log(Level.CONFIG, "Connector config Server = {0}", server);
     this.server = server;
   }
 
   public void setDatabase(String database) {
-    final String METHOD = "setDatabase";
-    LOGGER.logp(Level.CONFIG, CLASS_NAME, METHOD,
-        "Connector config Database = " + database);
+    LOGGER.log(Level.CONFIG, "Connector config Database = {0}", database);
     this.database = database;
   }
 
   public void setGsaNamesAreGlobal(boolean gsaNamesAreGlobal) {
-    final String METHOD = "setGsaNamesAreGlobal";
-    LOGGER.logp(Level.CONFIG, CLASS_NAME, METHOD,
-        "GSA names are global = " + gsaNamesAreGlobal);
+    LOGGER.log(Level.CONFIG, "GSA names are global = {0}", gsaNamesAreGlobal);
     this.gsaNamesAreGlobal = gsaNamesAreGlobal;
   }
 
   public void setGoogleConnectorWorkDir(String googleConnectorWorkDir) {
-    final String METHOD = "setGoogleConnectorWorkDir";
-    LOGGER.logp(Level.CONFIG, CLASS_NAME, METHOD,
-        "Deprecated googleConnectorWorkDir property, set to "
-        + googleConnectorWorkDir + ", will be ignored");
+    LOGGER.log(Level.CONFIG, "Deprecated googleConnectorWorkDir property,"
+        + " set to {0}, will be ignored", googleConnectorWorkDir);
   }
 
   public void setGoogleConnectorName(String googleConnectorName) {
-    final String METHOD = "setGoogleConnectorName";
-    LOGGER.logp(Level.CONFIG, CLASS_NAME, METHOD,
-        "Connector config GoogleConnectorName = " + googleConnectorName);
+    LOGGER.log(Level.CONFIG,
+        "Connector config GoogleConnectorName = {0}", googleConnectorName);
     connectorName = googleConnectorName;
   }
 
   public void setPolicyAclPattern(String policyAclPattern) {
-    final String METHOD = "setPolicyAclPattern";
-    LOGGER.logp(Level.CONFIG, CLASS_NAME, METHOD,
-        "Connector config policyAclPattern = " + policyAclPattern);
+    LOGGER.log(Level.CONFIG,
+        "Connector config policyAclPattern = {0}", policyAclPattern);
     this.policyAclPattern = policyAclPattern;
   }
 
   public void setGoogleFeedHost(String googleFeedHost) {
-    final String METHOD = "setGoogleFeedHost";
-    LOGGER.logp(Level.CONFIG, CLASS_NAME, METHOD,
-        "Deprecated googleFeedHost property, set to " + googleFeedHost
-        + ", will be ignored");
+    LOGGER.log(Level.CONFIG,
+        "Deprecated googleFeedHost property, set to {0}, will be ignored",
+        googleFeedHost);
   }
 
   public void setGsaUsername(String gsaUsername) {
-    final String METHOD = "setGsaUsername";
-    LOGGER.logp(Level.WARNING, CLASS_NAME, METHOD,
-        "Deprecated gsaUsername property, set to " + gsaUsername
-        + ", will be ignored");
+    LOGGER.log(Level.WARNING,
+        "Deprecated gsaUsername property, set to {0}, will be ignored",
+        gsaUsername);
   }
 
   public void setGsaPassword(String gsaPassword) {
-    final String METHOD = "setGsaPassword";
-    LOGGER.logp(Level.WARNING, CLASS_NAME, METHOD,
+    LOGGER.log(Level.WARNING,
         "Deprecated gsaPassword property will be ignored");
   }
 
   public void setGoogleLocalNamespace(String namespace) {
-    final String METHOD = "setGoogleLocalNamespace";
-    LOGGER.logp(Level.CONFIG, CLASS_NAME, METHOD,
-        "Connector config googleLocalNamespace = " + namespace);
+    LOGGER.log(Level.CONFIG,
+        "Connector config googleLocalNamespace = {0}", namespace);
     this.localNamespace = namespace;
   }
 
   public void setGoogleGlobalNamespace(String namespace) {
-    final String METHOD = "setGoogleGlobalNamespace";
-    LOGGER.logp(Level.CONFIG, CLASS_NAME, METHOD,
-        "Connector config googleGlobalNamespace = " + namespace);
+    LOGGER.log(Level.CONFIG,
+        "Connector config googleGlobalNamespace = {0}", namespace);
     this.globalNamespace = namespace;
   }
 
   @Override
   public void setDatabaseAccess(
       ConnectorPersistentStore connectorPersistentStore) {
-    final String METHOD = "setDatabaseAccess";
     if (connectorPersistentStore == null) {
       // null is passed in by Spring; the real value is set later
       // by the connector manager.
       return;
     }
 
-    LOGGER.logp(Level.CONFIG, CLASS_NAME, METHOD,
-        "Connector config databaseAccess = " + connectorPersistentStore);
+    LOGGER.log(Level.CONFIG,
+        "Connector config databaseAccess = {0}", connectorPersistentStore);
     this.connectorPersistentStore = connectorPersistentStore;
     this.jdbcDatabase = new JdbcDatabase(
         connectorPersistentStore.getLocalDatabase().getDataSource());
@@ -270,9 +248,7 @@ public class NotesConnector implements Connector,
 
   @Override
   public void delete() {
-    final String METHOD = "delete";
-    LOGGER.logp(Level.INFO, CLASS_NAME, METHOD,
-        "Connector is being DELETED!!!");
+    LOGGER.log(Level.INFO, "Connector is being DELETED!!!");
     releaseResources();
     deleted = true;
   }
@@ -286,12 +262,10 @@ public class NotesConnector implements Connector,
 
   @Override
   public void shutdown() {
-    final String METHOD = "shutdown";
-
     // There are two possibilities here.  Set a latch variable
     // and wait is on option.
     // TODO:  Use signalling to the other threads to get them to shutdown
-    LOGGER.logp(Level.INFO, CLASS_NAME, METHOD,
+    LOGGER.log(Level.INFO,
         "Connector is shutting down. Waking all threads!!!");
     shutdown = true;
     if (null != vecCrawlerThreads) {
@@ -323,8 +297,7 @@ public class NotesConnector implements Connector,
         try {
           docman.dropTables();
         } catch (Exception e) {
-          LOGGER.logp(Level.WARNING, CLASS_NAME, METHOD,
-              "Failed to drop document tables", e);
+          LOGGER.log(Level.WARNING, "Failed to drop document tables", e);
         }
       }
 
@@ -334,8 +307,7 @@ public class NotesConnector implements Connector,
           userGroupMan.dropTables();
         }
       } catch (Exception e) {
-        LOGGER.logp(Level.WARNING, CLASS_NAME, METHOD,
-            "Failed to drop user/group/role tables", e);
+        LOGGER.log(Level.WARNING, "Failed to drop user/group/role tables", e);
       }
     }
 

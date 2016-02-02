@@ -50,7 +50,7 @@ public class Util {
         try {
           obj.recycle();
         } catch (RepositoryException e) {
-          LOGGER.logp(Level.WARNING, CLASS_NAME, "recycle(obj)",
+          LOGGER.log(Level.WARNING,
               "Error calling recycle on Notes object: " + obj, e);
         }
       }
@@ -62,7 +62,7 @@ public class Util {
       try {
         obj.recycle(vec);
       } catch (RepositoryException e) {
-        LOGGER.logp(Level.WARNING, CLASS_NAME, "recycle(obj, vec)",
+        LOGGER.log(Level.WARNING,
             "Error calling recycle on Notes object: " + obj
             + " with data: " + vec, e);
       }
@@ -74,8 +74,7 @@ public class Util {
       try {
         stmt.close();
       } catch (SQLException e) {
-        LOGGER.logp(Level.WARNING, CLASS_NAME, "close",
-            "Error closing statement", e);
+        LOGGER.log(Level.WARNING, "Error closing statement", e);
       }
     }
   }
@@ -85,50 +84,39 @@ public class Util {
       try {
         rs.close();
       } catch (SQLException e) {
-        LOGGER.logp(Level.WARNING, CLASS_NAME, "close",
-            "Error closing result set", e);
+        LOGGER.log(Level.WARNING, "Error closing result set", e);
       }
     }
   }
-  
+
   static void executeStatements(Connection connection, boolean autoCommit,
       String... statements) throws SQLException {
-    final String METHOD = "executeStatements";
     if (connection == null) {
       throw new SQLException("Database connection is null");
     }
-    Statement stmt = null;
+    Statement stmt = connection.createStatement();
     try {
-      stmt = connection.createStatement();
       connection.setAutoCommit(autoCommit);
       connection.setTransactionIsolation(Connection.TRANSACTION_SERIALIZABLE);
       for (String statement : statements) {
         stmt.executeUpdate(statement);
-        LOGGER.logp(Level.FINE, CLASS_NAME, METHOD, "Executed " + statement);
+        LOGGER.log(Level.FINE, "Executed {0}", statement);
       }
       if (autoCommit == false) {
         try {
           connection.commit();
-          LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
-              "Committed all transactions successfully");
+          LOGGER.log(Level.FINE, "Committed all transactions successfully");
         } catch (SQLException sqle) {
           connection.rollback();
-          LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
-              "Rolled back all transactions");
+          LOGGER.log(Level.FINE, "Rolled back all transactions");
           throw sqle;
         }
       }
-    } catch (SQLException e) {
-      LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
-          "Failed to execute statements", e);
-      throw e;
     } finally {
-      if (stmt != null) {
-        try {
-          stmt.close();
-        } catch (SQLException e) {
-          LOGGER.logp(Level.WARNING, CLASS_NAME, METHOD, e.getMessage());
-        }
+      try {
+        stmt.close();
+      } catch (SQLException e) {
+        LOGGER.log(Level.WARNING, e.getMessage());
       }
     }
   }
