@@ -166,15 +166,16 @@ class NotesUserGroupManager {
         jdbcDatabase.makeTableName("grouproles_", connectorName);
     groupChildrenTableName =
         jdbcDatabase.makeTableName("groupchildren_", connectorName);
-    LOGGER.logp(Level.FINEST, CLASS_NAME, "<init>",
-        "Tables:"
-        + "\nuser: " + userTableName
-        + "\ngroup: " + groupTableName
-        + "\nrole: " + roleTableName
-        + "\nuserGroups: " + userGroupsTableName
-        + "\nuserRoles: " + userRolesTableName
-        + "\ngroupRoles: " + groupRolesTableName
-        + "\ngroupChildren: " + groupChildrenTableName);
+    if (LOGGER.isLoggable(Level.FINEST)) {
+      LOGGER.log(Level.FINEST, "Tables:"
+          + "\nuser: " + userTableName
+          + "\ngroup: " + groupTableName
+          + "\nrole: " + roleTableName
+          + "\nuserGroups: " + userGroupsTableName
+          + "\nuserRoles: " + userRolesTableName
+          + "\ngroupRoles: " + groupRolesTableName
+          + "\ngroupChildren: " + groupChildrenTableName);
+    }
     initializeUserCache();
   }
 
@@ -213,15 +214,11 @@ class NotesUserGroupManager {
         notesUsers.removeAll(verifiedUsers);
       }
 
-      if (LOGGER.isLoggable(Level.FINEST)) {
-        LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD,
-            "Mapped Notes names: " + notesUsers + " to GSA names: "
-            + gsaNames);
-      }
+      LOGGER.log(Level.FINEST, "Mapped Notes names: {0} to GSA names: {1}",
+          new Object[] { notesUsers, gsaNames });
       return gsaNames;
     } catch (Exception e) {
-      LOGGER.logp(Level.SEVERE, CLASS_NAME, METHOD,
-          "Failed to map users", e);
+      LOGGER.log(Level.SEVERE, "Failed to map users", e);
       return null;
     } finally {
       try {
@@ -230,8 +227,7 @@ class NotesUserGroupManager {
         lookupConn.setReadOnly(isReadOnly);
         connectionPool.releaseConnection(lookupConn);
       } catch (SQLException e) {
-        LOGGER.logp(Level.WARNING, CLASS_NAME, METHOD,
-            "Failure releasing connection", e);
+        LOGGER.log(Level.WARNING, "Failure releasing connection", e);
       }
       LOGGER.exiting(CLASS_NAME, METHOD);
     }
@@ -239,7 +235,6 @@ class NotesUserGroupManager {
 
   private String getGsaName(Connection conn, PreparedStatement pstmt,
       String name) {
-    final String METHOD = "getGsaName";
     ResultSet rs = null;
     try {
       pstmt.setString(1, name.toLowerCase());
@@ -248,8 +243,7 @@ class NotesUserGroupManager {
         return rs.getString("gsaname");
       }
     } catch (SQLException e) {
-      LOGGER.logp(Level.WARNING, CLASS_NAME, METHOD,
-          "Lookup error for name: " + name, e);
+      LOGGER.log(Level.WARNING, "Lookup error for name: " + name, e);
     } finally {
       Util.close(rs);
     }
@@ -260,12 +254,10 @@ class NotesUserGroupManager {
   // should use the lookup method in getSimpleUsers to find the
   // user record.
   public User getUserByNotesName(String notesName) {
-    final String METHOD = "getUserByNotesName";
     return getUser("notesname", notesName);
   }
 
   public User getUserByGsaName(String gsaName) {
-    final String METHOD = "getUserByGsaName";
     return getUser("gsaname", gsaName);
   }
 
@@ -395,17 +387,15 @@ class NotesUserGroupManager {
 
       return user;
     } catch (Exception e) {
-      LOGGER.logp(Level.SEVERE, CLASS_NAME, METHOD,
-          "Failed to find user record for: " + field
-          + " = " + value, e);
+      LOGGER.log(Level.SEVERE,
+          "Failed to find user record for: " + field + " = " + value, e);
       return null;
     } finally {
       try {
         lookupConn.setReadOnly(isReadOnly);
         connectionPool.releaseConnection(lookupConn);
       } catch (SQLException e) {
-        LOGGER.logp(Level.WARNING, CLASS_NAME, METHOD,
-            "Failure releasing connection", e);
+        LOGGER.log(Level.WARNING, "Failure releasing connection", e);
       }
       LOGGER.exiting(CLASS_NAME, METHOD);
     }
@@ -420,7 +410,6 @@ class NotesUserGroupManager {
    */
   private Map<Object, User> getSimpleUsers(NotesSession notesSession,
       Connection connection, Collection<?> userNames) {
-    final String METHOD = "getSimpleUsers";
     PreparedStatement exactMatchStmt = null;
     PreparedStatement commonNameStmt = null;
     Map<Object, User> users = new HashMap<Object, User>();
@@ -444,8 +433,7 @@ class NotesUserGroupManager {
             users.put(userObj, user);
             continue;
           }
-          LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD,
-              "User not found using: " + lookupString);
+          LOGGER.log(Level.FINEST, "User not found using: {0}", lookupString);
           // Try converting to canonical format.
           NotesName notesName = notesSession.createName(userName);
           if (notesName != null) {
@@ -455,8 +443,7 @@ class NotesUserGroupManager {
               users.put(userObj, user);
               continue;
             }
-            LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD,
-                "User not found using: " + lookupString);
+            LOGGER.log(Level.FINEST, "User not found using: {0}", lookupString);
           }
           // If an exact match failed, see if we have a common name.
           if (!userName.toLowerCase().startsWith("cn=")) {
@@ -466,18 +453,15 @@ class NotesUserGroupManager {
               users.put(userObj, user);
               continue;
             }
-            LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD,
-                "User not found using: " + lookupString);
+            LOGGER.log(Level.FINEST, "User not found using: {0}", lookupString);
           }
-          LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD,
-              "No record found for user: " + userName);
+          LOGGER.log(Level.FINEST, "No record found for user: {0}", userName);
         } catch (Exception e) {
-          LOGGER.logp(Level.SEVERE, CLASS_NAME, METHOD,
-              "Failed to lookup user: " + userName, e);
+          LOGGER.log(Level.SEVERE, "Failed to lookup user: " + userName, e);
         }
       }
     } catch (Exception e) {
-      LOGGER.logp(Level.SEVERE, CLASS_NAME, METHOD,
+      LOGGER.log(Level.SEVERE,
           "Failed to complete user lookup: " + userNames, e);
     }
     return users;
@@ -485,7 +469,6 @@ class NotesUserGroupManager {
 
   private User getSimpleUser(Connection conn, PreparedStatement pstmt,
       String name) {
-    final String METHOD = "getSimpleUser";
     ResultSet rs = null;
     try {
       pstmt.setString(1, name.toLowerCase());
@@ -494,14 +477,12 @@ class NotesUserGroupManager {
         User user = new User(rs.getLong("userid"), rs.getString("notesname"),
             rs.getString("gsaname"));
         if (rs.next()) {
-          LOGGER.logp(Level.WARNING, CLASS_NAME, METHOD,
-              "Found more than one match for " + name);
+          LOGGER.log(Level.WARNING, "Found more than one match for {0}", name);
         }
         return user;
       }
     } catch (Exception e) {
-      LOGGER.logp(Level.WARNING, CLASS_NAME, METHOD,
-          "Lookup error for name: " + name, e);
+      LOGGER.log(Level.WARNING, "Lookup error for name: " + name, e);
     } finally {
       Util.close(rs);
     }
@@ -515,7 +496,8 @@ class NotesUserGroupManager {
     NotesView view = null;
     try {
       if (!db.isOpen()) {
-        LOGGER.warning("Cannot open database: " + getDatabaseFilePath(db));
+        LOGGER.log(Level.WARNING, "Cannot open database: {0}",
+            getDatabaseFilePath(db));
         return unidList;
       }
       LOGGER.log(Level.FINEST,
@@ -560,7 +542,7 @@ class NotesUserGroupManager {
     final String METHOD = "updateUsersGroups";
     LOGGER.entering(CLASS_NAME, METHOD);
     try {
-      LOGGER.fine("Forcing cache update: " + force);
+      LOGGER.log(Level.FINE, "Forcing cache update: {0}", force);
       if (!setUpResources(force)) {
         return;
       }
@@ -591,8 +573,7 @@ class NotesUserGroupManager {
       setLastCacheUpdate();
       setCacheInitialized();
     } catch (Exception e) {
-      LOGGER.logp(Level.SEVERE, CLASS_NAME, METHOD,
-          "Failure updating user/group cache", e);
+      LOGGER.log(Level.SEVERE, "Failure updating user/group cache", e);
     } finally {
       releaseResources();
       LOGGER.exiting(CLASS_NAME, METHOD);
@@ -629,7 +610,6 @@ class NotesUserGroupManager {
   }
 
   synchronized void releaseResources() {
-    final String METHOD = "releaseResources";
     Util.recycle(peopleGroupsView);
     peopleGroupsView = null;
     Util.recycle(directoryDatabase);
@@ -643,8 +623,7 @@ class NotesUserGroupManager {
         conn.setAutoCommit(originalAutoCommit);
         conn.setTransactionIsolation(originalTransactionIsolation);
       } catch (SQLException e) {
-        LOGGER.logp(Level.WARNING, CLASS_NAME, METHOD,
-            "Error releasing database connection", e);
+        LOGGER.log(Level.WARNING, "Error releasing database connection", e);
       } finally {
         connectionPool.releaseConnection(conn);
         conn = null;
@@ -694,14 +673,13 @@ class NotesUserGroupManager {
           }
           // Only process groups
           if (!isAccessControlGroup(groupDoc)) {
-            LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD,
-                "Not a group/access control group: '" + groupName + "'");
+            LOGGER.log(Level.FINEST,
+                "Not a group/access control group: '{0}'", groupName);
             continue;
           }
           updateGroup(groupDoc, groupName);
         } catch (RepositoryException e) {
-          LOGGER.logp(Level.WARNING, CLASS_NAME, METHOD,
-              "Failed to update group cache" +
+          LOGGER.log(Level.WARNING, "Failed to update group cache" +
               (groupName != null ? " for " + groupName : ""), e);
         } finally {
           Util.recycle(groupDoc);
@@ -709,30 +687,22 @@ class NotesUserGroupManager {
       }
     }
     long timeFinish = System.currentTimeMillis();
-    LOGGER.log(Level.FINE, "Update groups: " + (timeFinish - timeStart) + "ms");
+    LOGGER.log(Level.FINE, "Update groups: {0}ms", timeFinish - timeStart);
   }
 
   private void updateGroup(NotesDocument groupDoc, String groupName) {
-    final String METHOD = "updateGroup";
-    LOGGER.entering(CLASS_NAME, METHOD);
-
-    if (LOGGER.isLoggable(Level.FINEST)) {
-      LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD,
-          "Processing group " + groupName);
-    }
+    LOGGER.log(Level.FINEST, "Processing group {0}", groupName);
     // Update the group record and the parent/descendent group records.
     LinkedHashSet<String> processedGroups = new LinkedHashSet<String>();
     LinkedHashSet<String> nestedGroups = new LinkedHashSet<String>();
     try {
       // Find the nested groups.
       getNestedGroups(groupDoc, groupName, processedGroups, nestedGroups);
-      if (LOGGER.isLoggable(Level.FINEST)) {
-        LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD,
-            "Nested groups for " + groupName + " are: " + nestedGroups);
-      }
+      LOGGER.log(Level.FINEST, "Nested groups for {0} are: {1}",
+          new Object[] { groupName, nestedGroups });
     } catch (Exception e) {
-      LOGGER.logp(Level.WARNING, CLASS_NAME, METHOD,
-          "Failed to find nested group information for group:  " + groupName
+      LOGGER.log(Level.WARNING,
+          "Failed to find nested group information for group: " + groupName
           + "; not updating", e);
       return;
     }
@@ -766,21 +736,18 @@ class NotesUserGroupManager {
         conn.commit();
       }
     } catch (Exception e) {
-      LOGGER.logp(Level.WARNING, CLASS_NAME, METHOD,
-          "Failed to update group information for group:  " + groupName
-          + "; not updating", e);
+      LOGGER.log(Level.WARNING, "Failed to update group information for group: "
+          + groupName + "; not updating", e);
       try {
         conn.rollback();
       } catch (SQLException e1) {
-        LOGGER.logp(Level.WARNING, CLASS_NAME, METHOD,
-            "Rollback failed", e1);
+        LOGGER.log(Level.WARNING, "Rollback failed", e1);
       }
     } finally {
       try {
         conn.setAutoCommit(true);
       } catch (SQLException e1) {
-        LOGGER.logp(Level.WARNING, CLASS_NAME, METHOD,
-            "AutoCommit reset failed", e1);
+        LOGGER.log(Level.WARNING, "AutoCommit reset failed", e1);
       }
     }
   }
@@ -840,8 +807,7 @@ class NotesUserGroupManager {
 
       NotesDocument doc = getDocumentByUnid(directoryDatabase, unid);
       if (doc == null) {
-        LOGGER.log(Level.FINEST,
-            "Document [{0}] is not found in {1} database",
+        LOGGER.log(Level.FINEST, "Document [{0}] is not found in {1} database",
             new Object[] {unid, getDatabaseFilePath(directoryDatabase)});
       } else {
         try {
@@ -866,7 +832,7 @@ class NotesUserGroupManager {
 
     long timeFinish = System.currentTimeMillis();
     LOGGER.log(Level.FINEST, "Update Notes domain cache [{0}ms]: {1}",
-        new Object[] {(timeFinish - timeStart), notesDomainNames.toString()});
+        new Object[] {(timeFinish - timeStart), notesDomainNames});
     LOGGER.exiting(CLASS_NAME, METHOD);
   }
 
@@ -898,31 +864,31 @@ class NotesUserGroupManager {
   public Set<String> getSubDomains(String domainName) {
     return notesDomainNames.getSubDomainNames(domainName).keySet();
   }
-  
+
   private long verifyDomainExists(String ou, boolean createIfNotExists) {
     final String METHOD = "verifyDomainExists";
     LOGGER.entering(CLASS_NAME, METHOD);
     Long groupId = this.notesDomainNames.get(ou);
     if (groupId instanceof Long) {
-      LOGGER.logp(Level.FINE, CLASS_NAME, METHOD, "Found " + ou + 
-          " domain in cache [ID# " + groupId + "]");
+      LOGGER.log(Level.FINE, "Found {0} domain in cache [ID# {1}]",
+          new Object[] { ou, groupId });
       return groupId.longValue();
     }
     long id = verifyGroupExists(ou, createIfNotExists);
     if (id != -1L) {
-      LOGGER.logp(Level.FINE, CLASS_NAME, METHOD, "Verify " + ou + 
-          " domain in database [ID# " + id + "]");
+      LOGGER.log(Level.FINE, "Verify {0} domain in database [ID# {1}]",
+          new Object[] { ou, id });
       this.notesDomainNames.add(ou, new Long(id));
     }
     LOGGER.exiting(CLASS_NAME, METHOD);
     return id;
   }
-  
+
   private void verifyMultiDomainsExist(List<String> personOUs, 
       boolean createIfNotExists) throws RepositoryException {
     final String METHOD = "verifyDomainsExists";
     LOGGER.entering(CLASS_NAME, METHOD);
-    
+
     boolean origAutoCommit = true;
     // Verify database connection which is used within verifyGroupExists
     try {
@@ -934,9 +900,7 @@ class NotesUserGroupManager {
       origAutoCommit = conn.getAutoCommit();
       conn.setAutoCommit(true);
     } catch (SQLException e) {
-      LOGGER.logp(Level.SEVERE, CLASS_NAME, METHOD, 
-          "Failed to connect to H2 database");
-      throw new RepositoryException(e);
+      throw new RepositoryException("Failed to connect to H2 database", e);
     }
     // Loop thru each person's OU and add to notesDomainNames cache
     for (String ou : personOUs) {
@@ -946,14 +910,13 @@ class NotesUserGroupManager {
     try {
       conn.setAutoCommit(origAutoCommit);
     } catch (SQLException e) {
-      LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
-          "Failed to reset original auto commit");
+      LOGGER.log(Level.FINE, "Failed to reset original auto commit");
     } finally {
       connectionPool.releaseConnection(conn);
     }
     LOGGER.exiting(CLASS_NAME, METHOD);
   }
-  
+
   private long verifyGroupExists(String groupName,
       boolean createIfNotExists) {
     final String METHOD = "verifyGroupExists";
@@ -986,15 +949,14 @@ class NotesUserGroupManager {
       }
       generatedKeys = pstmt.getGeneratedKeys();
       if (generatedKeys.next()) {
-        LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
-            Util.buildString("New ", groupName, " group is added to cache"));
+        LOGGER.log(Level.FINE, "New {0} group is added to cache", groupName);
         return generatedKeys.getLong(1);
       } else {
         throw new RepositoryException(
             "Failed to retrieve key for " + groupName);
       }
     } catch (Exception e) {
-      LOGGER.logp(Level.WARNING, CLASS_NAME, METHOD,
+      LOGGER.log(Level.WARNING,
           "Failed group lookup/creation: " + groupName, e);
       return -1L;
     } finally {
@@ -1024,11 +986,9 @@ class NotesUserGroupManager {
     try {
       String userSelectionFormula = connectorSession.getUserSelectionFormula();
       String userNameFormula = connectorSession.getUserNameFormula();
-      if (LOGGER.isLoggable(Level.FINEST)) {
-        LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD,
-            "User selection formula is: " + userSelectionFormula
-            + "\nUser name formula is: " + userNameFormula);
-      }
+      LOGGER.log(Level.FINEST,
+          "User selection formula is: {0}\nUser name formula is: {1}",
+          new Object[] { userSelectionFormula, userNameFormula });
       serverAccessView = directoryDatabase.getView(
           NCCONST.DIRVIEW_SERVERACCESS);
       serverAccessView.refresh();
@@ -1057,48 +1017,33 @@ class NotesUserGroupManager {
             String storedName = nameVector.firstElement().toString();
             notesName = notesSession.createName(storedName)
                 .getCanonical().toLowerCase();
-            if (LOGGER.isLoggable(Level.FINEST)) {
-              LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD,
-                  "Processing user: " + notesName + "; name from directory was: "
-                  + storedName);
-            }
+            LOGGER.log(Level.FINEST,
+                "Processing user: {0}; name from directory was: {1}",
+                new Object[] { notesName, storedName});
             // Get their PVI
             String pvi = evaluatePvi(userNameFormula, personDoc);
             if (0 == pvi.length()) {
-              LOGGER.logp(Level.WARNING, CLASS_NAME, METHOD,
-                  "Could not evaluate PVI username for: " + notesName);
+              LOGGER.log(Level.WARNING,
+                  "Could not evaluate PVI username for: {0}", notesName);
               continue;
             }
-            if (LOGGER.isLoggable(Level.FINEST)) {
-              LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD, "PVI: " + pvi);
-            }
+            LOGGER.log(Level.FINEST, "PVI: {0}", pvi);
             // Does this person match the selection formula?
             boolean selected = checkPersonSelectionFormula(userSelectionFormula,
                 personDoc);
             if (!selected) {
-              if (LOGGER.isLoggable(Level.FINEST)) {
-                LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD,
-                    "User not selected: " + notesName);
-              }
+              LOGGER.log(Level.FINEST, "User not selected: {0}", notesName);
               continue;
             }
             updateUser(personDoc, notesName, pvi, serverAccessView);
             // Log user info
             if (LOGGER.isLoggable(Level.FINE)) {
-              String delim = "";
               User user = getUser("gsaname", pvi);
-              Collection<String> userGroups = user.getGroups();
-              StringBuilder buf = new StringBuilder();
-              buf.append("All groups for ").append(user).append(": ");
-              for (String grpName : userGroups) {
-                buf.append(delim).append(grpName);
-                delim = ", ";
-              }
-              LOGGER.logp(Level.FINE, CLASS_NAME, METHOD, buf.toString());
+              LOGGER.log(Level.FINE, "All groups for {0}: {1}",
+                  new Object[] { user, user.getGroups() });
             }
           } catch (Exception e) {
-            LOGGER.logp(Level.WARNING, CLASS_NAME, METHOD,
-                "Failed to update user cache" +
+            LOGGER.log(Level.WARNING, "Failed to update user cache" +
                 (notesName != null ? " for " + notesName : ""), e);
           } finally {
             Util.recycle(personDoc);
@@ -1106,14 +1051,13 @@ class NotesUserGroupManager {
         }
       }
     } catch (Exception e) {
-      LOGGER.logp(Level.WARNING, CLASS_NAME, METHOD,
-          "Error processing users", e);
+      LOGGER.log(Level.WARNING, "Error processing users", e);
     } finally {
       Util.recycle(serverAccessView);
       LOGGER.exiting(CLASS_NAME, METHOD);
     }
     long timeFinish = System.currentTimeMillis();
-    LOGGER.log(Level.FINE, "Update users: " + (timeFinish - timeStart) + "ms");
+    LOGGER.log(Level.FINE, "Update users: {0}ms", timeFinish - timeStart);
   }
 
   private void updateUser(NotesDocument personDoc,
@@ -1151,21 +1095,19 @@ class NotesUserGroupManager {
       }
       conn.commit();
     } catch (Exception e) {
-      LOGGER.logp(Level.WARNING, CLASS_NAME, METHOD,
+      LOGGER.log(Level.WARNING,
           "Error updating user data for: " + notesName, e);
       try {
         conn.rollback();
       } catch (SQLException e1) {
-        LOGGER.logp(Level.WARNING, CLASS_NAME, METHOD,
-            "Rollback failed", e1);
+        LOGGER.log(Level.WARNING, "Rollback failed", e1);
       }
       Util.close(pstmt);
     } finally {
       try {
         conn.setAutoCommit(true);
       } catch (SQLException e1) {
-        LOGGER.logp(Level.WARNING, CLASS_NAME, METHOD,
-            "Reset AutoCommit failed", e1);
+        LOGGER.log(Level.WARNING, "Reset AutoCommit failed", e1);
       }
       LOGGER.exiting(CLASS_NAME, METHOD);
     }
@@ -1204,11 +1146,11 @@ class NotesUserGroupManager {
               parentGroups.add(id);
               getParentGroupsForGroup(id, parentGroups);
             } else {
-              LOGGER.logp(Level.WARNING, CLASS_NAME, METHOD,
-                  "No group record for group: " + groupName);
+              LOGGER.log(Level.WARNING,
+                  "No group record for group: {0}", groupName);
             }
           } catch (Exception e) {
-            LOGGER.logp(Level.WARNING, CLASS_NAME, METHOD,
+            LOGGER.log(Level.WARNING,
                 "Failure looking up group record for " + groupName, e);
           } finally {
             Util.close(pstmt);
@@ -1242,7 +1184,7 @@ class NotesUserGroupManager {
         }
       }
     } catch (SQLException e) {
-      LOGGER.logp(Level.WARNING, CLASS_NAME, METHOD,
+      LOGGER.log(Level.WARNING,
           "Failure getting parent groups for " + groupId, e);
       throw new RepositoryException(e);
     } finally {
@@ -1260,8 +1202,7 @@ class NotesUserGroupManager {
     for (int index = dn.indexOf('/'); index != -1; index = dn.indexOf('/')) {
       try {
         String ou = dn.substring(index + 1);
-        LOGGER.logp(Level.FINER, CLASS_NAME, METHOD,
-            "Group list adding OU " + ou);
+        LOGGER.log(Level.FINER, "Group list adding OU {0}", ou);
         long groupId = verifyDomainExists(ou, true);
         if (groupId != -1L) {
           markAsPseudoGroup(groupId, ou);
@@ -1271,8 +1212,7 @@ class NotesUserGroupManager {
         mapWildcardGroup("*/" + ou, groups, serverAccessView);
         dn = ou;
       } catch (Exception e) {
-        LOGGER.logp(Level.WARNING, CLASS_NAME, METHOD,
-            "Error creating group from dn: " + dn, e);
+        LOGGER.log(Level.WARNING, "Error creating group from dn: " + dn, e);
       }
     }
     mapWildcardGroup("*", groups, serverAccessView);
@@ -1294,7 +1234,7 @@ class NotesUserGroupManager {
       Set<Long> groups, NotesView serverAccessView) {
     final String METHOD = "getGroupsWithWildcardMembers";
     LOGGER.entering(CLASS_NAME, METHOD);
-    
+
     if (Strings.isNullOrEmpty(wildcardName)) {
       return;
     }
@@ -1317,7 +1257,7 @@ class NotesUserGroupManager {
         entry = nextEntry;
       }
     } catch (RepositoryException e) {
-      LOGGER.logp(Level.WARNING, CLASS_NAME, METHOD,
+      LOGGER.log(Level.WARNING,
           Util.buildString("Failed to lookup groups for ", wildcardName, " in ",
               NCCONST.DIRVIEW_SERVERACCESS, " view"), e);
     } finally {
@@ -1333,19 +1273,17 @@ class NotesUserGroupManager {
 
     Statement stmt = null;
     try {
-      if (LOGGER.isLoggable(Level.FINEST)) {
-        LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD,
-            "Marking group as pseudo-group: " + groupName + "/" + groupId);
-      }
+      LOGGER.log(Level.FINEST, "Marking group as pseudo-group: {0}/{1}",
+          new Object[] { groupName, groupId});
       stmt = conn.createStatement();
       int result = stmt.executeUpdate("update " + groupTableName
           + " set pseudogroup = true where groupid = " + groupId);
       if (result != 1) {
-        LOGGER.logp(Level.WARNING, CLASS_NAME, METHOD,
-            "Failed to flag group as pseudo-group: " + groupName);
+        LOGGER.log(Level.WARNING,
+            "Failed to flag group as pseudo-group: {0}", groupName);
       }
     } catch (SQLException e) {
-      LOGGER.logp(Level.WARNING, CLASS_NAME, METHOD,
+      LOGGER.log(Level.WARNING,
           "Failed to flag group as pseudo-group: " + groupName, e);
     } finally {
       Util.close(stmt);
@@ -1372,11 +1310,8 @@ class NotesUserGroupManager {
       } else {
         throw new RepositoryException("Attempted user lookup without a key");
       }
-      if (LOGGER.isLoggable(Level.FINEST)) {
-        LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD,
-            "Looking up user with SQL: [" + userLookupSql + "] and key: "
-            + key);
-      }
+      LOGGER.log(Level.FINEST, "Looking up user with SQL: [{0}] and key: {1}",
+          new Object[] { userLookupSql, key });
       PreparedStatement pstmt = conn.prepareStatement(userLookupSql,
           ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
       ResultSet rs = null;
@@ -1390,8 +1325,7 @@ class NotesUserGroupManager {
             rs.updateString("gsaname", pvi.toLowerCase());
             rs.updateRow();
           }
-          LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD,
-              Util.buildString("Found user ", key, " from cache"));
+          LOGGER.log(Level.FINEST, "Found user {0} from cache", key);
           return rs.getLong("userid");
         }
         if (!createIfNotExists) {
@@ -1412,9 +1346,8 @@ class NotesUserGroupManager {
         }
         generatedKeys = pstmt.getGeneratedKeys();
         if (generatedKeys.next()) {
-          LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
-              Util.buildString("New user ", notesName.toLowerCase(),
-                  " [", pvi.toLowerCase(), "] is added to cache"));
+          LOGGER.log(Level.FINE, "New user {0} [{1}] is added to cache",
+              new Object[] { notesName.toLowerCase(), pvi.toLowerCase() });
           return generatedKeys.getLong(1);
         } else {
           throw new RepositoryException(
@@ -1467,8 +1400,8 @@ class NotesUserGroupManager {
               NCCONST.DITM_DBNAME);
           String replicaId = connectorCrawlDatabaseDoc.getItemValueString(
               NCCONST.DITM_REPLICAID);
-          LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
-              "Updating roles for database: " + databaseName);
+          LOGGER.log(Level.FINE,
+              "Updating roles for database: {0}", databaseName);
           replicaIds.add(replicaId);
 
           // TODO: is there anything that would cause us to skip
@@ -1480,13 +1413,13 @@ class NotesUserGroupManager {
               connectorCrawlDatabaseDoc.getItemValueString(NCCONST.DITM_SERVER),
               replicaId);
           if (!crawlDatabase.isOpen()) {
-            LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
-                "Database could not be opened: " + databaseName);
+            LOGGER.log(Level.FINE,
+                "Database could not be opened: {0}", databaseName);
             continue;
           }
           updateRolesForDatabase(crawlDatabase, replicaId);
         } catch (Exception e) {
-          LOGGER.logp(Level.WARNING, CLASS_NAME, METHOD,
+          LOGGER.log(Level.WARNING,
               "Error updating roles for database: " + databaseName, e);
         } finally {
           Util.recycle(crawlDatabase);
@@ -1494,8 +1427,7 @@ class NotesUserGroupManager {
       }
       checkDatabaseDeletions(replicaIds);
     } catch (Exception e) {
-      LOGGER.logp(Level.WARNING, CLASS_NAME, METHOD,
-          "Error updating roles", e);
+      LOGGER.log(Level.WARNING, "Error updating roles", e);
     } finally {
       Util.recycle(connectorCrawlDatabaseDoc);
       Util.recycle(connectorCrawlDatabaseView);
@@ -1527,10 +1459,8 @@ class NotesUserGroupManager {
            aclEntry != null;
            aclEntry = getNextAclEntry(acl, aclEntry)) {
         Vector roles = aclEntry.getRoles();
-        if (LOGGER.isLoggable(Level.FINEST)) {
-          LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD,
-              "Acl entry: " + aclEntry.getName() + "; with roles: " + roles);
-        }
+        LOGGER.log(Level.FINEST, "ACL entry: {0}; with roles: {1}",
+            new Object[] { aclEntry.getName(), roles });
         int roleType = aclEntry.getUserType();
         switch (roleType) {
           case NotesACLEntry.TYPE_PERSON:
@@ -1549,17 +1479,15 @@ class NotesUserGroupManager {
       try {
         conn.rollback();
       } catch (SQLException e1) {
-        LOGGER.logp(Level.WARNING, CLASS_NAME, METHOD,
-            "Rollback failed", e1);
+        LOGGER.log(Level.WARNING, "Rollback failed", e1);
       }
-      LOGGER.logp(Level.WARNING, CLASS_NAME, METHOD,
+      LOGGER.log(Level.WARNING,
           "Failed to update role data for database: " + databaseReplicaId, e);
     } finally {
       try {
         conn.setAutoCommit(true);
       } catch (SQLException e) {
-        LOGGER.logp(Level.WARNING, CLASS_NAME, METHOD,
-            "Failed to reset autocommit", e);
+        LOGGER.log(Level.WARNING, "Failed to reset autocommit", e);
       }
       Util.recycle(aclEntry);
       Util.recycle(acl);
@@ -1607,8 +1535,8 @@ class NotesUserGroupManager {
       Map<Object, User> users = getSimpleUsers(notesSession, conn,
           Lists.newArrayList(notesName));
       if (users.size() == 0) {
-        LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD,
-            "ACL user not in connector user cache: " + notesName);
+        LOGGER.log(Level.FINEST,
+            "ACL user not in connector user cache: {0}", notesName);
         return;
       }
       long userId = users.get(notesName).getUserId();
@@ -1645,8 +1573,8 @@ class NotesUserGroupManager {
     try {
       long groupId = verifyGroupExists(groupName, false);
       if (groupId == -1L) {
-        LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD,
-            "ACL group not in connector group cache: " + groupName);
+        LOGGER.log(Level.FINEST,
+            "ACL group not in connector group cache: {0}", groupName);
         return;
       }
       PreparedStatement pstmt = null;
@@ -1719,9 +1647,8 @@ class NotesUserGroupManager {
         Util.close(pstmt);
       }
     } catch (Exception e) {
-      LOGGER.logp(Level.WARNING, CLASS_NAME, METHOD,
-          "Error in lookup/creation of role: " + databaseReplicaId
-          + "/" + roleName, e);
+      LOGGER.log(Level.WARNING, "Error in lookup/creation of role: "
+          + databaseReplicaId + "/" + roleName, e);
       return -1L;
     } finally {
       LOGGER.exiting(CLASS_NAME, METHOD);
@@ -1751,9 +1678,9 @@ class NotesUserGroupManager {
         }
       }
       if (replicaIdsToDelete.size() > 0) {
-        LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
+        LOGGER.log(Level.FINE,
             "Found role cache data for database(s) that aren't" +
-            " in the connector's crawl list any more: " + replicaIdsToDelete);
+            " in the connector's crawl list any more: {0}", replicaIdsToDelete);
         conn.setAutoCommit(false);
         try {
           for (String replicaId : replicaIdsToDelete) {
@@ -1761,7 +1688,7 @@ class NotesUserGroupManager {
           }
           conn.commit();
         } catch (SQLException e) {
-          LOGGER.logp(Level.WARNING, CLASS_NAME, METHOD,
+          LOGGER.log(Level.WARNING,
               "Failure deleting roles for database(s)", e);
           conn.rollback();
         } finally {
@@ -1769,8 +1696,7 @@ class NotesUserGroupManager {
         }
       }
     } catch (SQLException e) {
-      LOGGER.logp(Level.WARNING, CLASS_NAME, METHOD,
-          "Database error", e);
+      LOGGER.log(Level.WARNING, "Database error", e);
     } finally {
       Util.close(stmt);
       LOGGER.exiting(CLASS_NAME, METHOD);
@@ -1811,8 +1737,7 @@ class NotesUserGroupManager {
           userId = rs.getLong(1);
           fullName = rs.getString(2);
         } catch (SQLException e) {
-          LOGGER.logp(Level.WARNING, CLASS_NAME, METHOD,
-              "Failure reading user table data", e);
+          LOGGER.log(Level.WARNING, "Failure reading user table data", e);
           continue;
         }
         try {
@@ -1823,30 +1748,27 @@ class NotesUserGroupManager {
           NotesDocument notesUserDoc = usersView.getDocumentByKey(key);
           if (notesUserDoc == null) {
             // This person or group no longer exists. Remove them
-            LOGGER.logp(Level.INFO, CLASS_NAME, METHOD,
-                "User no longer exists in source directory"
-                + " and will be deleted: " + key);
+            LOGGER.log(Level.INFO, "User no longer exists in source directory"
+                + " and will be deleted: {0}", key);
             usersToDelete.add(userId);
           } else {
             // Do an additional check for Persons to make sure they
             // still meet the selection criteria
             if (!checkPersonSelectionFormula(userSelectionFormula,
                     notesUserDoc)) {
-              LOGGER.logp(Level.INFO, CLASS_NAME, METHOD,
-                  "User no longer meets selection criteria"
-                  + " and will be deleted: " + key);
+              LOGGER.log(Level.INFO, "User no longer meets selection criteria"
+                  + " and will be deleted: {0}", key);
               usersToDelete.add(userId);
             }
             Util.recycle(notesUserDoc);
           }
         } catch (Exception e) {
-          LOGGER.logp(Level.WARNING, CLASS_NAME, METHOD,
-              "Failure checking user deletion: " + fullName);
+          LOGGER.log(Level.WARNING,
+              "Failure checking user deletion: " + fullName, e);
         }
       }
     } catch (Exception e) {
-      LOGGER.logp(Level.WARNING, CLASS_NAME, METHOD,
-          "Error checking deletions", e);
+      LOGGER.log(Level.WARNING, "Error checking deletions", e);
     } finally {
       Util.recycle(usersView);
       Util.close(stmt);
@@ -1856,8 +1778,7 @@ class NotesUserGroupManager {
       try {
         removeUser(userId);
       } catch (SQLException e) {
-        LOGGER.logp(Level.WARNING, CLASS_NAME, METHOD,
-            "Error removing user: " + userId, e);
+        LOGGER.log(Level.WARNING, "Error removing user: " + userId, e);
       }
     }
     LOGGER.exiting(CLASS_NAME, METHOD);
@@ -1892,16 +1813,13 @@ class NotesUserGroupManager {
           groupName = rs.getString(2);
           pseudoGroup = rs.getBoolean(3);
         } catch (SQLException e) {
-          LOGGER.logp(Level.WARNING, CLASS_NAME, METHOD,
-              "Failure reading group table data", e);
+          LOGGER.log(Level.WARNING, "Failure reading group table data", e);
           continue;
         }
 
         if (pseudoGroup) {
-          if (LOGGER.isLoggable(Level.FINEST)) {
-            LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD,
-                "Skipping deletion check for pseudo-group: " + groupName);
-          }
+          LOGGER.log(Level.FINEST,
+              "Skipping deletion check for pseudo-group: {0}", groupName);
           continue;
         }
         try {
@@ -1912,20 +1830,18 @@ class NotesUserGroupManager {
           NotesDocument notesGroupDoc = groupView.getDocumentByKey(groupName);
           if (notesGroupDoc == null) {
             // This group no longer exists.
-            LOGGER.logp(Level.INFO, CLASS_NAME, METHOD,
-                "Group no longer exists in source directory"
-                + " and will be deleted: " + groupName);
+            LOGGER.log(Level.INFO, "Group no longer exists in source directory"
+                + " and will be deleted: {0}", groupName);
             groupsToDelete.add(groupId);
           }
           Util.recycle(notesGroupDoc);
         } catch (Exception e) {
-          LOGGER.logp(Level.WARNING, CLASS_NAME, METHOD,
+          LOGGER.log(Level.WARNING,
               "Error checking deletions for group: " + groupName, e);
         }
       }
     } catch (Exception e) {
-      LOGGER.logp(Level.WARNING, CLASS_NAME, METHOD,
-          "Error checking deletions", e);
+      LOGGER.log(Level.WARNING, "Error checking deletions", e);
     } finally {
       Util.recycle(groupView);
       Util.close(stmt);
@@ -1935,8 +1851,7 @@ class NotesUserGroupManager {
       try {
         removeGroup(groupId);
       } catch (SQLException e) {
-        LOGGER.logp(Level.WARNING, CLASS_NAME, METHOD,
-            "Error removing group: " + groupId, e);
+        LOGGER.log(Level.WARNING, "Error removing group: " + groupId, e);
       }
     }
     LOGGER.exiting(CLASS_NAME, METHOD);
@@ -1945,8 +1860,7 @@ class NotesUserGroupManager {
   private void removeUser(String notesName) throws SQLException {
     final String METHOD = "removeUser";
     LOGGER.entering(CLASS_NAME, METHOD);
-    LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
-        "Removing user: " + notesName);
+    LOGGER.log(Level.FINE, "Removing user: {0}", notesName);
 
     PreparedStatement pstmt = conn.prepareStatement("select userid from "
         + userTableName + " where notesname = ?",
@@ -1965,8 +1879,8 @@ class NotesUserGroupManager {
     if (userId != -1) {
       removeUser(userId);
     } else {
-      LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
-          "Unable to find user data to remove: " + notesName);
+      LOGGER.log(Level.FINE,
+          "Unable to find user data to remove: {0}", notesName);
     }
     LOGGER.exiting(CLASS_NAME, METHOD);
   }
@@ -1974,8 +1888,7 @@ class NotesUserGroupManager {
   private void removeUser(long userId) throws SQLException {
     final String METHOD = "removeUser";
     LOGGER.entering(CLASS_NAME, METHOD);
-    LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
-        "Removing user: " + userId);
+    LOGGER.log(Level.FINE, "Removing user: {0}", userId);
 
     try {
       conn.setAutoCommit(false);
@@ -1987,8 +1900,7 @@ class NotesUserGroupManager {
           + " where userid = ?", userId);
       conn.commit();
     } catch (SQLException e) {
-      LOGGER.logp(Level.WARNING, CLASS_NAME, METHOD,
-          "Caught exception", e);
+      LOGGER.log(Level.WARNING, "Caught exception", e);
       conn.rollback();
     } finally {
       conn.setAutoCommit(true);
@@ -2013,8 +1925,7 @@ class NotesUserGroupManager {
           + " where groupid = ?", groupId);
       conn.commit();
     } catch (SQLException e) {
-      LOGGER.logp(Level.WARNING, CLASS_NAME, METHOD,
-          "Caught exception", e);
+      LOGGER.log(Level.WARNING, "Caught exception", e);
       conn.rollback();
     } finally {
       conn.setAutoCommit(true);
@@ -2059,8 +1970,7 @@ class NotesUserGroupManager {
       vwConfig = dbConfig.getView(NCCONST.VIEWSYSTEMSETUP);
       docConfig = vwConfig.getFirstDocument();
       if (docConfig == null) {
-        LOGGER.logp(Level.SEVERE, CLASS_NAME, METHOD,
-            "System configuration document not found.");
+        LOGGER.log(Level.SEVERE, "System configuration document not found.");
         return false;
       }
       docConfig.replaceItemValue(NCCONST.SITM_LASTCACHEUPDATE, dtTarget);
@@ -2076,10 +1986,10 @@ class NotesUserGroupManager {
       Util.recycle(nSession);
     }
     LOGGER.exiting(CLASS_NAME, METHOD);
-    
+
     return isReset;
   }
-  
+
   private void setLastCacheUpdate() {
     final String METHOD = "setLastCacheUpdate";
     LOGGER.entering(CLASS_NAME, METHOD);
@@ -2093,14 +2003,13 @@ class NotesUserGroupManager {
       systemView = connectorDatabase.getView(NCCONST.VIEWSYSTEMSETUP);
       systemDoc = systemView.getFirstDocument();
       if (systemDoc == null) {
-        LOGGER.logp(Level.SEVERE, CLASS_NAME, METHOD,
-            "System configuration document not found.");
+        LOGGER.log(Level.SEVERE, "System configuration document not found.");
         return;
       }
       systemDoc.replaceItemValue(NCCONST.SITM_LASTCACHEUPDATE, now);
       systemDoc.save(true);
-      LOGGER.logp(Level.INFO, CLASS_NAME, METHOD,
-          "Directory Cache last update time set to " + now.toString());
+      LOGGER.log(Level.INFO,
+          "Directory Cache last update time set to {0}", now);
     } catch (RepositoryException e) {
       LOGGER.log(Level.SEVERE, CLASS_NAME, e);
     } finally {
@@ -2131,8 +2040,7 @@ class NotesUserGroupManager {
       systemView = connectorDatabase.getView(NCCONST.VIEWSYSTEMSETUP);
       systemDoc = systemView.getFirstDocument();
       if (systemDoc == null) {
-        LOGGER.logp(Level.SEVERE, CLASS_NAME, METHOD,
-            "System configuration document not found.");
+        LOGGER.log(Level.SEVERE, "System configuration document not found.");
         return false;
       }
 
@@ -2141,21 +2049,20 @@ class NotesUserGroupManager {
       vecLastCacheUpdate = systemDoc
           .getItemValue(NCCONST.SITM_LASTCACHEUPDATE);
       if (vecLastCacheUpdate.size() > 0) {
-        LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
-            "vecLastCacheUpdate is " + vecLastCacheUpdate);
+        LOGGER.log(Level.FINE, "vecLastCacheUpdate is {0}", vecLastCacheUpdate);
         lastCacheUpdate = (NotesDateTime) vecLastCacheUpdate.firstElement();
-        LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
-            "Last directory cache update time is: " + lastCacheUpdate);
+        LOGGER.log(Level.FINE,
+            "Last directory cache update time is: {0}", lastCacheUpdate);
       }
 
       double elapsedMinutes = now.timeDifference(lastCacheUpdate) / 60;
-      LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
-          "Time difference since last directory cache update is: "
-          + elapsedMinutes);
+      LOGGER.log(Level.FINE,
+          "Time difference since last directory cache update is: {0}",
+          elapsedMinutes);
 
       // Check poll interval
       if (cacheUpdateInterval > elapsedMinutes) {
-        LOGGER.logp(Level.FINE, CLASS_NAME, METHOD,
+        LOGGER.log(Level.FINE,
             "Directory cache poll interval has not yet elapsed.");
         needToUpdate = false;
       }
@@ -2176,15 +2083,13 @@ class NotesUserGroupManager {
    */
   private String evaluatePvi(String userNameFormula, NotesDocument doc)
       throws RepositoryException {
-    final String METHOD = "evaluatePvi";
-
     Vector<?> vecEvalResult = notesSession.evaluate(userNameFormula, doc);
     // Make sure we don't get an empty vector.
     if (vecEvalResult != null && vecEvalResult.size() > 0) {
       return (vecEvalResult.elementAt(0).toString());
     }
-    LOGGER.logp(Level.WARNING, CLASS_NAME, METHOD,
-        "Failed to evaluate formula: " + userNameFormula);
+    LOGGER.log(Level.WARNING,
+        "Failed to evaluate formula: {0}", userNameFormula);
     return "";
   }
 
@@ -2240,8 +2145,6 @@ class NotesUserGroupManager {
 
   @VisibleForTesting
   void initializeUserCache() throws RepositoryException {
-    final String METHOD = "initializeUserCache";
-    
     Connection conn = null;
     JdbcDatabase jdbcDatabase =
         connectorSession.getConnector().getJdbcDatabase();
@@ -2255,16 +2158,15 @@ class NotesUserGroupManager {
           "create table " + userTableName
           + " (userid long auto_increment primary key,"
           + " gsaname varchar(128), notesname varchar(254))"});
-      LOGGER.logp(Level.INFO, CLASS_NAME, METHOD,
-          "Created/verified table: " + userTableName);
+      LOGGER.log(Level.INFO, "Created/verified table: {0}", userTableName);
       Util.executeStatements(conn, true, new String[] {
           "create index if not exists idx_gsaname_" + userTableName 
           + " on " + userTableName + "(gsaname)",
           "create index if not exists idx_notesname_" + userTableName 
           + " on " + userTableName + "(notesname)"});
-      LOGGER.logp(Level.INFO, CLASS_NAME, METHOD,
-          "Created/verified index: idx_gsaname_" + userTableName + " and "
-          + " idx_notesname_" + userTableName);
+      LOGGER.log(Level.INFO,
+          "Created/verified index: idx_gsaname_{0} and idx_notesname_{0}",
+          userTableName);
 
       // Group names have a max size of 63, but we also create
       // groups based on DN components, so make the groupname
@@ -2273,87 +2175,84 @@ class NotesUserGroupManager {
           "create table " + groupTableName
           + " (groupid long auto_increment primary key,"
           + " groupname varchar(254), pseudogroup boolean)"});
-      LOGGER.logp(Level.INFO, CLASS_NAME, METHOD,
-          "Created/verified table: " + groupTableName);
+      LOGGER.log(Level.INFO, "Created/verified table: {0}", groupTableName);
       Util.executeStatements(conn, true,
           "create index if not exists idx_groupname_groups on "
           + groupTableName + "(groupname)");
-      LOGGER.logp(Level.INFO, CLASS_NAME, METHOD,
-          "Created/verified index: idx_groupname_groups on " + groupTableName);
+      LOGGER.log(Level.INFO,
+          "Created/verified index: idx_groupname_groups on {0}",
+          groupTableName);
 
       // Role names have a max size of 15.
       jdbcDatabase.verifyTableExists(roleTableName, new String[] {
           "create table " + roleTableName
           + " (roleid long auto_increment primary key,"
           + " rolename varchar(32), replicaid varchar(32))"});
-      LOGGER.logp(Level.INFO, CLASS_NAME, METHOD,
-          "Created/verified table: " + roleTableName);
+      LOGGER.log(Level.INFO, "Created/verified table: {0}", roleTableName);
       Util.executeStatements(conn, true,
           "create index if not exists idx_rolename_roles on "
           + roleTableName + "(rolename)",
           "create index if not exists idx_replicaid_roles on "
           + roleTableName + "(replicaid)");
-      LOGGER.logp(Level.INFO, CLASS_NAME, METHOD, "Created/verified indexes: "
-          + "idx_rolename_roles and idx_replicaid_roles on " + roleTableName);
+      LOGGER.log(Level.INFO, "Created/verified indexes: "
+          + "idx_rolename_roles and idx_replicaid_roles on {0}", roleTableName);
 
       jdbcDatabase.verifyTableExists(userGroupsTableName, new String[] {
           "create table " + userGroupsTableName + " (userid long,"
           + " groupid long)"});
-      LOGGER.logp(Level.INFO, CLASS_NAME, METHOD,
-          "Created/verified table: " + userGroupsTableName);
+      LOGGER.log(Level.INFO,
+          "Created/verified table: {0}", userGroupsTableName);
       Util.executeStatements(conn, true,
           "create index if not exists idx_userid_usergroups on "
           + userGroupsTableName + "(userid)",
           "create index if not exists idx_groupid_usergroups on "
           + userGroupsTableName + "(groupid)");
-      LOGGER.logp(Level.INFO, CLASS_NAME, METHOD, "Created/verified indexes: "
-          + "idx_userid_usergroups and idx_groupid_usergroups on "
-          + userGroupsTableName);
+      LOGGER.log(Level.INFO, "Created/verified indexes: "
+          + "idx_userid_usergroups and idx_groupid_usergroups on {0}",
+          userGroupsTableName);
 
       jdbcDatabase.verifyTableExists(userRolesTableName, new String[] {
           "create table " + userRolesTableName + " (userid long, "
           + "roleid long)"});
-      LOGGER.logp(Level.INFO, CLASS_NAME, METHOD,
-          "Created/verified table: " + userRolesTableName);
+      LOGGER.log(Level.INFO, "Created/verified table: {0}", userRolesTableName);
       Util.executeStatements(conn, true,
           "create index if not exists idx_userid_userroles on "
           + userRolesTableName + "(userid)",
           "create index if not exists idx_roleid_userroles on "
           + userRolesTableName + "(roleid)");
-      LOGGER.logp(Level.INFO, CLASS_NAME, METHOD, "Created/verified indexes: "
-          + "idx_userid_userroles and idx_roleid_userroles on "
-          + userRolesTableName);
+      LOGGER.log(Level.INFO, "Created/verified indexes: "
+          + "idx_userid_userroles and idx_roleid_userroles on {0}",
+          userRolesTableName);
 
       jdbcDatabase.verifyTableExists(groupRolesTableName, new String[] {
           "create table " + groupRolesTableName + " (groupid long,"
           + " roleid long)"});
-      LOGGER.logp(Level.INFO, CLASS_NAME, METHOD,
-          "Created/verified table: " + groupRolesTableName);
+      LOGGER.log(Level.INFO,
+          "Created/verified table: {0}", groupRolesTableName);
       Util.executeStatements(conn, true,
           "create index if not exists idx_groupid_grouproles on "
           + groupRolesTableName + "(groupid)",
           "create index if not exists idx_roleid_grouproles on "
           + groupRolesTableName + "(roleid)");
-      LOGGER.logp(Level.INFO, CLASS_NAME, METHOD, "Created/verified indexes: "
-          + "idx_groupid_grouproles and idx_roleid_grouproles on "
-          + groupRolesTableName);
+      LOGGER.log(Level.INFO, "Created/verified indexes: "
+          + "idx_groupid_grouproles and idx_roleid_grouproles on {0}",
+          groupRolesTableName);
 
       jdbcDatabase.verifyTableExists(groupChildrenTableName, new String[] {
           "create table " + groupChildrenTableName + " (parentgroupid long,"
           + " childgroupid long)"});
-      LOGGER.logp(Level.INFO, CLASS_NAME, METHOD,
-          "Created/verified table: " + groupChildrenTableName);
+      LOGGER.log(Level.INFO,
+          "Created/verified table: {0}", groupChildrenTableName);
       Util.executeStatements(conn, true,
           "create index if not exists idx_parentgroupid_groupchildren on "
           + groupChildrenTableName + "(parentgroupid)",
           "create index if not exists idx_childgroupid_groupchildren on "
           + groupChildrenTableName + "(childgroupid)");
-      LOGGER.logp(Level.INFO, CLASS_NAME, METHOD, "Created/verified indexes: "
+      LOGGER.log(Level.INFO, "Created/verified indexes: "
           + "idx_parentgroupid_groupchildren and idx_childgroupid_groupchildren"
-          + " on " + groupChildrenTableName);
+          + " on {0}", groupChildrenTableName);
     } catch (Exception e) {
-      LOGGER.logp(Level.SEVERE, CLASS_NAME, METHOD,
-          "Failed to initialize user cache", e);
+      LOGGER.log(Level.SEVERE, "Failed to initialize user cache", e);
       throw new RepositoryException("Failed to initialize user cache", e);
     } finally {
       if (conn != null) {
@@ -2363,7 +2262,6 @@ class NotesUserGroupManager {
   }
 
   void clearTables(Connection conn) {
-    final String METHOD = "clearTables";
     try {
       String[] tables = { userTableName, groupTableName, roleTableName,
          userGroupsTableName, userRolesTableName, groupRolesTableName,
@@ -2374,8 +2272,7 @@ class NotesUserGroupManager {
         stmt.executeUpdate("delete from " + table);
       }
     } catch (SQLException e) {
-      LOGGER.logp(Level.WARNING, CLASS_NAME, METHOD,
-          "Error clearing tables", e);
+      LOGGER.log(Level.WARNING, "Error clearing tables", e);
     }
   }
 
@@ -2401,21 +2298,18 @@ class NotesUserGroupManager {
         try {
           stmt.executeUpdate("drop table " + table);
         } catch (Exception e) {
-          LOGGER.logp(Level.WARNING, CLASS_NAME, METHOD,
-              "Failed to drop table: " + table, e);
+          LOGGER.log(Level.WARNING, "Failed to drop table: " + table, e);
         }
       }
     } catch (Exception e) {
-      LOGGER.logp(Level.WARNING, CLASS_NAME, METHOD,
-          "Failed to drop tables", e);
+      LOGGER.log(Level.WARNING, "Failed to drop tables", e);
     } finally {
       try {
         Util.close(stmt);
         conn.setReadOnly(isReadOnly);
         connectionPool.releaseConnection(conn);
       } catch (SQLException e) {
-        LOGGER.logp(Level.WARNING, CLASS_NAME, METHOD,
-            "Failure releasing connection", e);
+        LOGGER.log(Level.WARNING, "Failure releasing connection", e);
       }
       LOGGER.exiting(CLASS_NAME, METHOD);
     }

@@ -29,8 +29,6 @@ class GsaUtil {
 
   static Collection<String> getGsaGroups(Collection<?> notesGroups,
       String groupPrefix)  {
-    final String METHOD = "getGsaGroups";
-
     if (notesGroups == null || notesGroups.size() == 0) {
       return Collections.emptySet();
     }
