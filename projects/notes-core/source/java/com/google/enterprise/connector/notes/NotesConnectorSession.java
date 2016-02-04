@@ -81,6 +81,7 @@ public class NotesConnectorSession implements Session {
       npn = connectorNpn;
       ns = createNotesSession();
 
+      LOGGER.log(Level.INFO, "Notes version is {0}", ns.getNotesVersion());
       LOGGER.logp(Level.CONFIG, CLASS_NAME, METHOD,
           "Connector platform is " + ns.getPlatform());
       LOGGER.logp(Level.CONFIG, CLASS_NAME, METHOD,
