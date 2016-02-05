@@ -10,9 +10,10 @@ documentation.
 Web Site: https://github.com/googlegsa/notes.v3
 
 
-Release 3.4.0, October 2015
-===========================
-This is a compatibility release for Connector Manager version 3.4.0.
+Release 3.4.0, February 4, 2016
+===============================
+This is a compatibility release for Connector Manager version 3.4.0, with
+additional bug fixes. Users of previous releases are encouraged to upgrade.
 
 Issues Fixed Since 3.2.10
 -------------------------
@@ -27,6 +28,17 @@ Issues Fixed Since 3.2.10
            When the database ACL changes while the authentication type is
            set to ACL, a warning is logged that any previously created
            policy ACLs should be deleted or updated.
+25397907 - Add logging context for the crawler and maintenance threads.
+           This makes it easier to associate log messages with a
+           particular connector instance.
+26866586 - Indexing may fail with an "Object has been removed or recycled"
+           error if a document has multiple items with the same name and a
+           form definition is not configured for the template under Form
+           Details.
+26989169 - A deleted document may not be detected until the deletion stub
+           is purged from the Notes database. The logs will contain an
+           error of "Notes error: Document has been deleted" when the
+           check for deletions fails.
 
 Version Compatibility
 ---------------------
