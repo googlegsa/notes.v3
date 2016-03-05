@@ -122,9 +122,6 @@ class NotesMaintenanceThread extends Thread {
     try {
       LOGGER.log(Level.INFO, "Checking for deletions");
       ns = ncs.createNotesSession();
-      // TODO(jlacey): See getStopped.
-      // CheckTime = ns.createDateTime("1/1/1900");
-      // CheckTime.setNow();
       cdb = ns.getDatabase(ncs.getServer(), ncs.getDatabase());
       NotesView DatabaseView = cdb.getView(NCCONST.VIEWDATABASES);
       DatabaseView.refresh();
@@ -212,13 +209,16 @@ class NotesMaintenanceThread extends Thread {
             notesId);
         return;
       }
+
       //When a database is in stopped mode we purge all documents
-      if (getStopped()) {
+      int isStopped = DbConfigDoc.getItemValueInteger(NCCONST.DITM_STOPPED);
+      if (isStopped == 1) {
         LOGGER.log(Level.FINER,
             "Deleting document because database is being purged. {0}", notesId);
         sendDeleteRequest(notesId);
         return;
       }
+
       //Is this database configured to check for deletions?
       String checkDeletions = DbConfigDoc.getItemValueString(
           NCCONST.DITM_CHECKDELETIONS);
@@ -228,6 +228,7 @@ class NotesMaintenanceThread extends Thread {
             notesId);
         return;
       }
+
       //Is crawling enabled for this database?  If not then
       //skip to the next document
       int isEnabled = DbConfigDoc.getItemValueInteger(
@@ -238,6 +239,7 @@ class NotesMaintenanceThread extends Thread {
             notesId);
         return;
       }
+
       //Try and open the source database
       boolean isSrcDbOpened = openSourceDatabase(notesId);
       if (!isSrcDbOpened) {
@@ -282,29 +284,6 @@ class NotesMaintenanceThread extends Thread {
             new Object[] { notesId, notesId.getServer(), SrcDb.getFilePath() });
         sendDeleteRequest(notesId);
       }
-    }
-
-    /*
-     *   Only start purging documents after a little while
-     *
-     */
-    protected boolean getStopped() throws RepositoryException {
-      // TODO:  Think about adding variable to provide some grace time
-      /*
-        LOGGER.log(Level.FINEST, "CheckTime is: {0}", CheckTime);
-        DateTime lm = DbConfigDoc.getLastModified();
-        LOGGER.log(Level.FINEST, "Last Modified is: {0}", lm);
-
-        int timediff = CheckTime.timeDifference(lm);
-        LOGGER.log(Level.FINEST, "Time Diff is: {0}", timediff);
-        if (CheckTime.timeDifference(lm) < 300) {
-          return false;
-        }
-      */
-      if (1 == DbConfigDoc.getItemValueInteger(NCCONST.DITM_STOPPED)) {
-        return true;
-      }
-      return false;
     }
 
     private boolean openSourceDatabase(NotesDocId notesId)
@@ -371,18 +350,12 @@ class NotesMaintenanceThread extends Thread {
         DbConfigDocRepId = "";
       }
       DbConfigDoc = DatabaseView.getDocumentByKey(ReplicaId);
-      if (null == DbConfigDoc) {
-        LOGGER.log(Level.SEVERE,
-            "Maintenance thread can't find database config for replica: {0}",
-            ReplicaId);
-        return;
+      if (DbConfigDoc != null) {
+        DbConfigDocRepId = ReplicaId;
       }
-      DbConfigDocRepId = ReplicaId;
       LOGGER.exiting(CLASS_NAME, METHOD);
-      return;
     }
 
-    @SuppressWarnings("unchecked")
     protected boolean checkSelectionCriteria() throws RepositoryException {
       final String METHOD = "checkSelectionCriteria";
       LOGGER.entering(CLASS_NAME, METHOD);
@@ -392,17 +365,12 @@ class NotesMaintenanceThread extends Thread {
       // The tests check this, so avoid MessageFormat-style.
       LOGGER.log(Level.FINEST, "Using selection formula: " + SelectionFormula);
 
-      Vector<Double> VecEvalResult =  (Vector<Double>)
-          ns.evaluate(SelectionFormula, SourceDocument);
-      // A Selection formula will return a vector of doubles.
-      if (1 == VecEvalResult.elementAt(0)) {
-        LOGGER.log(Level.FINEST, "Selection formula returned true");
-        LOGGER.exiting(CLASS_NAME, METHOD);
-        return true;
-      }
-      LOGGER.log(Level.FINEST, "Selection formula returned false");
+      Vector<?> VecEvalResult = ns.evaluate(SelectionFormula, SourceDocument);
+      boolean result = (1 == (Double) VecEvalResult.elementAt(0));
+      LOGGER.logp(Level.FINEST, CLASS_NAME, METHOD,
+          "Selection formula returned " + result);
       LOGGER.exiting(CLASS_NAME, METHOD);
-      return false;
+      return result;
     }
 
     /*
