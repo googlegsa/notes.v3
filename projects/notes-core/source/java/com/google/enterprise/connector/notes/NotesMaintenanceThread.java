@@ -49,14 +49,6 @@ class NotesMaintenanceThread extends Thread {
   private final NotesConnector nc;
   private final NotesConnectorSession ncs;
   private final NotesUserGroupManager nugm;
-  private NotesDatabase cdb = null;
-  private String OpenDbRepId = "";
-  private NotesDatabase SrcDb = null;
-  private NotesDocument DbConfigDoc = null;
-  private NotesSession ns = null;
-  private String DbConfigDocRepId = "";
-  private NotesDocument TemplateDoc = null;
-  private NotesDocument SourceDocument = null;
 
   NotesMaintenanceThread(NotesConnector connector,
       NotesConnectorSession session) throws RepositoryException {
@@ -123,6 +115,9 @@ class NotesMaintenanceThread extends Thread {
     LOGGER.entering(CLASS_NAME, METHOD);
 
     String lastdocid = startdocid;
+    NotesSession ns = null;
+    NotesDatabase cdb = null;
+    DeletionHandler handler = null;
     NotesDocId notesId = null;
     try {
       LOGGER.log(Level.INFO, "Checking for deletions");
@@ -136,16 +131,16 @@ class NotesMaintenanceThread extends Thread {
       LOGGER.log(Level.FINE, "Entries in database view: {0}",
           DatabaseView.getEntryCount());
 
+      NotesDocumentManager docMgr = ncs.getNotesDocumentManager();
+      handler = new DeletionHandler(docMgr, ns, cdb, DatabaseView);
       Map<String, NotesDocId> indexedDocuments;
       if (Strings.isNullOrEmpty(startdocid)) {
-        indexedDocuments = ncs.getNotesDocumentManager()
-            .getIndexedDocuments(null, null, batchsize);
+        indexedDocuments = docMgr.getIndexedDocuments(null, null, batchsize);
         LOGGER.log(Level.FINE, "Restarting deletion check.");
       } else {
         NotesDocId startNotesId = new NotesDocId(startdocid);
-        indexedDocuments = ncs.getNotesDocumentManager()
-            .getIndexedDocuments(startNotesId.getDocId(), 
-                startNotesId.getReplicaId(), batchsize);
+        indexedDocuments = docMgr.getIndexedDocuments(startNotesId.getDocId(),
+            startNotesId.getReplicaId(), batchsize);
 
         if (!indexedDocuments.containsKey(startNotesId.getDocId())) {
           LOGGER.log(Level.FINE, "Restarting deletion check.");
@@ -160,7 +155,7 @@ class NotesMaintenanceThread extends Thread {
         LOGGER.log(Level.FINER, "Checking deletion for document: {0}", notesId);
         try {
           lastdocid = notesId.toString();
-          checkForDeletion(unid, notesId, DatabaseView);
+          handler.checkForDeletion(unid, notesId);
         } catch (RepositoryException e) {
           LOGGER.log(Level.WARNING,
               "Unable to process document: " + notesId, e);
@@ -171,14 +166,10 @@ class NotesMaintenanceThread extends Thread {
       LOGGER.log(Level.SEVERE,
           "Aborting check for deletions at document: " + notesId, e);
     } finally {
-      Util.recycle(SourceDocument, TemplateDoc, DbConfigDoc, SrcDb, cdb);
-      SourceDocument = null;
-      TemplateDoc = null;
-      DbConfigDocRepId = "";
-      DbConfigDoc = null;
-      OpenDbRepId = "";
-      SrcDb = null;
-      cdb = null;
+      Util.recycle(cdb);
+      if (handler != null) {
+        handler.recycleAll();
+      }
 
       ncs.closeNotesSession(ns);
       LOGGER.exiting(CLASS_NAME, METHOD);
@@ -186,8 +177,33 @@ class NotesMaintenanceThread extends Thread {
     return lastdocid;
   }
 
-    private void checkForDeletion(String unid, NotesDocId notesId,
-        NotesView DatabaseView) throws RepositoryException {
+  private static class DeletionHandler {
+    private final NotesDocumentManager docMgr;
+    private final NotesSession ns;
+    private final NotesDatabase cdb;
+    private final NotesView DatabaseView;
+
+    private NotesDocument DbConfigDoc = null;
+    private String DbConfigDocRepId = "";
+    private NotesDatabase SrcDb = null;
+    private String OpenDbRepId = "";
+    private NotesDocument TemplateDoc = null;
+    private NotesDocument SourceDocument = null;
+
+    public DeletionHandler(NotesDocumentManager docMgr, NotesSession ns,
+        NotesDatabase cdb, NotesView DatabaseView) {
+      this.docMgr = docMgr;
+      this.ns = ns;
+      this.cdb = cdb;
+      this.DatabaseView = DatabaseView;
+    }
+
+    public void recycleAll() {
+      Util.recycle(DbConfigDoc, SrcDb, TemplateDoc, SourceDocument);
+    }
+
+    public void checkForDeletion(String unid, NotesDocId notesId)
+        throws RepositoryException {
       //Validate database config using replica ID
       loadDbConfigDoc(notesId.getReplicaId(), DatabaseView);
       if (DbConfigDoc == null) {
@@ -268,202 +284,202 @@ class NotesMaintenanceThread extends Thread {
       }
     }
 
-  /*
-   *   Only start purging documents after a little while
-   *
-   */
-  protected boolean getStopped() throws RepositoryException {
-    // TODO:  Think about adding variable to provide some grace time
     /*
-      LOGGER.log(Level.FINEST, "CheckTime is: {0}", CheckTime);
-      DateTime lm = DbConfigDoc.getLastModified();
-      LOGGER.log(Level.FINEST, "Last Modified is: {0}", lm);
+     *   Only start purging documents after a little while
+     *
+     */
+    protected boolean getStopped() throws RepositoryException {
+      // TODO:  Think about adding variable to provide some grace time
+      /*
+        LOGGER.log(Level.FINEST, "CheckTime is: {0}", CheckTime);
+        DateTime lm = DbConfigDoc.getLastModified();
+        LOGGER.log(Level.FINEST, "Last Modified is: {0}", lm);
 
-      int timediff = CheckTime.timeDifference(lm);
-      LOGGER.log(Level.FINEST, "Time Diff is: {0}", timediff);
-      if (CheckTime.timeDifference(lm) < 300) {
-        return false;
+        int timediff = CheckTime.timeDifference(lm);
+        LOGGER.log(Level.FINEST, "Time Diff is: {0}", timediff);
+        if (CheckTime.timeDifference(lm) < 300) {
+          return false;
+        }
+      */
+      if (1 == DbConfigDoc.getItemValueInteger(NCCONST.DITM_STOPPED)) {
+        return true;
       }
-    */
-    if (1 == DbConfigDoc.getItemValueInteger(NCCONST.DITM_STOPPED)) {
-      return true;
+      return false;
     }
-    return false;
-  }
 
-  private boolean openSourceDatabase(NotesDocId notesId)
-      throws RepositoryException {
-    final String METHOD = "openSourceDatabase";
-    LOGGER.entering(CLASS_NAME, METHOD);
-    if (OpenDbRepId.contentEquals(notesId.getReplicaId())) {
-      return true;
+    private boolean openSourceDatabase(NotesDocId notesId)
+        throws RepositoryException {
+      final String METHOD = "openSourceDatabase";
+      LOGGER.entering(CLASS_NAME, METHOD);
+      if (OpenDbRepId.contentEquals(notesId.getReplicaId())) {
+        return true;
+      }
+      //Different replicaId - Recycle and close the old database
+      if (SrcDb != null) {
+        SrcDb.recycle();
+        SrcDb= null;
+        OpenDbRepId = "";
+      }
+      // Open the new database
+      SrcDb = ns.getDatabase(null, null);
+      boolean isSrcDbOpen = SrcDb.openByReplicaID(notesId.getServer(),
+          notesId.getReplicaId());
+      if (isSrcDbOpen) {
+        OpenDbRepId = notesId.getReplicaId();
+      }
+      LOGGER.exiting(CLASS_NAME, METHOD);
+      return isSrcDbOpen;
     }
-    //Different replicaId - Recycle and close the old database
-    if (SrcDb != null) {
-      SrcDb.recycle();
-      SrcDb= null;
-      OpenDbRepId = "";
-    }
-    // Open the new database
-    SrcDb = ns.getDatabase(null, null);
-    boolean isSrcDbOpen = SrcDb.openByReplicaID(notesId.getServer(), 
-        notesId.getReplicaId());
-    if (isSrcDbOpen) {
-      OpenDbRepId = notesId.getReplicaId();
-    }
-    LOGGER.exiting(CLASS_NAME, METHOD);
-    return isSrcDbOpen;
-  }
 
-  protected void loadTemplateDoc(String TemplateName)
-      throws RepositoryException {
-    final String METHOD = "loadTemplateDoc";
-    LOGGER.entering(CLASS_NAME, METHOD);
-    LOGGER.log(Level.FINEST, "Loading template: {0}", TemplateName);
-    // Is a template document all ready loaded?
-    if (null != TemplateDoc) {
-      // Is this the one we need?
-      String existingTemplate = TemplateDoc.getItemValueString(
-          NCCONST.TITM_TEMPLATENAME);
-      LOGGER.log(Level.FINEST, "Existing template is: {0}", TemplateName);
-      if (TemplateName.equals(existingTemplate)) {
+    protected void loadTemplateDoc(String TemplateName)
+        throws RepositoryException {
+      final String METHOD = "loadTemplateDoc";
+      LOGGER.entering(CLASS_NAME, METHOD);
+      LOGGER.log(Level.FINEST, "Loading template: {0}", TemplateName);
+      // Is a template document all ready loaded?
+      if (null != TemplateDoc) {
+        // Is this the one we need?
+        String existingTemplate = TemplateDoc.getItemValueString(
+            NCCONST.TITM_TEMPLATENAME);
+        LOGGER.log(Level.FINEST, "Existing template is: {0}", TemplateName);
+        if (TemplateName.equals(existingTemplate)) {
+          return;
+        }
+        TemplateDoc.recycle();
+        TemplateDoc = null;
+      }
+      NotesView vw = cdb.getView(NCCONST.VIEWTEMPLATES);
+      TemplateDoc = vw.getDocumentByKey(TemplateName, true);
+      vw.recycle();
+      if (null != TemplateDoc) {
+        LOGGER.log(Level.FINEST, "Loaded template: {0}",
+            TemplateDoc.getItemValueString(NCCONST.TITM_TEMPLATENAME));
+      }
+      LOGGER.exiting(CLASS_NAME, METHOD);
+    }
+
+    protected void loadDbConfigDoc(String ReplicaId, NotesView DatabaseView)
+        throws RepositoryException {
+      final String METHOD = "loadDbConfigDoc";
+      LOGGER.entering(CLASS_NAME, METHOD);
+      if (ReplicaId.contentEquals(DbConfigDocRepId)) {
         return;
       }
-      TemplateDoc.recycle();
-      TemplateDoc = null;
-    }
-    NotesView vw = cdb.getView(NCCONST.VIEWTEMPLATES);
-    TemplateDoc = vw.getDocumentByKey(TemplateName, true);
-    vw.recycle();
-    if (null != TemplateDoc) {
-      LOGGER.log(Level.FINEST, "Loaded template: {0}",
-          TemplateDoc.getItemValueString(NCCONST.TITM_TEMPLATENAME));
-    }
-    LOGGER.exiting(CLASS_NAME, METHOD);
-  }
-
-  protected void loadDbConfigDoc(String ReplicaId, NotesView DatabaseView)
-      throws RepositoryException {
-    final String METHOD = "loadDbConfigDoc";
-    LOGGER.entering(CLASS_NAME, METHOD);
-    if (ReplicaId.contentEquals(DbConfigDocRepId)) {
-      return;
-    }
-    if (DbConfigDoc != null) {
-      DbConfigDoc.recycle();
-      DbConfigDoc = null;
-      DbConfigDocRepId = "";
-    }
-    DbConfigDoc = DatabaseView.getDocumentByKey(ReplicaId);
-    if (null == DbConfigDoc) {
-      LOGGER.log(Level.SEVERE,
-          "Maintenance thread can't find database config for replica: {0}",
-          ReplicaId);
-      return;
-    }
-    DbConfigDocRepId = ReplicaId;
-    LOGGER.exiting(CLASS_NAME, METHOD);
-    return;
-  }
-
-  @SuppressWarnings("unchecked")
-  protected boolean checkSelectionCriteria() throws RepositoryException {
-    final String METHOD = "checkSelectionCriteria";
-    LOGGER.entering(CLASS_NAME, METHOD);
-
-    String SelectionFormula = TemplateDoc.getItemValueString(
-        NCCONST.TITM_SEARCHSTRING);
-    // The tests check this, so avoid MessageFormat-style.
-    LOGGER.log(Level.FINEST, "Using selection formula: " + SelectionFormula);
-
-    Vector<Double> VecEvalResult =  (Vector<Double>)
-        ns.evaluate(SelectionFormula, SourceDocument);
-    // A Selection formula will return a vector of doubles.
-    if (1 == VecEvalResult.elementAt(0)) {
-      LOGGER.log(Level.FINEST, "Selection formula returned true");
-      LOGGER.exiting(CLASS_NAME, METHOD);
-      return true;
-    }
-    LOGGER.log(Level.FINEST, "Selection formula returned false");
-    LOGGER.exiting(CLASS_NAME, METHOD);
-    return false;
-  }
-
-  /*
-   * Check to see if the source document still exists in the source database
-   */
-  protected boolean loadSourceDocument(String UNID)
-      throws RepositoryException {
-    final String METHOD = "loadSourceDocument";
-    LOGGER.entering(CLASS_NAME, METHOD);
-
-    try {
-      // See if we can get the document
-      if (null != SourceDocument) {
-        SourceDocument.recycle();
-        SourceDocument = null;
+      if (DbConfigDoc != null) {
+        DbConfigDoc.recycle();
+        DbConfigDoc = null;
+        DbConfigDocRepId = "";
       }
-      SourceDocument = SrcDb.getDocumentByUNID(UNID);
-    } catch (NotesConnectorException e) {
-      if (e.getId() == NotesError.NOTES_ERR_BAD_UNID) {
+      DbConfigDoc = DatabaseView.getDocumentByKey(ReplicaId);
+      if (null == DbConfigDoc) {
+        LOGGER.log(Level.SEVERE,
+            "Maintenance thread can't find database config for replica: {0}",
+            ReplicaId);
+        return;
+      }
+      DbConfigDocRepId = ReplicaId;
+      LOGGER.exiting(CLASS_NAME, METHOD);
+      return;
+    }
+
+    @SuppressWarnings("unchecked")
+    protected boolean checkSelectionCriteria() throws RepositoryException {
+      final String METHOD = "checkSelectionCriteria";
+      LOGGER.entering(CLASS_NAME, METHOD);
+
+      String SelectionFormula = TemplateDoc.getItemValueString(
+          NCCONST.TITM_SEARCHSTRING);
+      // The tests check this, so avoid MessageFormat-style.
+      LOGGER.log(Level.FINEST, "Using selection formula: " + SelectionFormula);
+
+      Vector<Double> VecEvalResult =  (Vector<Double>)
+          ns.evaluate(SelectionFormula, SourceDocument);
+      // A Selection formula will return a vector of doubles.
+      if (1 == VecEvalResult.elementAt(0)) {
+        LOGGER.log(Level.FINEST, "Selection formula returned true");
         LOGGER.exiting(CLASS_NAME, METHOD);
         return true;
-      } else {
-        throw e;
       }
+      LOGGER.log(Level.FINEST, "Selection formula returned false");
+      LOGGER.exiting(CLASS_NAME, METHOD);
+      return false;
     }
-    LOGGER.exiting(CLASS_NAME, METHOD);
-    return !SourceDocument.isValid() || SourceDocument.isDeleted();
-  }
 
-  /*
-   * Create a request to delete this document
-   */
-  private void createDeleteRequest(String googleDocId) throws RepositoryException {
-    final String METHOD = "createDeleteRequest";
-    LOGGER.entering(CLASS_NAME, METHOD);
-    LOGGER.log(Level.FINER,
-        "Send deletion request to GSA for {0}", googleDocId);
-    NotesDocument DeleteReq = cdb.createDocument();
-    DeleteReq.appendItemValue(NCCONST.ITMFORM, NCCONST.FORMCRAWLREQUEST);
-    DeleteReq.replaceItemValue(NCCONST.ITM_ACTION, ActionType.DELETE.toString());
-    DeleteReq.replaceItemValue(NCCONST.ITM_DOCID, googleDocId);
-    DeleteReq.replaceItemValue(NCCONST.NCITM_STATE, NCCONST.STATEFETCHED);
-    DeleteReq.save(true);
-    DeleteReq.recycle();
-    LOGGER.exiting(CLASS_NAME, METHOD);
-  }
+    /*
+     * Check to see if the source document still exists in the source database
+     */
+    protected boolean loadSourceDocument(String UNID)
+        throws RepositoryException {
+      final String METHOD = "loadSourceDocument";
+      LOGGER.entering(CLASS_NAME, METHOD);
 
-  private void createDeleteRequestForAttachments(NotesDocId notesId)
-      throws RepositoryException {
-    NotesDocumentManager docMgr = ncs.getNotesDocumentManager();
-    Connection conn = null;
-    try {
-      conn = docMgr.getDatabaseConnection();
-      Set<String> attachmentSet = docMgr.getAttachmentIds(conn,
-          notesId.getDocId(), notesId.getReplicaId());
-      for (String attachmentId : attachmentSet) {
-        String attachmentUrl = String.format(NCCONST.SITM_ATTACHMENTDOCID,
-            notesId.toString(), attachmentId);
-        try {
-          createDeleteRequest(attachmentUrl);
-        } catch (RepositoryException re) {
-          LOGGER.log(Level.WARNING, "Failed to create delete request for "
-              + attachmentUrl, re);
+      try {
+        // See if we can get the document
+        if (null != SourceDocument) {
+          SourceDocument.recycle();
+          SourceDocument = null;
+        }
+        SourceDocument = SrcDb.getDocumentByUNID(UNID);
+      } catch (NotesConnectorException e) {
+        if (e.getId() == NotesError.NOTES_ERR_BAD_UNID) {
+          LOGGER.exiting(CLASS_NAME, METHOD);
+          return true;
+        } else {
+          throw e;
         }
       }
-    } catch (SQLException e) {
-      LOGGER.log(Level.SEVERE, "Unable to connect to H2 database", e);
-    } finally {
-      if (conn != null) {
-        docMgr.releaseDatabaseConnection(conn);
+      LOGGER.exiting(CLASS_NAME, METHOD);
+      return !SourceDocument.isValid() || SourceDocument.isDeleted();
+    }
+
+    /*
+     * Create a request to delete this document
+     */
+    private void createDeleteRequest(String googleDocId) throws RepositoryException {
+      final String METHOD = "createDeleteRequest";
+      LOGGER.entering(CLASS_NAME, METHOD);
+      LOGGER.log(Level.FINER,
+          "Send deletion request to GSA for {0}", googleDocId);
+      NotesDocument DeleteReq = cdb.createDocument();
+      DeleteReq.appendItemValue(NCCONST.ITMFORM, NCCONST.FORMCRAWLREQUEST);
+      DeleteReq.replaceItemValue(NCCONST.ITM_ACTION, ActionType.DELETE.toString());
+      DeleteReq.replaceItemValue(NCCONST.ITM_DOCID, googleDocId);
+      DeleteReq.replaceItemValue(NCCONST.NCITM_STATE, NCCONST.STATEFETCHED);
+      DeleteReq.save(true);
+      DeleteReq.recycle();
+      LOGGER.exiting(CLASS_NAME, METHOD);
+    }
+
+    private void createDeleteRequestForAttachments(NotesDocId notesId)
+        throws RepositoryException {
+      Connection conn = null;
+      try {
+        conn = docMgr.getDatabaseConnection();
+        Set<String> attachmentSet = docMgr.getAttachmentIds(conn,
+            notesId.getDocId(), notesId.getReplicaId());
+        for (String attachmentId : attachmentSet) {
+          String attachmentUrl = String.format(NCCONST.SITM_ATTACHMENTDOCID,
+              notesId.toString(), attachmentId);
+          try {
+            createDeleteRequest(attachmentUrl);
+          } catch (RepositoryException re) {
+            LOGGER.log(Level.WARNING, "Failed to create delete request for "
+                + attachmentUrl, re);
+          }
+        }
+      } catch (SQLException e) {
+        LOGGER.log(Level.SEVERE, "Unable to connect to H2 database", e);
+      } finally {
+        if (conn != null) {
+          docMgr.releaseDatabaseConnection(conn);
+        }
       }
     }
-  }
 
-  private void sendDeleteRequest(NotesDocId notesId)
-      throws RepositoryException {
-    createDeleteRequestForAttachments(notesId);
-    createDeleteRequest(notesId.toString());
+    private void sendDeleteRequest(NotesDocId notesId)
+        throws RepositoryException {
+      createDeleteRequestForAttachments(notesId);
+      createDeleteRequest(notesId.toString());
+    }
   }
 }
