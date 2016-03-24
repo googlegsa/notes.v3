@@ -279,7 +279,7 @@ class NotesAuthorizationManager implements AuthorizationManager {
           toLowerCase(dbdoc.getItemValue(NCCONST.NCITM_DBPERMITGROUPS));
       LOGGER.log(Level.FINER, "Allow groups are: {0}", allowGroups);
 
-      for (String group: userGroups) {
+      for (String group : userGroups) {
         if (allowGroups.contains(group)) {
           LOGGER.log(Level.FINEST,
               "ALLOWED: User is allowed through group {0}", group);

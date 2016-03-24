@@ -108,7 +108,7 @@ public class NotesTraversalManager implements TraversalManager {
       NotesViewNavigator submitQNav = submitQ.createViewNav();
       NotesViewEntry ve = submitQNav.getFirst();
       int batchSize = 0;
-      while (( ve != null) && (batchSize < batchHint)) {
+      while ((ve != null) && (batchSize < batchHint)) {
         batchSize++;
         String unid = ve.getColumnValues().elementAt(1).toString();
         LOGGER.log(Level.FINEST, "Adding document to list: {0}", unid);

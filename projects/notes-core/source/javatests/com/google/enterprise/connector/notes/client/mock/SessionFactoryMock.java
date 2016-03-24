@@ -58,7 +58,7 @@ public class SessionFactoryMock implements SessionFactory {
   }
 
   public NotesDatabaseMock getDatabase(String name) {
-    for (NotesDatabaseMock database: databases) {
+    for (NotesDatabaseMock database : databases) {
       if (name.equals(database.getName())) {
         return database;
       }

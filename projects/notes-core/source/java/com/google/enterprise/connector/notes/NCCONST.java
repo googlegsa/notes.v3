@@ -55,7 +55,7 @@ public class NCCONST {
   // Authorization methods specified in the field ITM_DAUTHTYPE
   public static final String AUTH_NONE = "none";
   public static final String AUTH_ACL = "acl";
-  public static final String AUTH_CONNECTOR ="connector";
+  public static final String AUTH_CONNECTOR = "connector";
 
   //Item names used in the template documents
   public static final String TITM_TEMPLATENAME = "TemplateName";
@@ -163,7 +163,7 @@ public class NCCONST {
   public static final String ITM_ISPUBLIC = "google.ispublic";
   public static final String ITM_LASTMODIFIED = "google.lastmodified";
   public static final String ITM_MIMETYPE = "google.mimetype";
-  public static final String ITM_SEARCHURL = "google.searchurl" ;
+  public static final String ITM_SEARCHURL = "google.searchurl";
   public static final String ITM_TITLE = "google.title";
   public static final String ITM_LOCK = "google.lock";
 
@@ -214,7 +214,7 @@ public class NCCONST {
   public static final String INIKEYFILENAME = "KeyFileName";
   public static final String INIKITTYPE = "KitType";
   public static final String INISERVERKEYFILENAME = "ServerKeyFileName";
-  public static final String INIDEBUGOUTFILE="debug_outfile";
+  public static final String INIDEBUGOUTFILE = "debug_outfile";
 
   // Item names in the system setup configuration
   public static final String SITM_EXCLUDEDEXTENSIONS = "ExcludeFileTypes";

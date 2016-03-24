@@ -272,7 +272,7 @@ class NotesMaintenanceThread extends Thread {
         // The tests check this, so avoid MessageFormat-style.
         LOGGER.log(Level.SEVERE, "Skipping selection criteria check " +
             "because template could not be opened: " + notesId +
-            ", Template: "+ templateName + ", Database: " +
+            ", Template: " + templateName + ", Database: " +
             notesId.getServer() + "!!" + SrcDb.getFilePath());
         return;
       }
@@ -296,7 +296,7 @@ class NotesMaintenanceThread extends Thread {
       //Different replicaId - Recycle and close the old database
       if (SrcDb != null) {
         SrcDb.recycle();
-        SrcDb= null;
+        SrcDb = null;
         OpenDbRepId = "";
       }
       // Open the new database

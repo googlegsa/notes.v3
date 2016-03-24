@@ -70,7 +70,7 @@ public class InheritableAclTest extends TestCase {
   }
 
   private static String getValue(Document doc, String name) throws Exception {
-    List<String> values = getValues(doc,name);
+    List<String> values = getValues(doc, name);
     if (values.size() > 0) {
       return values.get(0);
     }

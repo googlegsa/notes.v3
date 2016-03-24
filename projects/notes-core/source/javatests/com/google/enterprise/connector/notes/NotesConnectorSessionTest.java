@@ -56,24 +56,24 @@ public class NotesConnectorSessionTest extends TestCase {
 
     // Create source document
     NotesDocumentMock docDbSrc = new NotesDocumentMock();
-    docDbSrc.addItem(new NotesItemMock("name","Form",
-        "type",NotesItem.TEXT,"values","DATABASE"));
-    docDbSrc.addItem(new NotesItemMock("name","Server",
-        "type",NotesItem.TEXT,"values",TESTCONST.SERVER_DOMINO));
-    docDbSrc.addItem(new NotesItemMock("name","DbRepId",
-        "type",NotesItem.TEXT,"values",TESTCONST.DBSRC_REPLICAID));
+    docDbSrc.addItem(new NotesItemMock("name", "Form",
+        "type", NotesItem.TEXT, "values", "DATABASE"));
+    docDbSrc.addItem(new NotesItemMock("name", "Server",
+        "type", NotesItem.TEXT, "values", TESTCONST.SERVER_DOMINO));
+    docDbSrc.addItem(new NotesItemMock("name", "DbRepId",
+        "type", NotesItem.TEXT, "values", TESTCONST.DBSRC_REPLICAID));
     docDbSrc.addItem(new NotesItemMock("name", NCCONST.NCITM_UNID,
         "type", NotesItem.TEXT, "values", TESTCONST.DBSRC_REPLICAID));
-    docDbSrc.addItem(new NotesItemMock("name","Enabled",
-        "type",NotesItem.NUMBERS,"values",1));
-    docDbSrc.addItem(new NotesItemMock("name","Stopped",
-        "type",NotesItem.NUMBERS,"values",0));    
-    docDbSrc.addItem(new NotesItemMock("name","CheckDeletions",
-        "type", NotesItem.TEXT,"values","Yes"));
-    docDbSrc.addItem(new NotesItemMock("name","DbAuthType",
-        "type",NotesItem.TEXT,"values","connector"));
-    docDbSrc.addItem(new NotesItemMock("name","Template",
-        "type",NotesItem.TEXT,"values","Discussion"));
+    docDbSrc.addItem(new NotesItemMock("name", "Enabled",
+        "type", NotesItem.NUMBERS, "values", 1));
+    docDbSrc.addItem(new NotesItemMock("name", "Stopped",
+        "type", NotesItem.NUMBERS, "values", 0));
+    docDbSrc.addItem(new NotesItemMock("name", "CheckDeletions",
+        "type", NotesItem.TEXT, "values", "Yes"));
+    docDbSrc.addItem(new NotesItemMock("name", "DbAuthType",
+        "type", NotesItem.TEXT, "values", "connector"));
+    docDbSrc.addItem(new NotesItemMock("name", "Template",
+        "type", NotesItem.TEXT, "values", "Discussion"));
     configDatabase.addDocument(docDbSrc, NCCONST.VIEWDATABASES);
     configDatabase.setViewFields(NCCONST.VIEWDATABASES, "DbRepId");
 

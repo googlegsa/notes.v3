@@ -275,7 +275,7 @@ class NotesDocumentManager {
         pstmt.close();
         //Insert into readers table
         Set<String> readers = getReaders(docIndexed, new String[] {
-            NCCONST.NCITM_DOCREADERS,NCCONST.NCITM_DOCAUTHORREADERS});
+            NCCONST.NCITM_DOCREADERS, NCCONST.NCITM_DOCAUTHORREADERS});
         pstmt = connection.prepareStatement(
             "insert into " + readersTableName + "(reader, docid) values(?,?)");
         for (String reader : readers) {
@@ -607,7 +607,7 @@ class NotesDocumentManager {
     for (String readerFieldName : readerFieldNames) {
       try {
         Vector fieldValues = docIndexed.getItemValue(readerFieldName);
-        for (int i=0; i < fieldValues.size(); i++) {
+        for (int i = 0; i < fieldValues.size(); i++) {
           String fieldValue = (String) fieldValues.get(i);
           readers.add(fieldValue);
         }

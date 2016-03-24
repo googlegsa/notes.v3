@@ -130,7 +130,7 @@ public class NotesMaintenanceThreadTest extends TestCase {
     configDatabase.addDocument(docTmpl, NCCONST.VIEWTEMPLATES);
 
     // Run deletion check to capture error logs
-    Map<String,NotesDocId> docs = 
+    Map<String, NotesDocId> docs =
         notesDocMgrDbTest.getIndexedDocument(null, null, 1);
     NotesDocId startUnid = docs.get(docs.keySet().iterator().next());
     maintenanceThread.checkForDeletions(startUnid.toString(), BATCH_SIZE);
@@ -168,7 +168,7 @@ public class NotesMaintenanceThreadTest extends TestCase {
     configDatabase.setViewFields(NCCONST.VIEWTEMPLATES, "TemplateName");
 
     // Run deletion check to capture error logs
-    Map<String,NotesDocId> docs = 
+    Map<String, NotesDocId> docs =
         notesDocMgrDbTest.getIndexedDocument(null, null, 1);
     NotesDocId startUnid = docs.get(docs.keySet().iterator().next());
     maintenanceThread.checkForDeletions(startUnid.toString(), BATCH_SIZE);

@@ -43,7 +43,7 @@ class NotesViewEntryMock extends NotesBaseMock
   public Vector getColumnValues() throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "getColumnValues");
     Vector<Object> values = new Vector<Object>();
-    for (String field: view.getFields()) {
+    for (String field : view.getFields()) {
       NotesItem item = document.getFirstItem(field);
       values.add(item.getValues().get(0));
     }

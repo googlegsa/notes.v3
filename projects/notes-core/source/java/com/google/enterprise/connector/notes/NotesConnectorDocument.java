@@ -150,7 +150,7 @@ public class NotesConnectorDocument implements Document {
       //     gsa to try and crawl the doc
       putTextItem(SpiConstants.PROPNAME_MIMETYPE, NCCONST.ITM_MIMETYPE, null);
       putTextItem(SpiConstants.PROPNAME_DISPLAYURL,
-          NCCONST.ITM_DISPLAYURL,null);
+          NCCONST.ITM_DISPLAYURL, null);
       putBooleanItem(SpiConstants.PROPNAME_ISPUBLIC, NCCONST.ITM_ISPUBLIC, null);
       putTextItem(SpiConstants.PROPNAME_ACTION, NCCONST.ITM_ACTION, null);
       putBooleanItem(SpiConstants.PROPNAME_LOCK, NCCONST.ITM_LOCK, "true");
@@ -411,7 +411,7 @@ public class NotesConnectorDocument implements Document {
       return;
     }
     List<Value> list = new LinkedList<Value>();
-    for (int i= 0; i < vText.size(); i++) {
+    for (int i = 0; i < vText.size(); i++) {
       String ItemListElementText = vText.elementAt(i).toString();
       if (ItemListElementText != null) {
         if (0 != ItemListElementText.length()) {

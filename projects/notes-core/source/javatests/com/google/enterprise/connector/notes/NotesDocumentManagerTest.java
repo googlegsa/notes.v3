@@ -118,7 +118,7 @@ public class NotesDocumentManagerTest extends TestCase {
   }
   
   public void testStartUnid() throws Exception {
-    Map<String,NotesDocId> docIds = 
+    Map<String, NotesDocId> docIds =
         notesDocManager.getIndexedDocuments(
             TESTCONST.TEST_UNID1, TESTCONST.DBSRC_REPLICAID, 50);
     String firstUnid = docIds.keySet().iterator().next();
@@ -126,17 +126,17 @@ public class NotesDocumentManagerTest extends TestCase {
   }
   
   public void testGetIndexedDocuments() throws RepositoryException {
-    Map<String,NotesDocId> docIds = 
+    Map<String, NotesDocId> docIds =
         notesDocManager.getIndexedDocuments(null, null, NUM_OF_DOCS);
-    assertEquals(NUM_OF_DOCS,docIds.size());
+    assertEquals(NUM_OF_DOCS, docIds.size());
     
     //Get a collection equal to batch size which has the first expected unid
     NotesDocument doc = docs.get(NUM_OF_DOCS / 2);
     String unid = doc.getItemValueString(NCCONST.NCITM_UNID);
     String replicaid = doc.getItemValueString(NCCONST.NCITM_REPLICAID);
     docIds = notesDocManager.getIndexedDocuments(unid, 
-        replicaid, NUM_OF_DOCS/4);
-    assertEquals(NUM_OF_DOCS/4, docIds.size());
+        replicaid, NUM_OF_DOCS / 4);
+    assertEquals(NUM_OF_DOCS / 4, docIds.size());
     
     Set<String> keys = docIds.keySet();
     assertEquals(unid, keys.iterator().next());
@@ -163,7 +163,7 @@ public class NotesDocumentManagerTest extends TestCase {
     Connection conn = null;
     try {
       conn = notesDocManager.getDatabaseConnection();
-      for (int i = 0; i < NUM_OF_DOCS/10; i++) {
+      for (int i = 0; i < NUM_OF_DOCS / 10; i++) {
         doc = docs.get(i);
         unid = doc.getItemValueString(NCCONST.NCITM_UNID);
         repid = doc.getItemValueString(NCCONST.NCITM_REPLICAID);
@@ -274,7 +274,7 @@ public class NotesDocumentManagerTest extends TestCase {
     assertTrue(notesDocManager.dropTables());
   }
 
-  Map<String,NotesDocId> getIndexedDocument(
+  Map<String, NotesDocId> getIndexedDocument(
       String startUnid, String replicaId, int batchSize) 
           throws RepositoryException {
     return notesDocManager.getIndexedDocuments(
@@ -288,7 +288,7 @@ public class NotesDocumentManagerTest extends TestCase {
   
     int digitCount1 = String.valueOf(NUM_OF_DOCS).length();
     StringBuilder baseUnid = new StringBuilder();
-    for(int i = 0; i < (32 - digitCount1); i++){
+    for (int i = 0; i < (32 - digitCount1); i++){
       baseUnid.append("X");
     }
     NotesDocumentMock docNew = null;
@@ -320,7 +320,7 @@ public class NotesDocumentManagerTest extends TestCase {
     Connection conn = null;
     try {
       conn = notesDocManager.getDatabaseConnection();
-      for(NotesDocument doc : docs){
+      for (NotesDocument doc : docs) {
         notesDocManager.addIndexedDocument(doc, conn);
       }
     } catch (Exception e) {
@@ -334,51 +334,51 @@ public class NotesDocumentManagerTest extends TestCase {
       throws RepositoryException{
     NotesDocumentMock docMock = new NotesDocumentMock();
     docMock.addItem(new NotesItemMock("name", "Form", "type", NotesItem.TEXT, 
-        "values",NCCONST.FORMCRAWLREQUEST));
+        "values", NCCONST.FORMCRAWLREQUEST));
     docMock.addItem(new NotesItemMock("name", NCCONST.ITM_ACTION, "type", 
-        NotesItem.TEXT, "values","add"));
+        NotesItem.TEXT, "values", "add"));
     docMock.addItem(new NotesItemMock("name", NCCONST.ITM_DOCID, "type", 
         NotesItem.TEXT, "values",
         "http://" + TESTCONST.SERVER_DOMINO_WEB + TESTCONST.DOMAIN + 
         "/" + TESTCONST.DBSRC_REPLICAID + "/0/XXXXXXXXXXXXXXXXXXXXXXXXXXXX0000"));
     docMock.addItem(new NotesItemMock("name", NCCONST.ITM_ISPUBLIC, "type", 
-        NotesItem.TEXT, "values","true"));
+        NotesItem.TEXT, "values", "true"));
     NotesDateTimeMock dtMock = new NotesDateTimeMock(null);
     dtMock.setNow();
     docMock.addItem(new NotesItemMock("name", NCCONST.ITM_LASTMODIFIED, 
         "type", NotesItem.DATETIMES, "values", dtMock));
     docMock.addItem(new NotesItemMock("name", NCCONST.ITM_LOCK, "type", 
-        NotesItem.TEXT, "values","true"));
+        NotesItem.TEXT, "values", "true"));
     docMock.addItem(new NotesItemMock("name", NCCONST.ITM_MIMETYPE, "type", 
-        NotesItem.TEXT, "values","text/plain"));
+        NotesItem.TEXT, "values", "text/plain"));
     docMock.addItem(new NotesItemMock("name", NCCONST.ITM_TITLE, "type", 
-        NotesItem.TEXT, "values","This is a test"));
+        NotesItem.TEXT, "values", "This is a test"));
     docMock.addItem(new NotesItemMock("name", NCCONST.ITM_GMETAALLATTACHMENTS, 
-        "type", NotesItem.TEXT, "values","allattachments"));
+        "type", NotesItem.TEXT, "values", "allattachments"));
     docMock.addItem(new NotesItemMock("name", NCCONST.ITM_GMETAATTACHMENTS,
-        "type", NotesItem.TEXT, "values","attachments"));
+        "type", NotesItem.TEXT, "values", "attachments"));
     docMock.addItem(new NotesItemMock("name", NCCONST.ITM_GMETACATEGORIES, 
-        "type", NotesItem.TEXT, "values","Discussion"));
+        "type", NotesItem.TEXT, "values", "Discussion"));
     docMock.addItem(new NotesItemMock("name", NCCONST.ITM_GMETACREATEDATE, "type", 
-        NotesItem.DATETIMES, "values",dtMock));
+        NotesItem.DATETIMES, "values", dtMock));
     docMock.addItem(new NotesItemMock("name", NCCONST.ITM_GMETADATABASE, "type", 
-        NotesItem.TEXT, "values","Discussion Database"));
+        NotesItem.TEXT, "values", "Discussion Database"));
     docMock.addItem(new NotesItemMock("name", NCCONST.ITM_GMETADESCRIPTION, "type", 
-        NotesItem.TEXT, "values","Descrition: this is a test document"));
+        NotesItem.TEXT, "values", "Descrition: this is a test document"));
     docMock.addItem(new NotesItemMock("name", NCCONST.ITM_GMETAFORM, "type", 
-        NotesItem.TEXT, "values","MainTopic"));
+        NotesItem.TEXT, "values", "MainTopic"));
     docMock.addItem(new NotesItemMock("name", NCCONST.ITM_GMETALASTUPDATE, "type", 
-        NotesItem.DATETIMES, "values",dtMock));
+        NotesItem.DATETIMES, "values", dtMock));
     docMock.addItem(new NotesItemMock("name", NCCONST.ITM_GMETANOTESLINK, "type", 
         NotesItem.TEXT, "values",
         "notes://" + TESTCONST.SERVER_DOMINO + "/__" + TESTCONST.DBSRC_REPLICAID + 
         ".nsf/0/XXXXXXXXXXXXXXXXXXXXXXXXXXXX0000?OpenDocument"));
     docMock.addItem(new NotesItemMock("name", NCCONST.ITM_GMETAREPLICASERVERS, "type", 
-        NotesItem.TEXT, "values","server1/mtv/us,server2/mtv/us"));
+        NotesItem.TEXT, "values", "server1/mtv/us,server2/mtv/us"));
     docMock.addItem(new NotesItemMock("name", NCCONST.ITM_GMETAWRITERNAME, "type", 
-        NotesItem.TEXT, "values","CN=Jean Writer/OU=MTV/O=GOV"));
+        NotesItem.TEXT, "values", "CN=Jean Writer/OU=MTV/O=GOV"));
     docMock.addItem(new NotesItemMock("name", NCCONST.NCITM_AUTHTYPE, "type", 
-        NotesItem.TEXT, "values","connector"));
+        NotesItem.TEXT, "values", "connector"));
     
     Vector<String> vecAuthorReaders = new Vector<String>();
     vecAuthorReaders.add("cn=John Doe/ou=mtv/o=us");
@@ -386,7 +386,7 @@ public class NotesDocumentManagerTest extends TestCase {
     vecAuthorReaders.add("LocalDomainAdmins");
     NotesItemMock authorReaders = new NotesItemMock("name", 
         NCCONST.NCITM_DOCAUTHORREADERS, "type", NotesItem.TEXT, 
-        "values",vecAuthorReaders);
+        "values", vecAuthorReaders);
     docMock.addItem(authorReaders);
       
     Vector<String> readers = new Vector<String>();
@@ -395,24 +395,24 @@ public class NotesDocumentManagerTest extends TestCase {
     readers.add("LocalDomainAdmins");
     readers.add("cn=Jane Doe/ou=mtv/o=us");
     NotesItemMock docReaders = new NotesItemMock("name", NCCONST.NCITM_DOCREADERS, 
-        "type", NotesItem.TEXT, "values",readers);
+        "type", NotesItem.TEXT, "values", readers);
     docMock.addItem(docReaders);
     docMock.addItem(new NotesItemMock("name", NCCONST.NCITM_DOMAIN, "type", 
-        NotesItem.TEXT, "values","gsa-connectors.com"));
+        NotesItem.TEXT, "values", "gsa-connectors.com"));
     docMock.addItem(new NotesItemMock("name", NCCONST.NCITM_REPLICAID, "type", 
-        NotesItem.TEXT, "values",TESTCONST.DBSRC_REPLICAID));
+        NotesItem.TEXT, "values", TESTCONST.DBSRC_REPLICAID));
     docMock.addItem(new NotesItemMock("name", NCCONST.NCITM_SERVER, "type", 
-        NotesItem.TEXT, "values","mickey1/mtv/us"));
+        NotesItem.TEXT, "values", "mickey1/mtv/us"));
     docMock.addItem(new NotesItemMock("name", NCCONST.NCITM_STATE, "type", 
         NotesItem.TEXT, "values", NCCONST.STATEINDEXED));
     docMock.addItem(new NotesItemMock("name", NCCONST.NCITM_TEMPLATE, "type", 
-        NotesItem.TEXT, "values","Discussion"));
+        NotesItem.TEXT, "values", "Discussion"));
     docMock.addItem(new NotesItemMock("name", NCCONST.NCITM_UNID, "type", 
-        NotesItem.TEXT, "values","XXXXXXXXXXXXXXXXXXXXXXXXXXXX0000"));
+        NotesItem.TEXT, "values", "XXXXXXXXXXXXXXXXXXXXXXXXXXXX0000"));
     docMock.addItem(new NotesItemMock("name", "x.meta_custom1", "type", 
-        NotesItem.TEXT, "values","testing custom meta field"));
+        NotesItem.TEXT, "values", "testing custom meta field"));
     docMock.addItem(new NotesItemMock("name", "x.meta_customer", "type", 
-        NotesItem.TEXT, "values","Sesame Street"));  
+        NotesItem.TEXT, "values", "Sesame Street"));
     return docMock;
   }
   
@@ -420,63 +420,63 @@ public class NotesDocumentManagerTest extends TestCase {
       throws RepositoryException{
     NotesDocumentMock docMock = new NotesDocumentMock();
     docMock.addItem(new NotesItemMock("name", "Form", "type", NotesItem.TEXT, 
-        "values",NCCONST.FORMCRAWLREQUEST));
+        "values", NCCONST.FORMCRAWLREQUEST));
     docMock.addItem(new NotesItemMock("name", NCCONST.ITM_ACTION, "type", 
-        NotesItem.TEXT, "values","add"));
+        NotesItem.TEXT, "values", "add"));
     docMock.addItem(new NotesItemMock("name", NCCONST.ITM_DOCID, "type", 
         NotesItem.TEXT, "values",
         "http://" + TESTCONST.SERVER_DOMINO_WEB + TESTCONST.DOMAIN + 
         "/" + TESTCONST.DBSRC_REPLICAID + "/0/XXXXXXXXXXXXXXXXXXXXXXXXXXXX0001"));
     docMock.addItem(new NotesItemMock("name", NCCONST.ITM_ISPUBLIC, "type", 
-        NotesItem.TEXT, "values","true"));
+        NotesItem.TEXT, "values", "true"));
     NotesDateTimeMock dtMock = new NotesDateTimeMock(null);
     dtMock.setNow();
     docMock.addItem(new NotesItemMock("name", NCCONST.ITM_LASTMODIFIED, 
         "type", NotesItem.DATETIMES, "values", dtMock));
     docMock.addItem(new NotesItemMock("name", NCCONST.ITM_LOCK, "type", 
-        NotesItem.TEXT, "values","true"));
+        NotesItem.TEXT, "values", "true"));
     docMock.addItem(new NotesItemMock("name", NCCONST.ITM_MIMETYPE, "type", 
-        NotesItem.TEXT, "values","text/plain"));
+        NotesItem.TEXT, "values", "text/plain"));
     docMock.addItem(new NotesItemMock("name", NCCONST.ITM_TITLE, "type", 
-        NotesItem.TEXT, "values","This is a test"));
+        NotesItem.TEXT, "values", "This is a test"));
     docMock.addItem(new NotesItemMock("name", NCCONST.ITM_GMETAALLATTACHMENTS, 
-        "type", NotesItem.TEXT, "values","allattachments"));
+        "type", NotesItem.TEXT, "values", "allattachments"));
     docMock.addItem(new NotesItemMock("name", NCCONST.ITM_GMETAATTACHMENTS,
-        "type", NotesItem.TEXT, "values","attachments"));
+        "type", NotesItem.TEXT, "values", "attachments"));
     docMock.addItem(new NotesItemMock("name", NCCONST.ITM_GMETACATEGORIES, 
-        "type", NotesItem.TEXT, "values","Discussion"));
+        "type", NotesItem.TEXT, "values", "Discussion"));
     docMock.addItem(new NotesItemMock("name", NCCONST.ITM_GMETACREATEDATE, "type", 
-        NotesItem.DATETIMES, "values",dtMock));
+        NotesItem.DATETIMES, "values", dtMock));
     docMock.addItem(new NotesItemMock("name", NCCONST.ITM_GMETADATABASE, "type", 
-        NotesItem.TEXT, "values","Discussion Database"));
+        NotesItem.TEXT, "values", "Discussion Database"));
     docMock.addItem(new NotesItemMock("name", NCCONST.ITM_GMETADESCRIPTION, "type", 
-        NotesItem.TEXT, "values","Descrition: this is a test document"));
+        NotesItem.TEXT, "values", "Descrition: this is a test document"));
     docMock.addItem(new NotesItemMock("name", NCCONST.ITM_GMETAFORM, "type", 
-        NotesItem.TEXT, "values","MainTopic"));
+        NotesItem.TEXT, "values", "MainTopic"));
     docMock.addItem(new NotesItemMock("name", NCCONST.ITM_GMETALASTUPDATE, "type", 
-        NotesItem.DATETIMES, "values",dtMock));
+        NotesItem.DATETIMES, "values", dtMock));
     docMock.addItem(new NotesItemMock("name", NCCONST.ITM_GMETANOTESLINK, "type", 
         NotesItem.TEXT, "values",
         "notes://" + TESTCONST.SERVER_DOMINO + "/__" + TESTCONST.DBSRC_REPLICAID + 
         ".nsf/0/XXXXXXXXXXXXXXXXXXXXXXXXXXXX0001?OpenDocument"));
     docMock.addItem(new NotesItemMock("name", NCCONST.ITM_GMETAREPLICASERVERS, "type", 
-        NotesItem.TEXT, "values","mickey1/mtv/us,server2/mtv/us"));
+        NotesItem.TEXT, "values", "mickey1/mtv/us,server2/mtv/us"));
     docMock.addItem(new NotesItemMock("name", NCCONST.ITM_GMETAWRITERNAME, "type", 
-        NotesItem.TEXT, "values","CN=Jean Writer/OU=MTV/O=GOV"));
+        NotesItem.TEXT, "values", "CN=Jean Writer/OU=MTV/O=GOV"));
     docMock.addItem(new NotesItemMock("name", NCCONST.NCITM_AUTHTYPE, "type", 
-        NotesItem.TEXT, "values","connector"));
+        NotesItem.TEXT, "values", "connector"));
     docMock.addItem(new NotesItemMock("name", NCCONST.NCITM_DOMAIN, "type", 
-        NotesItem.TEXT, "values","gsa-connectors.com"));
+        NotesItem.TEXT, "values", "gsa-connectors.com"));
     docMock.addItem(new NotesItemMock("name", NCCONST.NCITM_REPLICAID, "type", 
-        NotesItem.TEXT, "values","85257608004F5587"));
+        NotesItem.TEXT, "values", "85257608004F5587"));
     docMock.addItem(new NotesItemMock("name", NCCONST.NCITM_SERVER, "type", 
-        NotesItem.TEXT, "values","mickey1/mtv/us"));
+        NotesItem.TEXT, "values", "mickey1/mtv/us"));
     docMock.addItem(new NotesItemMock("name", NCCONST.NCITM_STATE, "type", 
         NotesItem.TEXT, "values", NCCONST.STATEINDEXED));
     docMock.addItem(new NotesItemMock("name", NCCONST.NCITM_TEMPLATE, "type", 
-        NotesItem.TEXT, "values","Discussion"));
+        NotesItem.TEXT, "values", "Discussion"));
     docMock.addItem(new NotesItemMock("name", NCCONST.NCITM_UNID, "type", 
-        NotesItem.TEXT, "values","XXXXXXXXXXXXXXXXXXXXXXXXXXXX0001"));
+        NotesItem.TEXT, "values", "XXXXXXXXXXXXXXXXXXXXXXXXXXXX0001"));
     return docMock;
   }
 

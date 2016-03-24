@@ -468,7 +468,7 @@ class NotesCrawlerThread extends Thread {
         }
       }
     } finally {
-      Util.recycle(srcDoc,vi);
+      Util.recycle(srcDoc, vi);
     }
     LOGGER.exiting(CLASS_NAME, METHOD);
     return content.toString();
@@ -499,7 +499,7 @@ class NotesCrawlerThread extends Thread {
         // Different ReplicaId - Recycle and close the old database
         if (srcdb != null) {
           srcdb.recycle();
-          srcdb= null;
+          srcdb = null;
         }
         // Open the new database
         srcdb = ns.getDatabase(null, null);
@@ -839,7 +839,7 @@ class NotesCrawlerThread extends Thread {
         File spoolDir = new File(ncs.getSpoolDir());
         LOGGER.log(Level.FINE,
             "Spool free space is {0}", spoolDir.getFreeSpace());
-        if (spoolDir.getFreeSpace()/1000000 < 300) {
+        if (spoolDir.getFreeSpace() / 1000000 < 300) {
           LOGGER.log(Level.WARNING,
               "Insufficient space in spool directory to process " +
               "new documents.  Need at least 300MB.");

@@ -130,7 +130,7 @@ public class NotesAuthenticationManagerWildcardTest extends TestCase {
     String user = names[0];
     NotesNameMock nameMock = notesNamesCache.get(user);
     AuthenticationResponse response = authenticationManager.authenticate(
-        new SimpleAuthenticationIdentity(nameMock.getShortName(),"password"));
+        new SimpleAuthenticationIdentity(nameMock.getShortName(), "password"));
     assertTrue(user + " is valid: ", response.isValid());
     testUserGroups(connectorSession, response, user);
   }

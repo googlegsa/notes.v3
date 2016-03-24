@@ -75,7 +75,7 @@ public class NotesItemMock extends NotesBaseMock implements NotesItem {
     Vector<Object> values = (Vector<Object>)properties.get("values");
     for (Object o : values) {
       if (o instanceof NotesDateTime) {
-        return (NotesDateTime)o;
+        return (NotesDateTime) o;
       }
     }
     return null;
@@ -111,7 +111,7 @@ public class NotesItemMock extends NotesBaseMock implements NotesItem {
     for (Object o : values) {
       builder.append(o.toString()).append(";");
     }
-    builder.deleteCharAt(builder.length() -1);
+    builder.deleteCharAt(builder.length() - 1);
     return builder.toString();
   }
 

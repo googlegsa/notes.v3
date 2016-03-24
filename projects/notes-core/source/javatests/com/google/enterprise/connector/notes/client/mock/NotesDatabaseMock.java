@@ -190,7 +190,7 @@ public class NotesDatabaseMock extends NotesBaseMock
   public NotesDocument getDocumentByUNID(final String unid)
       throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "getDocumentByUNID");
-    for (NotesDocumentMock doc: documents) {
+    for (NotesDocumentMock doc : documents) {
       if (unid.equals(doc.getItemValueString(NCCONST.NCITM_UNID))) {
         return doc;
       }

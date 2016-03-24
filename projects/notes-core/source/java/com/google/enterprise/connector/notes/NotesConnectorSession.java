@@ -45,7 +45,7 @@ public class NotesConnectorSession implements Session {
   private Vector<String> ExcludedExtns = null;
   private int MaxFileSize;
   private String SpoolDir = null;
-  private HashMap<String,String> MimeTypeMap = null;
+  private HashMap<String, String> MimeTypeMap = null;
   private final HashMap<String, String> serverDomainMap =
       new HashMap<String, String>();
   private final NotesPollerNotifier npn;
@@ -98,7 +98,7 @@ public class NotesConnectorSession implements Session {
           ns.getEnvironmentString(NCCONST.INIDEBUGOUTFILE, true));
 
       NotesDatabase db = ns.getDatabase(server, database);
-      configValidated = loadConfig(ns,db);
+      configValidated = loadConfig(ns, db);
 
       db.recycle();
       notesDocManager = new NotesDocumentManager(this);
@@ -139,7 +139,7 @@ public class NotesConnectorSession implements Session {
       // "." means no file extension.  Replace with an empty string if it exists.
       ExcludedExtns = (Vector<String>)
           systemDoc.getItemValue(NCCONST.SITM_EXCLUDEDEXTENSIONS);
-      for (int i = 0; i < ExcludedExtns.size(); i++ ) {
+      for (int i = 0; i < ExcludedExtns.size(); i++) {
         LOGGER.log(Level.CONFIG,
             "The following file extensions will be excluded {0}",
             ExcludedExtns.elementAt(i));
@@ -424,13 +424,13 @@ public class NotesConnectorSession implements Session {
   }
 
   public String getDatabase() {
-    return database ;
+    return database;
   }
 
   public NotesConnector getConnector() {
     return connector;
   }
-  
+
   public NotesDocumentManager getNotesDocumentManager() {
     return notesDocManager;
   }
