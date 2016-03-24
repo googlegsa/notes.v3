@@ -360,12 +360,11 @@ class NotesDocumentManager {
               indexedTableName + " order by unid",
           ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
       ResultSet rs = pstmt.executeQuery();
-      String unid = null;
       if (isExisted) {
         //Scroll to the startUnid
         boolean isFound = false;
         while (rs.next()) {
-          unid = rs.getString(1);
+          String unid = rs.getString(1);
           if (unid.equalsIgnoreCase(startUnid)) {
             isFound = true;
             break;
@@ -375,11 +374,11 @@ class NotesDocumentManager {
           if (rs.isLast()) {
             rs.beforeFirst();
             LOGGER.log(Level.FINE, "Doc ID#{0}"
-                + " is at the end of collection; reset to first record", unid);
+                + " is at the end of collection; reset to first record", startUnid);
           } else {
             rs.previous();
             LOGGER.log(Level.FINE,
-                "Collection started with {0} document ID", unid);
+                "Collection started with {0} document ID", startUnid);
           }
         } else {
           LOGGER.log(Level.FINE,
@@ -391,7 +390,7 @@ class NotesDocumentManager {
       int count = 0;
       while (rs.next() && count < batchSize) {
         NotesDocId notesId = new NotesDocId();
-        unid = rs.getString(1);
+        String unid = rs.getString(1);
         notesId.setDocId(rs.getString(1));
         notesId.setReplicaId(rs.getString(2));
         notesId.setServer(rs.getString(3));

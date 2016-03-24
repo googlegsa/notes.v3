@@ -428,7 +428,6 @@ public class NotesConnectorDocument implements Document {
   // Items with multiple values are separated by semicolons
   protected void putTextItem(String PropName, String ItemName,
       String defaultText) throws RepositoryException {
-    String text = null;
     NotesItem itm = crawlDoc.getFirstItem(ItemName);
 
     // Does the item exist?
@@ -440,14 +439,13 @@ public class NotesConnectorDocument implements Document {
     }
 
     // Get the text of the item
-    text = itm.getText(1024 * 1024 * 2);  // Maximum of 2mb of text
+    String text = itm.getText(1024 * 1024 * 2);  // Maximum of 2mb of text
     if (Strings.isNullOrEmpty(text)) { // Does this field exist?
       LOGGER.log(Level.FINEST, "Using default value document. {0} in {1}",
           new Object[] { PropName, docid });
       if (defaultText != null) {
         text = defaultText;
-      }
-      else {
+      } else {
         return;
       }
     }
@@ -539,11 +537,7 @@ public class NotesConnectorDocument implements Document {
   public Property findProperty(String name) throws RepositoryException {
     // Maintain the ability to check docProps directly for testing.
     List<Value> list = docProps.get(name);
-    Property prop = null;
-    if (list != null) {
-      prop = new SimpleProperty(list);
-    }
-    return prop;
+    return (list == null) ? null : new SimpleProperty(list);
   }
 
   @Override

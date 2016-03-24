@@ -15,6 +15,7 @@
 package com.google.enterprise.connector.notes;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Strings;
 import com.google.enterprise.connector.logging.NDC;
 import com.google.enterprise.connector.notes.client.NotesDatabase;
 import com.google.enterprise.connector.notes.client.NotesDocument;
@@ -244,26 +245,21 @@ class NotesCrawlerThread extends Thread {
     final String METHOD = "evaluateField";
     LOGGER.entering(CLASS_NAME, METHOD);
 
-    Vector<?> VecEvalResult = null;
     String Result = null;
     try {
       LOGGER.log(Level.FINEST, "Evaluating formula for item {0} : src is: {1}",
           new Object[] { ItemName, formula });
-      VecEvalResult = ns.evaluate(formula, srcDoc);
-      // Make sure we dont' get an empty vector or an empty string
-      if (VecEvalResult != null) {
-        if (VecEvalResult.size() > 0) {
-          Result = VecEvalResult.elementAt(0).toString();
-          LOGGER.log(Level.FINEST, "Evaluating formula result is: {0}", Result);
-        }
+      Vector<?> VecEvalResult = ns.evaluate(formula, srcDoc);
+      // Make sure we don't get an empty vector or an empty string.
+      if (VecEvalResult != null && VecEvalResult.size() > 0) {
+        Result = VecEvalResult.elementAt(0).toString();
+        LOGGER.log(Level.FINEST, "Evaluating formula result is: {0}", Result);
       }
-      if (null == Result) {
-        Result = Default;
-      }
-      if (Result.length() == 0) {
+      if (Strings.isNullOrEmpty(Result)) {
         Result = Default;
       }
     } catch (RepositoryException e) {
+      // TODO(jlacey): Should this set Result = Default instead?
       LOGGER.log(Level.SEVERE, "Skipping {0}: Unable to evaluate formula: {1}",
           new Object[] { ItemName, formula });
     } finally {
@@ -299,12 +295,11 @@ class NotesCrawlerThread extends Thread {
     crawlDoc.replaceItemValue(NCCONST.ITM_GMETACREATEDATE, srcDoc.getCreated());
 
     // We need to generate the title and description using a formula
-    String formula = null;
+    String formula;
     // When there is no form configuration use the config from the template
     if (formDoc != null) {
       formula = formDoc.getItemValueString(NCCONST.FITM_SEARCHRESULTSFORMULA);
-    }
-    else {
+    } else {
       formula = templateDoc.getItemValueString(NCCONST.TITM_SEARCHRESULTSFIELDS);
     }
     evaluateField(crawlDoc, srcDoc, formula, NCCONST.ITM_TITLE, "");
@@ -313,8 +308,7 @@ class NotesCrawlerThread extends Thread {
     // from the template
     if (formDoc != null) {
       formula = formDoc.getItemValueString(NCCONST.FITM_DESCRIPTIONFORMULA);
-    }
-    else {
+    } else {
       formula = templateDoc.getItemValueString(NCCONST.TITM_DESCRIPTIONFIELDS);
     }
     evaluateField(crawlDoc, srcDoc, formula, NCCONST.ITM_GMETADESCRIPTION, "");
@@ -329,8 +323,8 @@ class NotesCrawlerThread extends Thread {
       throws RepositoryException {
     final String METHOD = "mapMetaFields";
     LOGGER.entering(CLASS_NAME, METHOD);
-    NotesItem item = null;
     for (MetaField mf : metaFields) {
+      NotesItem item = null;
       try {
         if (null == mf.getFieldName()) {
           if (LOGGER.isLoggable(Level.FINEST)) {
@@ -398,20 +392,13 @@ class NotesCrawlerThread extends Thread {
 
   protected String getHTTPURL(NotesDocument crawlDoc)
       throws RepositoryException {
-
-    String httpURL = null;
-    String server = null;
-
     // Get the domain name associated with the server
-    server = crawlDoc.getItemValueString(NCCONST.NCITM_SERVER);
+    String server = crawlDoc.getItemValueString(NCCONST.NCITM_SERVER);
     String domain = ncs.getDomain(server);
 
-    httpURL = String.format("http://%s%s/%s/0/%s",
-        crawlDoc.getItemValueString(NCCONST.NCITM_SERVER),
-        domain,
+    return String.format("http://%s%s/%s/0/%s", server, domain,
         crawlDoc.getItemValueString(NCCONST.NCITM_REPLICAID),
         crawlDoc.getItemValueString(NCCONST.NCITM_UNID));
-    return httpURL;
   }
 
   protected String getContentFields(NotesDocument srcDoc)
@@ -492,7 +479,6 @@ class NotesCrawlerThread extends Thread {
     LOGGER.entering(CLASS_NAME, METHOD);
 
     String NotesURL = null;
-    NotesDocument srcDoc = null;
     try {
       NotesURL = crawlDoc.getItemValueString(NCCONST.ITM_GMETANOTESLINK);
       LOGGER.log(Level.FINER, "Prefetching document {0}" + NotesURL);
@@ -523,8 +509,8 @@ class NotesCrawlerThread extends Thread {
       }
 
       // Load our source document
-      srcDoc = srcdb.getDocumentByUNID(crawlDoc.getItemValueString(
-              NCCONST.NCITM_UNID));
+      NotesDocument srcDoc = srcdb.getDocumentByUNID(
+          crawlDoc.getItemValueString(NCCONST.NCITM_UNID));
       // Get the form configuration for this document
       loadForm(srcDoc.getItemValueString(NCCONST.ITMFORM));
       if (null == formDoc) {
@@ -553,7 +539,7 @@ class NotesCrawlerThread extends Thread {
         if (attachName.length() == 0) {
           continue;
         }
-        String xtn = null;
+        String xtn;
         int period = attachName.lastIndexOf(".");
         if (period == -1) {
           xtn = "";
@@ -682,7 +668,6 @@ class NotesCrawlerThread extends Thread {
   String createAttachmentDoc(NotesDocument crawlDoc, NotesDocument srcDoc,
       String AttachmentName, String MimeType) throws RepositoryException {
     final String METHOD = "createAttachmentDoc";
-    String AttachmentURL = null;
     LOGGER.entering(CLASS_NAME, METHOD);
     NotesEmbeddedObject eo = null;
     NotesDocument attachDoc = null;
@@ -720,7 +705,7 @@ class NotesCrawlerThread extends Thread {
       attachDoc.save();
 
       // Compute display URL
-      String encodedAttachmentName = null;
+      String encodedAttachmentName;
       try {
         encodedAttachmentName = URLEncoder.encode(AttachmentName, "UTF-8");
       } catch (Exception e) {
@@ -728,7 +713,7 @@ class NotesCrawlerThread extends Thread {
         eo.recycle();
         return null;
       }
-      AttachmentURL = String.format(NCCONST.SITM_ATTACHMENTDISPLAYURL,
+      String AttachmentURL = String.format(NCCONST.SITM_ATTACHMENTDISPLAYURL,
           getHTTPURL(crawlDoc), encodedAttachmentName);
       attachDoc.replaceItemValue(NCCONST.ITM_DISPLAYURL, AttachmentURL);
       LOGGER.log(Level.FINEST, "Attachment display url: {0}", AttachmentURL);
@@ -849,7 +834,6 @@ class NotesCrawlerThread extends Thread {
     NotesPollerNotifier npn = ncs.getNotifier();
     while (nc.getShutdown() == false) {
       try {
-        NotesDocument crawlDoc = null;
         // Only get from the queue if there is more than 300MB in the
         // spool directory
         File spoolDir = new File(ncs.getSpoolDir());
@@ -867,7 +851,7 @@ class NotesCrawlerThread extends Thread {
         }
         LOGGER.log(Level.FINEST, "Connecting to crawl queue.");
         connectQueue();
-        crawlDoc = getNextFromCrawlQueue(ns, crawlQueue);
+        NotesDocument crawlDoc = getNextFromCrawlQueue(ns, crawlQueue);
         if (crawlDoc == null) {
           LOGGER.log(Level.FINE, 
               "{0}: Crawl queue is empty. Crawler thread sleeping.", getName());
