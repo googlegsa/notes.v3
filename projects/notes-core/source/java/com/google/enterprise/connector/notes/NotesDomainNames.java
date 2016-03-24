@@ -47,8 +47,9 @@ class NotesDomainNames {
     String reversedName = reverse(domainName.toLowerCase());
       SortedMap<String, Long> subs = domainTree.tailMap(reversedName);
     for (String key : subs.keySet()) {
-      if (!key.startsWith(reversedName))
+      if (!key.startsWith(reversedName)) {
         break;
+      }
       lmap.put(reverse(key), subs.get(key));
     }
     LOGGER.log(Level.FINE, "Sub domain names for {0}: {1}",

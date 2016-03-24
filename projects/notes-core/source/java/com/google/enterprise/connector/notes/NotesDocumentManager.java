@@ -202,15 +202,15 @@ class NotesDocumentManager {
     boolean isUpdated = false;
 
     //Validate connection, auto commit and indexed document
-    if (connection == null)
+    if (connection == null) {
       throw new RepositoryException("Database connection is null");
-
+    }
     if (!setAutoCommit(connection, false)) {
       throw new RepositoryException("Failed to disable auto commit");
     }
-
-    if (docIndexed == null)
+    if (docIndexed == null) {
       return isUpdated;
+    }
 
     //Get NC.UNID, NC.Server, google.docid
     String unid = null;
@@ -218,8 +218,9 @@ class NotesDocumentManager {
     String gid = null;
     try {
       unid = docIndexed.getItemValueString(NCCONST.NCITM_UNID);
-      if (Strings.isNullOrEmpty(unid))
+      if (Strings.isNullOrEmpty(unid)) {
         return isUpdated;
+      }
       LOGGER.log(Level.FINEST,
           "Add indexed document UNID#{0} to database", unid);
       server = docIndexed.getItemValueString(NCCONST.NCITM_SERVER);

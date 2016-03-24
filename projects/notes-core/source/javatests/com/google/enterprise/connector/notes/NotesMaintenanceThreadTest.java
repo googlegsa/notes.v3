@@ -101,15 +101,21 @@ public class NotesMaintenanceThreadTest extends TestCase {
   }
 
   public void testCheckForDeletions_invalidDoc() throws Exception {
-    testCheckForDeletions(new NotesDocumentMock() {
-        public boolean isValid() { return false; }
-    });
+    testCheckForDeletions(
+        new NotesDocumentMock() {
+          public boolean isValid() {
+            return false;
+          }
+        });
   }
 
   public void testCheckForDeletions_deletedDoc() throws Exception {
-    testCheckForDeletions(new NotesDocumentMock() {
-        public boolean isDeleted() { return true; }
-    });
+    testCheckForDeletions(
+        new NotesDocumentMock() {
+          public boolean isDeleted() {
+            return true;
+          }
+        });
   }
 
   public void testMissingSelectionCriteria() throws Exception {

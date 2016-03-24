@@ -52,8 +52,8 @@ public class NotesUserGroupManagerTest extends TestCase {
   private static NotesConnectorSession connectorSession;
   private static NotesSession session;
   private static NotesDatabaseMock namesDatabase;
-  private static final int groupCount = 8;
-  private static final int userCount = 11;
+  private static final int GROUP_COUNT = 8;
+  private static final int USER_COUNT = 11;
 
   public static Test suite() {
     return new TestSetup(
@@ -390,7 +390,7 @@ public class NotesUserGroupManagerTest extends TestCase {
 
   public void testUpdateGroups() throws Exception {
     setUpGroups();
-    assertEquals(groups.toString(), groupCount + 2, groups.size());
+    assertEquals(groups.toString(), GROUP_COUNT + 2, groups.size());
     HashSet<Long> children = groupChildren.get(groups.get("good guys"));
     assertEquals(6, children.size());
     assertGroupHasChild("good guys", "jedi");
@@ -428,7 +428,7 @@ public class NotesUserGroupManagerTest extends TestCase {
 
   public void testUpdateUsers() throws Exception {
     setUpUsers();
-    assertEquals(userCount, notesUserNames.size());
+    assertEquals(USER_COUNT, notesUserNames.size());
     assertUserHasGroup("ahsoka", "padawan learners");
     assertUserHasGroup("ahsoka", "jedi");
     assertUserHasGroup("ahsoka", "good guys");
@@ -663,8 +663,8 @@ public class NotesUserGroupManagerTest extends TestCase {
       userGroupManager.updateUsersGroups(true);
       getGroupData();
       getUserData();
-      assertEquals(groups.toString(), groupCount + 5, groups.size());
-      assertEquals(userCount, notesUserNames.size());
+      assertEquals(groups.toString(), GROUP_COUNT + 5, groups.size());
+      assertEquals(USER_COUNT, notesUserNames.size());
     }
   }
 

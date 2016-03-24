@@ -143,14 +143,6 @@ public class Util {
         (rt.totalMemory() / 1024) + "kb");
   }
 
-  static String buildString(String...args) {
-    StringBuilder buf = new StringBuilder();
-    for (String arg : args) {
-      buf.append(arg);
-    }
-    return buf.toString();
-  }
-
   static String hash(String word) {
     try {
       MessageDigest digest = MessageDigest.getInstance(DEFAULT_ALGORITHM);

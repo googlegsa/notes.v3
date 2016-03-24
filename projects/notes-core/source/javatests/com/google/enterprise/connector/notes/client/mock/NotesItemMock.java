@@ -69,10 +69,9 @@ public class NotesItemMock extends NotesBaseMock implements NotesItem {
 
   /** {@inheritDoc} */
   @Override
-  @SuppressWarnings("unchecked")
   public NotesDateTime getDateTimeValue() throws RepositoryException {
     LOGGER.entering(CLASS_NAME, "getDateTimeValue");
-    Vector<Object> values = (Vector<Object>)properties.get("values");
+    Vector<?> values = (Vector<?>) properties.get("values");
     for (Object o : values) {
       if (o instanceof NotesDateTime) {
         return (NotesDateTime) o;

@@ -112,8 +112,9 @@ public class NotesDocumentManagerTest extends TestCase {
     } catch (SQLException e) {
       e.printStackTrace();
     } finally {
-      if(conn != null)
+      if (conn != null) {
         this.notesDocManager.releaseDatabaseConnection(conn);
+      }
     }
   }
   

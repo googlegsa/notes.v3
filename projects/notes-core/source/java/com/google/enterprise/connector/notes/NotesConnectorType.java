@@ -363,7 +363,12 @@ public class NotesConnectorType implements ConnectorType {
   private ConfigureResponse getErrorResponse(String error) {
     StringBuilder buffer = new StringBuilder(
         "<tr><td colspan=\"2\"><font color=\"red\">");
-    buffer.append(error); // FIXME: HTML escaping?
+    try {
+      XmlUtils.xmlAppendAttrValue(error, buffer);
+    } catch (IOException e) {
+      // Can't happen with StringBuilder.
+      throw new AssertionError(e);
+    }
     buffer.append("</font></td></tr>");
     return new ConfigureResponse(null, buffer.toString());
   }

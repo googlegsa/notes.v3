@@ -181,8 +181,9 @@ class NotesAuthorizationManager implements AuthorizationManager {
   protected static String getCommonName(String notesName) {
     if (notesName.startsWith("cn=")) {
       int index = notesName.indexOf('/');
-      if (index > 0)
+      if (index > 0) {
         return notesName.substring(3, index);
+      }
     }
     return null;
   }

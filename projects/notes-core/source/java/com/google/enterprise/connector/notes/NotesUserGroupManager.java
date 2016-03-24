@@ -306,11 +306,9 @@ class NotesUserGroupManager {
 
       // Find user groups and nested groups
       pstmt = lookupConn.prepareStatement(
-          Util.buildString(
-              "select groupname from ", groupTableName,
-              " where groupid in ",
-              "(select groupid from ",userGroupsTableName,
-              " where userid = ?)"),
+          "select groupname from " + groupTableName + " where groupid in "
+          + "(select groupid from " + userGroupsTableName
+          + " where userid = ?)",
           ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
       try {
         pstmt.setLong(1, userId);
@@ -327,13 +325,11 @@ class NotesUserGroupManager {
       // This query queries for user's groups.  From user's groups, it looks up
       // all parent ids.  From parent ids, it looks up for group names.
       pstmt = lookupConn.prepareStatement(
-          Util.buildString(
-              "select groupname from ", groupTableName,
-              " where groupid in ",
-              "(select parentgroupid from ", groupChildrenTableName,
-              " where childgroupid in ",
-              "(select groupid from ", userGroupsTableName,
-              " where userid = ?)", ")"),
+          "select groupname from " + groupTableName + " where groupid in "
+          + "(select parentgroupid from " + groupChildrenTableName
+          + " where childgroupid in "
+          + "(select groupid from " + userGroupsTableName
+          + " where userid = ?))",
           ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
       try {
         pstmt.setLong(1, userId);
@@ -1257,9 +1253,8 @@ class NotesUserGroupManager {
         entry = nextEntry;
       }
     } catch (RepositoryException e) {
-      LOGGER.log(Level.WARNING,
-          Util.buildString("Failed to lookup groups for ", wildcardName, " in ",
-              NCCONST.DIRVIEW_SERVERACCESS, " view"), e);
+      LOGGER.log(Level.WARNING, "Failed to lookup groups for " + wildcardName
+          + " in " + NCCONST.DIRVIEW_SERVERACCESS + " view", e);
     } finally {
       Util.recycle(entry);
       Util.recycle(viewNav);

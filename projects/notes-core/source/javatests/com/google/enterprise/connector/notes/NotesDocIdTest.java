@@ -60,7 +60,8 @@ public class NotesDocIdTest extends TestCase {
   }
   
   public void testDefaultConstructor() {
-	String url = "http://dominoServer1.gsa-connectors.com/85257608004F5587/0/03493D9F9F29AE9D85257607005F56F8";
+    String url = "http://dominoServer1.gsa-connectors.com/85257608004F5587/0/"
+        + "03493D9F9F29AE9D85257607005F56F8";
     NotesDocId notesId = new NotesDocId();
     notesId.setDocId("03493D9F9F29AE9D85257607005F56F8");
     notesId.setReplicaId("85257608004F5587");

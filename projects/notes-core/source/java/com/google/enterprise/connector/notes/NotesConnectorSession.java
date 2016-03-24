@@ -153,8 +153,9 @@ public class NotesConnectorSession implements Session {
       LOGGER.log(Level.CONFIG, "Maximum attachment size is {0}", MaxFileSize);
 
       // If 0, use the default value
-      if (0 == MaxFileSize)
+      if (MaxFileSize == 0) {
         MaxFileSize = 1024 * 1024 * NCCONST.DEFAULT_MAX_FILE_LIMIT;
+      }
 
       // Get the spool directory for processing attachments
       SpoolDir = systemDoc.getItemValueString(NCCONST.SITM_SPOOLDIR);

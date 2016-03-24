@@ -54,7 +54,7 @@ enum NotesUsernameType {
     this.tag = tag;
   }
 
-  abstract public String getUsername(AuthenticationIdentity userId);
+  public abstract String getUsername(AuthenticationIdentity userId);
 
   public static NotesUsernameType findUsernameType(String enumName) {
     try {
