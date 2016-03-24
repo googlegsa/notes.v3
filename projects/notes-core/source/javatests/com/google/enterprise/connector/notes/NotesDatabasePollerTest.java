@@ -58,7 +58,7 @@ public class NotesDatabasePollerTest extends TestCase {
     }
   }
 
-  private static NotesACLMock acl;
+  private static final NotesACLMock acl;
 
   static {
     acl = new NotesACLMock();
@@ -111,7 +111,7 @@ public class NotesDatabasePollerTest extends TestCase {
     ArrayList<String> noAccessUsers = new ArrayList<String>();
     ArrayList<String> noAccessGroups = new ArrayList<String>();
 
-    poller.getPermitDeny(NotesDatabasePollerTest.acl, permitUsers, permitGroups,
+    poller.getPermitDeny(acl, permitUsers, permitGroups,
         noAccessUsers, noAccessGroups, connectorSession.createNotesSession());
     assertEquals(2, permitUsers.size());
     assertEquals("allowed user1", permitUsers.get(0));
@@ -130,7 +130,7 @@ public class NotesDatabasePollerTest extends TestCase {
     NotesDatabaseMock sourceDatabase = new NotesDatabaseMock("testserver",
         "sourcedatabase.nsf");
     sourceDatabase.setACLActivityLog("today");
-    sourceDatabase.setACL(NotesDatabasePollerTest.acl);
+    sourceDatabase.setACL(acl);
     factory.addDatabase(sourceDatabase);
     NotesDocumentMock databaseDocument = new NotesDocumentMock();
     databaseDocument.addItem(new NotesItemMock("name", NCCONST.DITM_ACLTEXT,

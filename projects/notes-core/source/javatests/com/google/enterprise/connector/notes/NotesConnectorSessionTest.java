@@ -170,7 +170,7 @@ public class NotesConnectorSessionTest extends TestCase {
     SessionFactoryMock factory = (SessionFactoryMock)
         connector.getSessionFactory();
 
-    NotesConnectorSessionTest.configureFactoryForSession(factory);
+    configureFactoryForSession(factory);
     NotesConnectorSession session = new NotesConnectorSession(connector,
         null, "testpassword", "testserver", "testconfig.nsf");
 

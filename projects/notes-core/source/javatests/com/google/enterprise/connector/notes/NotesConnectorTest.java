@@ -65,7 +65,7 @@ public class NotesConnectorTest extends TestCase {
   }
 
   public void testLoginShutdown() throws Exception {
-    connector = NotesConnectorTest.getConnector();
+    connector = getConnector();
     SessionFactoryMock factory = (SessionFactoryMock)
         connector.getSessionFactory();
     NotesConnectorSessionTest.configureFactoryForSession(factory);
@@ -80,7 +80,7 @@ public class NotesConnectorTest extends TestCase {
   }
 
   public void testDelete() throws Exception {
-    connector = NotesConnectorTest.getConnector();
+    connector = getConnector();
     SessionFactoryMock factory = 
         (SessionFactoryMock) connector.getSessionFactory();
     NotesConnectorSessionTest.configureFactoryForSession(factory);

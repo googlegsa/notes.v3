@@ -166,8 +166,7 @@ public class InheritableAclTest extends TestCase {
       return;
     }
     for (Document doc : documents) {
-      String title = InheritableAclTest .getValue(
-          doc, SpiConstants.PROPNAME_TITLE);
+      String title = getValue(doc, SpiConstants.PROPNAME_TITLE);
       if (title == null) {
         continue;
       }

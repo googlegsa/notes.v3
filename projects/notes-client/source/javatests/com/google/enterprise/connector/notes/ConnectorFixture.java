@@ -58,12 +58,9 @@ public class ConnectorFixture extends TestCase {
   static NotesConnector getConnector(boolean allowMaintenanceThread,
       boolean allowCrawlerThread) throws RepositoryException {
     // Get test properties.
-    ConnectorFixture.server = ConnectorFixture.getRequiredProperty(
-        "javatest.server");
-    ConnectorFixture.database = ConnectorFixture.getRequiredProperty(
-        "javatest.database");
-    ConnectorFixture.idpassword = ConnectorFixture.getRequiredProperty(
-        "javatest.idpassword");
+    server = getRequiredProperty("javatest.server");
+    database = getRequiredProperty("javatest.database");
+    idpassword = getRequiredProperty("javatest.idpassword");
 
     // Instantiate and configure connector.
     NotesConnector connector = new NotesConnector();
@@ -103,8 +100,7 @@ public class ConnectorFixture extends TestCase {
   public static List<Document> traverseAll(NotesConnectorSession
       connectorSession) throws RepositoryLoginException, RepositoryException {
     ArrayList<Document> documents = new ArrayList<Document>();
-    TraversalManager tm = ConnectorFixture.getTraversalManager(
-        connectorSession);
+    TraversalManager tm = getTraversalManager(connectorSession);
     // Get the first set of documents.
     tm.setBatchHint(20);
     DocumentList docList = tm.startTraversal();
@@ -133,8 +129,7 @@ public class ConnectorFixture extends TestCase {
   @Override
   protected void setUp() throws Exception {
     LOGGER.entering(this.getClass().getName(), getName());
-    connector = ConnectorFixture.getConnector(allowMaintenanceThread,
-        allowCrawlerThread);
+    connector = getConnector(allowMaintenanceThread, allowCrawlerThread);
   }
 
   @Override
