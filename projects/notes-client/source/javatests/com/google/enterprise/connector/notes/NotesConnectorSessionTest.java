@@ -14,11 +14,7 @@
 
 package com.google.enterprise.connector.notes;
 
-import com.google.enterprise.connector.notes.NotesConnector;
-import com.google.enterprise.connector.notes.NotesConnectorSession;
-import com.google.enterprise.connector.spi.Connector;
 import com.google.enterprise.connector.spi.RepositoryException;
-import com.google.enterprise.connector.spi.RepositoryLoginException;
 
 public class NotesConnectorSessionTest extends ConnectorFixture {
 
@@ -31,11 +27,9 @@ public class NotesConnectorSessionTest extends ConnectorFixture {
    * NotesConnectorSession. Assumes that the Notes GSA Connector
    * config is using default values where appropriate.
    *
-   * @throws RepositoryLoginException
    * @throws RepositoryException
    */
-  public void testProperties() throws RepositoryLoginException,
-      RepositoryException {
+  public void testProperties() throws RepositoryException {
     NotesConnectorSession session = (NotesConnectorSession) connector.login();
     assertEquals("maxCrawlQDepth", 5000, session.getMaxCrawlQDepth());
     assertEquals("deletionBatchSize", 300, session.getDeletionBatchSize());

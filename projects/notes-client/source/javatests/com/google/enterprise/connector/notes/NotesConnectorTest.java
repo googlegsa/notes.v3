@@ -14,10 +14,7 @@
 
 package com.google.enterprise.connector.notes;
 
-import com.google.enterprise.connector.notes.NotesConnector;
-import com.google.enterprise.connector.notes.NotesConnectorSession;
 import com.google.enterprise.connector.spi.RepositoryException;
-import com.google.enterprise.connector.spi.RepositoryLoginException;
 
 import junit.framework.TestCase;
 
@@ -120,11 +117,9 @@ public class NotesConnectorTest extends TestCase {
   /**
    * Tests calling NotesConnector.login a second time.
    *
-   * @throws RepositoryLoginException
    * @throws RepositoryException
    */
-  public void testLogin() throws RepositoryLoginException,
-      RepositoryException {
+  public void testLogin() throws RepositoryException {
     NotesConnector connector = new NotesConnector();
     try {
       connector.setDatabase(database);
@@ -143,7 +138,6 @@ public class NotesConnectorTest extends TestCase {
   /**
    * Tests calling NotesConnector.shutdown.
    *
-   * @throws RepositoryLoginException
    * @throws RepositoryException
    */
   public void testShutdown() throws RepositoryException {

@@ -14,11 +14,8 @@
 
 package com.google.enterprise.connector.notes;
 
-import com.google.enterprise.connector.notes.NotesConnectorSession;
 import com.google.enterprise.connector.notes.client.NotesSession;
 import com.google.enterprise.connector.util.database.JdbcDatabase;
-
-import junit.framework.Test;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
