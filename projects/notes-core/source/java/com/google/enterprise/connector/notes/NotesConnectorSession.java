@@ -42,10 +42,10 @@ public class NotesConnectorSession implements Session {
   private final String database;
   private final String password;
   private final NotesConnector connector;
-  private Vector<String> ExcludedExtns = null;
-  private int MaxFileSize;
-  private String SpoolDir = null;
-  private HashMap<String, String> MimeTypeMap = null;
+  private Vector<String> excludedExtns = null;
+  private int maxFileSize;
+  private String spoolDir = null;
+  private HashMap<String, String> mimeTypeMap = null;
   private final HashMap<String, String> serverDomainMap =
       new HashMap<String, String>();
   private final NotesPollerNotifier npn;
@@ -61,14 +61,14 @@ public class NotesConnectorSession implements Session {
   private final NotesDocumentManager notesDocManager;
   private NotesUsernameType usernameType = NotesUsernameType.USERNAME;
 
-  public NotesConnectorSession(NotesConnector Connector,
-      NotesPollerNotifier connectorNpn, String Password,
-      String Server, String Database) throws RepositoryException {
+  public NotesConnectorSession(NotesConnector connector,
+      NotesPollerNotifier connectorNpn, String password,
+      String server, String database) throws RepositoryException {
     final String METHOD = "NotesConnectorSession";
-    server = Server;
-    database = Database;
-    password = Password;
-    connector = Connector;
+    this.server = server;
+    this.database = database;
+    this.password = password;
+    this.connector = connector;
     NotesSession ns = null;
     boolean configValidated = false;
     LOGGER.entering(CLASS_NAME, METHOD);
@@ -137,44 +137,44 @@ public class NotesConnectorSession implements Session {
       }
 
       // "." means no file extension.  Replace with an empty string if it exists.
-      ExcludedExtns = (Vector<String>)
+      excludedExtns = (Vector<String>)
           systemDoc.getItemValue(NCCONST.SITM_EXCLUDEDEXTENSIONS);
-      for (int i = 0; i < ExcludedExtns.size(); i++) {
+      for (int i = 0; i < excludedExtns.size(); i++) {
         LOGGER.log(Level.CONFIG,
             "The following file extensions will be excluded {0}",
-            ExcludedExtns.elementAt(i));
-        if (ExcludedExtns.elementAt(i).equals(".")) {
-          ExcludedExtns.set(i, "");
+            excludedExtns.elementAt(i));
+        if (excludedExtns.elementAt(i).equals(".")) {
+          excludedExtns.set(i, "");
         }
       }
 
-      MaxFileSize = 1024 * 1024
+      maxFileSize = 1024 * 1024
           * systemDoc.getItemValueInteger(NCCONST.SITM_MAXFILESIZE);
-      LOGGER.log(Level.CONFIG, "Maximum attachment size is {0}", MaxFileSize);
+      LOGGER.log(Level.CONFIG, "Maximum attachment size is {0}", maxFileSize);
 
       // If 0, use the default value
-      if (MaxFileSize == 0) {
-        MaxFileSize = 1024 * 1024 * NCCONST.DEFAULT_MAX_FILE_LIMIT;
+      if (maxFileSize == 0) {
+        maxFileSize = 1024 * 1024 * NCCONST.DEFAULT_MAX_FILE_LIMIT;
       }
 
       // Get the spool directory for processing attachments
-      SpoolDir = systemDoc.getItemValueString(NCCONST.SITM_SPOOLDIR);
-      if ((null == SpoolDir) || (0 == SpoolDir.length())) {
-        SpoolDir = String.format("%s/%s",
+      spoolDir = systemDoc.getItemValueString(NCCONST.SITM_SPOOLDIR);
+      if (Strings.isNullOrEmpty(spoolDir)) {
+        spoolDir = String.format("%s/%s",
             ns.getEnvironmentString(NCCONST.INIDIRECTORY, true),
             NCCONST.DEFAULT_ATTACHMENT_DIR);;
       }
-      File sdir = new File(SpoolDir);
+      File sdir = new File(spoolDir);
 
       // Make the directory and make sure we can write to it
       sdir.mkdirs();
       if (!sdir.isDirectory() || !sdir.canWrite()) {
         LOGGER.log(Level.SEVERE,
-            "Can't write to spool directory {0}", SpoolDir);
+            "Can't write to spool directory {0}", spoolDir);
         return false;
       }
       LOGGER.log(Level.CONFIG,
-          "Attachment spool directory is set to {0}", SpoolDir);
+          "Attachment spool directory is set to {0}", spoolDir);
 
       // Threshhold for polling
       maxCrawlQDepth = systemDoc.getItemValueInteger(
@@ -326,7 +326,7 @@ public class NotesConnectorSession implements Session {
         tmpMimeExtnMap.put(ext, mimetype);
       }
       // Load into a new map then reassign to minimize threading issues
-      MimeTypeMap = tmpMimeExtnMap;
+      mimeTypeMap = tmpMimeExtnMap;
 
       String retainMetaDataConfig =
           systemDoc.getItemValueString(NCCONST.SITM_RETAINMETADATA);
@@ -363,7 +363,7 @@ public class NotesConnectorSession implements Session {
   }
 
   public String getSpoolDir() {
-    return SpoolDir;
+    return spoolDir;
   }
 
   public String getDomain(String server) {
@@ -376,7 +376,7 @@ public class NotesConnectorSession implements Session {
   }
 
   public String getMimeType(String extn) {
-    String mimeType = MimeTypeMap.get(extn.toLowerCase());
+    String mimeType = mimeTypeMap.get(extn.toLowerCase());
     if (null == mimeType) {
       return "";
     } else {
@@ -421,7 +421,7 @@ public class NotesConnectorSession implements Session {
   }
 
   public int getMaxFileSize() {
-    return MaxFileSize;
+    return maxFileSize;
   }
 
   public String getDatabase() {
@@ -468,7 +468,7 @@ public class NotesConnectorSession implements Session {
     boolean excluded = false;
 
     // Trim leading . character
-    int lastIndex = ExcludedExtns.lastIndexOf(extension);
+    int lastIndex = excludedExtns.lastIndexOf(extension);
     if (lastIndex != -1) {
       excluded = true;
     }

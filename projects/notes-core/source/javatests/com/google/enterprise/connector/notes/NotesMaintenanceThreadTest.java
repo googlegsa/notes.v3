@@ -34,7 +34,7 @@ public class NotesMaintenanceThreadTest extends TestCase {
   private NotesMaintenanceThread maintenanceThread;
   private NotesDocumentManagerTest notesDocMgrDbTest;
   
-  private static int BATCH_SIZE = 500;
+  private static final int BATCH_SIZE = 500;
 
   @Override
   protected void setUp() throws Exception {

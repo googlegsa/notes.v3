@@ -20,8 +20,8 @@ import java.util.logging.Logger;
 class NotesPollerNotifier {
   private static final String CLASS_NAME = NotesPollerNotifier.class.getName();
   private static final Logger LOGGER = Logger.getLogger(CLASS_NAME);
-  private  NotesConnector nc;
-  private int NumThreads = 1;
+  private final NotesConnector nc;
+  private int numThreads = 1;
 
   public NotesPollerNotifier(NotesConnector connector) {
     nc = connector;
@@ -46,7 +46,7 @@ class NotesPollerNotifier {
   }
 
   synchronized void setNumThreads(int i) {
-    NumThreads = i;
+    numThreads = i;
   }
 
   /**
@@ -56,7 +56,7 @@ class NotesPollerNotifier {
    */
   synchronized void wakeWorkers() {
     LOGGER.log(Level.FINE, "Waking worker threads.");
-    for (int i = 0; i < NumThreads; i++) {
+    for (int i = 0; i < numThreads; i++) {
       notifyAll();
     }
   }

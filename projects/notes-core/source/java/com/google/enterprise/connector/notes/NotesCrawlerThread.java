@@ -66,11 +66,11 @@ class NotesCrawlerThread extends Thread {
   @VisibleForTesting
   List<MetaField> metaFields;
 
-  NotesCrawlerThread(NotesConnector Connector, NotesConnectorSession Session) {
+  NotesCrawlerThread(NotesConnector connector, NotesConnectorSession session) {
     LOGGER.finest("NotesCrawlerThread being created.");
 
-    nc = Connector;
-    ncs = Session;
+    nc = connector;
+    ncs = session;
   }
 
   // Since we are multi-threaded, each thread has its own objects
@@ -96,7 +96,7 @@ class NotesCrawlerThread extends Thread {
     return null;
   }
 
-  protected void loadTemplateDoc(String TemplateName)
+  protected void loadTemplateDoc(String templateName)
       throws RepositoryException {
     final String METHOD = "loadTemplate";
     LOGGER.entering(CLASS_NAME, METHOD);
@@ -104,7 +104,7 @@ class NotesCrawlerThread extends Thread {
     // Is a template document all ready loaded?
     if (null != templateDoc) {
       // Is this the one we need?
-      if (TemplateName.equals(
+      if (templateName.equals(
               templateDoc.getItemValueString(NCCONST.TITM_TEMPLATENAME))) {
         return;
       }
@@ -114,7 +114,7 @@ class NotesCrawlerThread extends Thread {
       formDoc = null;
     }
     NotesView vw = cdb.getView(NCCONST.VIEWTEMPLATES);
-    templateDoc = vw.getDocumentByKey(TemplateName, true);
+    templateDoc = vw.getDocumentByKey(templateName, true);
     formsdc = templateDoc.getResponses();
 
     // Parse any configured MetaFields once per template load.
@@ -131,12 +131,12 @@ class NotesCrawlerThread extends Thread {
     vw.recycle();
   }
 
-  protected void loadForm(String FormName) throws RepositoryException {
+  protected void loadForm(String formName) throws RepositoryException {
     final String METHOD = "loadForm";
     LOGGER.entering(CLASS_NAME, METHOD);
 
     if (null != formDoc) {
-      if (FormName == formDoc.getItemValueString(NCCONST.FITM_LASTALIAS)) {
+      if (formName == formDoc.getItemValueString(NCCONST.FITM_LASTALIAS)) {
         return;
       }
       formDoc.recycle();
@@ -148,7 +148,7 @@ class NotesCrawlerThread extends Thread {
     formDoc = formsdc.getFirstDocument();
     while (null != formDoc) {
       String formDocName = formDoc.getItemValueString(NCCONST.FITM_LASTALIAS);
-      if (formDocName.equals(FormName)) {
+      if (formDocName.equals(formName)) {
         return;
       }
       NotesDocument prevDoc = formDoc;
@@ -233,37 +233,37 @@ class NotesCrawlerThread extends Thread {
     final String METHOD = "setDocumentSecurity";
     LOGGER.entering(CLASS_NAME, METHOD);
 
-    String AuthType = crawlDoc.getItemValueString(NCCONST.NCITM_AUTHTYPE);
+    String authType = crawlDoc.getItemValueString(NCCONST.NCITM_AUTHTYPE);
 
     crawlDoc.replaceItemValue(NCCONST.ITM_ISPUBLIC,
-        String.valueOf(AuthType.equals(NCCONST.AUTH_NONE)));
+        String.valueOf(authType.equals(NCCONST.AUTH_NONE)));
   }
 
   protected void evaluateField(NotesDocument crawlDoc, NotesDocument srcDoc,
-      String formula, String ItemName, String Default)
+      String formula, String itemName, String defaultValue)
       throws RepositoryException {
     final String METHOD = "evaluateField";
     LOGGER.entering(CLASS_NAME, METHOD);
 
-    String Result = null;
+    String result = null;
     try {
       LOGGER.log(Level.FINEST, "Evaluating formula for item {0} : src is: {1}",
-          new Object[] { ItemName, formula });
-      Vector<?> VecEvalResult = ns.evaluate(formula, srcDoc);
+          new Object[] { itemName, formula });
+      Vector<?> vecEvalResult = ns.evaluate(formula, srcDoc);
       // Make sure we don't get an empty vector or an empty string.
-      if (VecEvalResult != null && VecEvalResult.size() > 0) {
-        Result = VecEvalResult.elementAt(0).toString();
-        LOGGER.log(Level.FINEST, "Evaluating formula result is: {0}", Result);
+      if (vecEvalResult != null && vecEvalResult.size() > 0) {
+        result = vecEvalResult.elementAt(0).toString();
+        LOGGER.log(Level.FINEST, "Evaluating formula result is: {0}", result);
       }
-      if (Strings.isNullOrEmpty(Result)) {
-        Result = Default;
+      if (Strings.isNullOrEmpty(result)) {
+        result = defaultValue;
       }
     } catch (RepositoryException e) {
-      // TODO(jlacey): Should this set Result = Default instead?
+      // TODO(jlacey): Should this set result = defaultValue instead?
       LOGGER.log(Level.SEVERE, "Skipping {0}: Unable to evaluate formula: {1}",
-          new Object[] { ItemName, formula });
+          new Object[] { itemName, formula });
     } finally {
-      crawlDoc.replaceItemValue(ItemName, Result);
+      crawlDoc.replaceItemValue(itemName, result);
     }
     LOGGER.exiting(CLASS_NAME, METHOD);
   }
@@ -281,10 +281,10 @@ class NotesCrawlerThread extends Thread {
     LOGGER.entering(CLASS_NAME, METHOD);
 
     // Copy the standard fields
-    String NotesURL = srcDoc.getNotesURL();
-    String HttpURL = getHTTPURL(crawlDoc);
-    crawlDoc.replaceItemValue(NCCONST.ITM_DOCID, HttpURL);
-    crawlDoc.replaceItemValue(NCCONST.ITM_DISPLAYURL, HttpURL);
+    String notesUrl = srcDoc.getNotesURL();
+    String httpUrl = getHTTPURL(crawlDoc);
+    crawlDoc.replaceItemValue(NCCONST.ITM_DOCID, httpUrl);
+    crawlDoc.replaceItemValue(NCCONST.ITM_DISPLAYURL, httpUrl);
     crawlDoc.replaceItemValue(NCCONST.ITM_GMETAFORM,
         srcDoc.getItemValueString(NCCONST.ITMFORM));
     crawlDoc.replaceItemValue(NCCONST.ITM_LASTMODIFIED,
@@ -315,7 +315,7 @@ class NotesCrawlerThread extends Thread {
     LOGGER.exiting(CLASS_NAME, METHOD);
 
     // DO NOT MAP THIS FIELD - it will force the GSA to try and crawl this URL
-    // crawlDoc.replaceItemValue(NCCONST.ITM_SEARCHURL, HttpURL);
+    // crawlDoc.replaceItemValue(NCCONST.ITM_SEARCHURL, httpUrl);
   }
 
   @VisibleForTesting
@@ -438,9 +438,9 @@ class NotesCrawlerThread extends Thread {
     try {
       for (int j = 0; j < vi.size(); j++) {
         NotesItem itm = (NotesItem) vi.elementAt(j);
-        String ItemName = itm.getName();
-        if ((ItemName.charAt(0) == '$')
-            || (ItemName.equalsIgnoreCase("form"))) {
+        String itemName = itm.getName();
+        if ((itemName.charAt(0) == '$')
+            || (itemName.equalsIgnoreCase("form"))) {
           continue;
         }
         int type = itm.getType();
@@ -452,7 +452,7 @@ class NotesCrawlerThread extends Thread {
           case NotesItem.NAMES:
           case NotesItem.AUTHORS:
           case NotesItem.READERS:
-            items.add(ItemName);
+            items.add(itemName);
             break;
           default:
             break;
@@ -478,10 +478,10 @@ class NotesCrawlerThread extends Thread {
     final String METHOD = "prefetchDoc";
     LOGGER.entering(CLASS_NAME, METHOD);
 
-    String NotesURL = null;
+    String notesUrl = null;
     try {
-      NotesURL = crawlDoc.getItemValueString(NCCONST.ITM_GMETANOTESLINK);
-      LOGGER.log(Level.FINER, "Prefetching document {0}" + NotesURL);
+      notesUrl = crawlDoc.getItemValueString(NCCONST.ITM_GMETANOTESLINK);
+      LOGGER.log(Level.FINER, "Prefetching document {0}", notesUrl);
 
       // Get the template for this document
       loadTemplateDoc(crawlDoc.getItemValueString(NCCONST.NCITM_TEMPLATE));
@@ -516,7 +516,7 @@ class NotesCrawlerThread extends Thread {
       if (null == formDoc) {
         LOGGER.log(Level.FINER,
             "No form definition found.  Using template definition "
-            + "to process document {0}", NotesURL);
+            + "to process document {0}", notesUrl);
       }
 
       setDocumentReaderNames(crawlDoc, srcDoc);
@@ -558,7 +558,7 @@ class NotesCrawlerThread extends Thread {
           }
         } else {
           LOGGER.log(Level.FINER, "Excluding attachment in {0} : {1}",
-              new Object[] { NotesURL, attachName });
+              new Object[] { notesUrl, attachName });
         }
       }
       crawlDoc.replaceItemValue(NCCONST.ITM_GMETAALLATTACHMENTS, va);
@@ -586,7 +586,7 @@ class NotesCrawlerThread extends Thread {
 
       return true;
     } catch (Exception e) {
-      LOGGER.log(Level.SEVERE, "Error prefetching document " + NotesURL, e);
+      LOGGER.log(Level.SEVERE, "Error prefetching document " + notesUrl, e);
       return false;
     } finally {
       LOGGER.exiting(CLASS_NAME, METHOD);
@@ -666,7 +666,7 @@ class NotesCrawlerThread extends Thread {
    */
   @VisibleForTesting
   String createAttachmentDoc(NotesDocument crawlDoc, NotesDocument srcDoc,
-      String AttachmentName, String MimeType) throws RepositoryException {
+      String attachmentName, String mimeType) throws RepositoryException {
     final String METHOD = "createAttachmentDoc";
     LOGGER.entering(CLASS_NAME, METHOD);
     NotesEmbeddedObject eo = null;
@@ -674,17 +674,17 @@ class NotesCrawlerThread extends Thread {
 
     try {
       // Error access the attachment
-      eo = srcDoc.getAttachment(AttachmentName);
+      eo = srcDoc.getAttachment(attachmentName);
 
       if (eo == null) {
         LOGGER.log(Level.FINER, "Attachment could not be accessed {0}",
-            AttachmentName);
+            attachmentName);
         return null;
       }
 
       if (eo.getType() != NotesEmbeddedObject.EMBED_ATTACHMENT) {
         // The object is not an attachment - could be an OLE object or link
-        LOGGER.log(Level.FINER, "Ignoring embedded object {0}", AttachmentName);
+        LOGGER.log(Level.FINER, "Ignoring embedded object {0}", attachmentName);
         eo.recycle();
         return null;
       }
@@ -693,7 +693,7 @@ class NotesCrawlerThread extends Thread {
       if (eo.getFileSize() > ncs.getMaxFileSize()) {
         LOGGER.log(Level.FINER,
             "Attachment larger than the configured limit and content "
-            + "will not be sent. {0}", AttachmentName);
+            + "will not be sent. {0}", attachmentName);
       }
 
       attachDoc = cdb.createDocument();
@@ -701,25 +701,25 @@ class NotesCrawlerThread extends Thread {
 
       // Store the filename of this attachment in the attachment crawl doc.
       attachDoc.replaceItemValue(NCCONST.ITM_GMETAATTACHMENTFILENAME,
-          AttachmentName);
+          attachmentName);
       attachDoc.save();
 
       // Compute display URL
       String encodedAttachmentName;
       try {
-        encodedAttachmentName = URLEncoder.encode(AttachmentName, "UTF-8");
+        encodedAttachmentName = URLEncoder.encode(attachmentName, "UTF-8");
       } catch (Exception e) {
         attachDoc.recycle();
         eo.recycle();
         return null;
       }
-      String AttachmentURL = String.format(NCCONST.SITM_ATTACHMENTDISPLAYURL,
+      String attachmentUrl = String.format(NCCONST.SITM_ATTACHMENTDISPLAYURL,
           getHTTPURL(crawlDoc), encodedAttachmentName);
-      attachDoc.replaceItemValue(NCCONST.ITM_DISPLAYURL, AttachmentURL);
-      LOGGER.log(Level.FINEST, "Attachment display url: {0}", AttachmentURL);
+      attachDoc.replaceItemValue(NCCONST.ITM_DISPLAYURL, attachmentUrl);
+      LOGGER.log(Level.FINEST, "Attachment display url: {0}", attachmentUrl);
 
       // Compute docid
-      String attachNameHash = Util.hash(AttachmentName);
+      String attachNameHash = Util.hash(attachmentName);
       if (attachNameHash == null) {
         return null;
       }
@@ -731,16 +731,16 @@ class NotesCrawlerThread extends Thread {
       // Only if we have a supported mime type and file size is not exceeding
       // the limit do we send the content, or only metadata and file name will
       // be sent.
-      if (MimeType.length() != 0
+      if (mimeType.length() != 0
           && eo.getFileSize() <= ncs.getMaxFileSize()) {
-        attachDoc.replaceItemValue(NCCONST.ITM_MIMETYPE, MimeType);
+        attachDoc.replaceItemValue(NCCONST.ITM_MIMETYPE, mimeType);
         String attachmentPath = getAttachmentFilePath(crawlDoc, attachNameHash);
         eo.extractFile(attachmentPath);
         attachDoc.replaceItemValue(NCCONST.ITM_CONTENTPATH, attachmentPath);
       } else {
         // Not a supported attachment so sending meta data only
         // with the filename as content
-        attachDoc.replaceItemValue(NCCONST.ITM_CONTENT, AttachmentName);
+        attachDoc.replaceItemValue(NCCONST.ITM_CONTENT, attachmentName);
         attachDoc.replaceItemValue(NCCONST.ITM_MIMETYPE,
             NCCONST.DEFAULT_MIMETYPE);
       }
@@ -755,7 +755,7 @@ class NotesCrawlerThread extends Thread {
       return attachNameHash;
     } catch (Exception e) {
       LOGGER.log(Level.SEVERE,
-          "Error pre-fetching attachment: " + AttachmentName
+          "Error pre-fetching attachment: " + attachmentName
           + " in document: " + srcDoc.getNotesURL(), e);
       Util.recycle(eo);
       if (null != attachDoc) {
@@ -780,9 +780,9 @@ class NotesCrawlerThread extends Thread {
         cdb.getReplicaID(),
         crawlDoc.getUniversalID());
     new File(dirName).mkdirs();
-    String FilePath = String.format("%s/%s", dirName, attachName);
-    //TODO:  Ensure that FilePath is a valid Windows filepath
-    return FilePath;
+    String filePath = String.format("%s/%s", dirName, attachName);
+    // TODO: Ensure that filePath is a valid Windows filepath.
+    return filePath;
   }
 
   @VisibleForTesting

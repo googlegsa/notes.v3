@@ -59,7 +59,7 @@ public class NotesConnectorDocument implements Document {
   private final NotesConnectorSession notesConnectorSession;
   private final NotesSession notesSession;
   private final NotesDatabase connectorDatabase;
-  private String UNID = null;
+  private String unid = null;
   private FileInputStream fin = null;
   private String docid = null;
   private boolean isAttachment = false;
@@ -91,7 +91,7 @@ public class NotesConnectorDocument implements Document {
     final String METHOD = "setcrawlDoc";
     LOGGER.entering(CLASS_NAME, METHOD);
     crawlDoc = backenddoc;
-    UNID = unid;
+    this.unid = unid;
     try {
       String action = crawlDoc.getItemValueString(NCCONST.ITM_ACTION);
       if (action.equalsIgnoreCase(ActionType.ADD.toString())){
@@ -399,41 +399,39 @@ public class NotesConnectorDocument implements Document {
     createdate.recycle();
   }
 
-  protected void putTextListItem(String PropName, String ItemName,
+  protected void putTextListItem(String propName, String itemName,
       String defaultText) throws RepositoryException {
-    Vector<?> vText = crawlDoc.getItemValue(ItemName);
+    Vector<?> vText = crawlDoc.getItemValue(itemName);
     if (0 == vText.size()) {
       LOGGER.log(Level.FINEST, "Using default value document. {0} in {1}",
-          new Object[] { PropName, docid });
+          new Object[] { propName, docid });
       if (defaultText != null) {
-        docProps.put(PropName, asList(Value.getStringValue(defaultText)));
+        docProps.put(propName, asList(Value.getStringValue(defaultText)));
       }
       return;
     }
     List<Value> list = new LinkedList<Value>();
     for (int i = 0; i < vText.size(); i++) {
-      String ItemListElementText = vText.elementAt(i).toString();
-      if (ItemListElementText != null) {
-        if (0 != ItemListElementText.length()) {
-          list.add(Value.getStringValue(vText.elementAt(i).toString()));;
-        }
+      String itemListElementText = vText.elementAt(i).toString();
+      if (!Strings.isNullOrEmpty(itemListElementText)) {
+        list.add(Value.getStringValue(vText.elementAt(i).toString()));;
       }
     }
     LOGGER.log(Level.FINEST,
-        "Adding property {0} ::: {1}", new Object[] { PropName, list });
-    docProps.put(PropName, list);
+        "Adding property {0} ::: {1}", new Object[] { propName, list });
+    docProps.put(propName, list);
   }
 
   // This method puts the text of an itme into a meta field.
   // Items with multiple values are separated by semicolons
-  protected void putTextItem(String PropName, String ItemName,
+  protected void putTextItem(String propName, String itemName,
       String defaultText) throws RepositoryException {
-    NotesItem itm = crawlDoc.getFirstItem(ItemName);
+    NotesItem itm = crawlDoc.getFirstItem(itemName);
 
     // Does the item exist?
     if (itm == null) {
       if (defaultText != null) {
-        docProps.put(PropName, asList(Value.getStringValue(defaultText)));
+        docProps.put(propName, asList(Value.getStringValue(defaultText)));
       }
       return;
     }
@@ -442,27 +440,27 @@ public class NotesConnectorDocument implements Document {
     String text = itm.getText(1024 * 1024 * 2);  // Maximum of 2mb of text
     if (Strings.isNullOrEmpty(text)) { // Does this field exist?
       LOGGER.log(Level.FINEST, "Using default value document. {0} in {1}",
-          new Object[] { PropName, docid });
+          new Object[] { propName, docid });
       if (defaultText != null) {
         text = defaultText;
       } else {
         return;
       }
     }
-    LOGGER.log(Level.FINEST, "Adding property {0}", PropName);
-    docProps.put(PropName, asList(Value.getStringValue(text)));
+    LOGGER.log(Level.FINEST, "Adding property {0}", propName);
+    docProps.put(propName, asList(Value.getStringValue(text)));
   }
 
-  protected void putBooleanItem(String PropName, String ItemName,
+  protected void putBooleanItem(String propName, String itemName,
       String defaultText) throws RepositoryException {
-    String text = crawlDoc.getItemValueString(ItemName);
+    String text = crawlDoc.getItemValueString(itemName);
     if (Strings.isNullOrEmpty(text)) { // Does this field exist?
       // At this point there is nothing we can do except log an error
       LOGGER.log(Level.FINEST, "Using default value document. {0} in {1}",
-          new Object[] { PropName, docid });
+          new Object[] { propName, docid });
       text = defaultText;
     }
-    docProps.put(PropName, asList(Value.getBooleanValue(text)));
+    docProps.put(propName, asList(Value.getBooleanValue(text)));
   }
 
   /**
@@ -530,7 +528,7 @@ public class NotesConnectorDocument implements Document {
   }
 
   public String getUNID() {
-    return UNID;
+    return unid;
   }
 
   @Override

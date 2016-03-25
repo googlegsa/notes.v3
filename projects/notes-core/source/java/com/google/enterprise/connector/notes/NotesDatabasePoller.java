@@ -490,21 +490,21 @@ class NotesDatabasePoller {
 
       NotesDocument curDoc = dc.getFirstDocument();
       while (null != curDoc) {
-        String NotesURL = curDoc.getNotesURL();
+        String notesUrl = curDoc.getNotesURL();
         NotesDateTime lastModified = curDoc.getLastModified();
         LOGGER.log(Level.FINER, "Processing document {0} last modified on {1}",
-            new Object[] {NotesURL, lastModified});
-        nextBatch.put(NotesURL, lastModified.toJavaDate());
-        Date prevLastModified = lastCrawlCache.get(NotesURL);
+            new Object[] {notesUrl, lastModified});
+        nextBatch.put(notesUrl, lastModified.toJavaDate());
+        Date prevLastModified = lastCrawlCache.get(notesUrl);
         if (prevLastModified != null
                 && prevLastModified.equals(lastModified.toJavaDate())) {
           LOGGER.log(Level.FINEST,
-              "Skipping previously crawled document: {0}", NotesURL);
+              "Skipping previously crawled document: {0}", notesUrl);
           curDoc = nextDocument(dc, curDoc);
           continue;
         }
         if (curDoc.hasItem(NCCONST.NCITM_CONFLICT)) {
-          LOGGER.log(Level.FINER, "Skipping conflict document {0}", NotesURL);
+          LOGGER.log(Level.FINER, "Skipping conflict document {0}", notesUrl);
           curDoc = nextDocument(dc, curDoc);
           continue;
         }
@@ -543,7 +543,7 @@ class NotesDatabasePoller {
             srcdbDoc.getItemValue(NCCONST.DITM_DBCATEGORIES));
         crawlRequestDoc.appendItemValue(NCCONST.ITM_GMETADATABASE,
             srcdbDoc.getItemValueString(NCCONST.DITM_DBNAME));
-        crawlRequestDoc.appendItemValue(NCCONST.ITM_GMETANOTESLINK, NotesURL);
+        crawlRequestDoc.appendItemValue(NCCONST.ITM_GMETANOTESLINK, notesUrl);
 
         crawlRequestDoc.save();
         crawlRequestDoc.recycle();  //TEST THIS
