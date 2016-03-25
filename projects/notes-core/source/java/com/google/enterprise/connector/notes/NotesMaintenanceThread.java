@@ -94,8 +94,8 @@ class NotesMaintenanceThread extends Thread {
               "Too many exceptions. Maintenance thread sleeping.");
           npn.waitForWork();
           LOGGER.log(Level.WARNING,
-              "Maintenance thread resuming after too many exceptions " +
-              "were encountered.");
+              "Maintenance thread resuming after too many exceptions "
+              + "were encountered.");
         }
       }
     }
@@ -270,10 +270,10 @@ class NotesMaintenanceThread extends Thread {
       loadTemplateDoc(templateName);
       if (null == TemplateDoc) {
         // The tests check this, so avoid MessageFormat-style.
-        LOGGER.log(Level.SEVERE, "Skipping selection criteria check " +
-            "because template could not be opened: " + notesId +
-            ", Template: " + templateName + ", Database: " +
-            notesId.getServer() + "!!" + SrcDb.getFilePath());
+        LOGGER.log(Level.SEVERE, "Skipping selection criteria check "
+            + "because template could not be opened: " + notesId
+            + ", Template: " + templateName + ", Database: "
+            + notesId.getServer() + "!!" + SrcDb.getFilePath());
         return;
       }
 

@@ -162,8 +162,8 @@ public class MockFixture {
         NotesItem.TEXT, "values", "add"));
     docMock.addItem(new NotesItemMock("name", NCCONST.ITM_DOCID, "type", 
         NotesItem.TEXT, "values",
-        "http://" + TESTCONST.SERVER_DOMINO_WEB + TESTCONST.DOMAIN + 
-        "/" + TESTCONST.DBSRC_REPLICAID + "/0/" + unid));
+        "http://" + TESTCONST.SERVER_DOMINO_WEB + TESTCONST.DOMAIN
+            + "/" + TESTCONST.DBSRC_REPLICAID + "/0/" + unid));
     docMock.addItem(new NotesItemMock("name", NCCONST.ITM_ISPUBLIC, "type", 
         NotesItem.TEXT, "values", "true"));
     NotesDateTimeMock dtMock = new NotesDateTimeMock(new Date());
@@ -248,8 +248,8 @@ public class MockFixture {
         NotesItem.TEXT, "values", "add"));
     docMock.addItem(new NotesItemMock("name", NCCONST.ITM_DOCID, "type", 
         NotesItem.TEXT, "values",
-        "http://" + TESTCONST.SERVER_DOMINO_WEB + TESTCONST.DOMAIN + 
-        "/" + TESTCONST.DBSRC_REPLICAID + "/0/" + unid));
+        "http://" + TESTCONST.SERVER_DOMINO_WEB + TESTCONST.DOMAIN
+            + "/" + TESTCONST.DBSRC_REPLICAID + "/0/" + unid));
     docMock.addItem(new NotesItemMock("name", NCCONST.ITM_ISPUBLIC, "type", 
         NotesItem.TEXT, "values", "true"));
     NotesDateTimeMock dtMock = new NotesDateTimeMock(new Date());

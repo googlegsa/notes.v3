@@ -326,8 +326,8 @@ class NotesDatabasePoller {
         // DENY users.  As a result, unspecified groups with NO ACCESS will also
         // be included in the DENY user list but they will not have any impact
         // to authenticated users.
-        if ((userType == NotesACLEntry.TYPE_PERSON) ||
-            (userType == NotesACLEntry.TYPE_UNSPECIFIED)) {
+        if ((userType == NotesACLEntry.TYPE_PERSON)
+            || (userType == NotesACLEntry.TYPE_UNSPECIFIED)) {
           LOGGER.log(Level.FINER,
               "Adding the user entry to deny list: {0}", ae.getName());
           noAccessUsers.add(ae.getName().toLowerCase());
@@ -339,16 +339,16 @@ class NotesDatabasePoller {
       // If this entry has an access level greater than DEPOSITOR
       if (NotesACL.LEVEL_DEPOSITOR < ae.getLevel()) {
         // Add to the PERMIT USERS if they are a user
-        if ((userType == NotesACLEntry.TYPE_PERSON) ||
-            (userType == NotesACLEntry.TYPE_UNSPECIFIED)) {
+        if ((userType == NotesACLEntry.TYPE_PERSON)
+            || (userType == NotesACLEntry.TYPE_UNSPECIFIED)) {
           LOGGER.log(Level.FINER,
               "Adding the user entry to person allow list: {0}", ae.getName());
           permitUsers.add(ae.getName().toLowerCase());
         }
         // Add to the PERMIT GROUPS if they are a group
-        if  ((userType == NotesACLEntry.TYPE_MIXED_GROUP) ||
-            (userType == NotesACLEntry.TYPE_PERSON_GROUP) ||
-            (userType == NotesACLEntry.TYPE_UNSPECIFIED)) {
+        if  ((userType == NotesACLEntry.TYPE_MIXED_GROUP)
+            || (userType == NotesACLEntry.TYPE_PERSON_GROUP)
+            || (userType == NotesACLEntry.TYPE_UNSPECIFIED)) {
           LOGGER.log(Level.FINER,
               "Adding the user entry to group allow list: {0}", ae.getName());
           permitGroups.add(ae.getName().toLowerCase());

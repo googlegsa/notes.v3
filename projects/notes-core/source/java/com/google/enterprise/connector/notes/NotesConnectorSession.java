@@ -148,8 +148,8 @@ public class NotesConnectorSession implements Session {
         }
       }
 
-      MaxFileSize = 1024 * 1024 *
-          systemDoc.getItemValueInteger(NCCONST.SITM_MAXFILESIZE);
+      MaxFileSize = 1024 * 1024
+          * systemDoc.getItemValueInteger(NCCONST.SITM_MAXFILESIZE);
       LOGGER.log(Level.CONFIG, "Maximum attachment size is {0}", MaxFileSize);
 
       // If 0, use the default value

@@ -219,8 +219,8 @@ public class NotesConnectorDocumentTest extends TestCase {
       1);
     assertPropertyEquals(Value.calendarToIso8601(testCalendar),
         document, SpiConstants.PROPNAME_LASTMODIFIED);
-    assertPropertyEquals("http://host:42/replicaid/" +
-        NCCONST.DB_ACL_INHERIT_TYPE_PARENTOVERRIDES,
+    assertPropertyEquals("http://host:42/replicaid/"
+        + NCCONST.DB_ACL_INHERIT_TYPE_PARENTOVERRIDES,
         document, SpiConstants.PROPNAME_ACLINHERITFROM_DOCID);
     assertNull(document.findProperty(SpiConstants.PROPNAME_ACLUSERS));
     assertNull(document.findProperty(SpiConstants.PROPNAME_ACLGROUPS));
@@ -270,8 +270,8 @@ public class NotesConnectorDocumentTest extends TestCase {
       1);
     assertPropertyEquals(Value.calendarToIso8601(testCalendar),
         document, SpiConstants.PROPNAME_LASTMODIFIED);
-    assertPropertyEquals("http://host:42/replicaid/" +
-        NCCONST.DB_ACL_INHERIT_TYPE_ANDBOTH,
+    assertPropertyEquals("http://host:42/replicaid/"
+        + NCCONST.DB_ACL_INHERIT_TYPE_ANDBOTH,
         document, SpiConstants.PROPNAME_ACLINHERITFROM_DOCID);
     assertEquals(ImmutableSet.of("jsmith"),
         getPrincipalNames(document, SpiConstants.PROPNAME_ACLUSERS));

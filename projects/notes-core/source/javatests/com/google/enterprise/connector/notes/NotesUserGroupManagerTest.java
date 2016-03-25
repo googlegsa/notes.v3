@@ -950,9 +950,9 @@ public class NotesUserGroupManagerTest extends TestCase {
     }
     rs = conn.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE,
           ResultSet.CONCUR_READ_ONLY).executeQuery(
-        "select * from " + userGroupManager.userGroupsTableName +
-        " left join " + userGroupManager.groupChildrenTableName + " on " +
-        " groupid = childgroupid");
+        "select * from " + userGroupManager.userGroupsTableName
+        + " left join " + userGroupManager.groupChildrenTableName
+        + " on groupid = childgroupid");
     while (rs.next()) {
       Long userId = rs.getLong("userid");
       Long groupId = rs.getLong("groupid");

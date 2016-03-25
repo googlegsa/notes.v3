@@ -37,8 +37,8 @@ public class NotesACLEntryMock extends NotesBaseMock
 
   public NotesACLEntryMock(String name, int userType, int level,
       String... roles) {
-    LOGGER.fine("creating acl entry for " + name +
-        " with roles " + Arrays.asList(roles));
+    LOGGER.fine("creating acl entry for " + name
+        + " with roles " + Arrays.asList(roles));
 
     this.name = name;
     this.userType = userType;

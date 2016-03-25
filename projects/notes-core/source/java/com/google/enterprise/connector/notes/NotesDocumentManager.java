@@ -260,8 +260,8 @@ class NotesDocumentManager {
       
       //Insert into indexed table
       pstmt = connection.prepareStatement(
-          "insert into " + indexedTableName +
-          "(unid, replicaid, server, host, protocol) values(?,?,?,?,?)",
+          "insert into " + indexedTableName
+          + "(unid, replicaid, server, host, protocol) values(?,?,?,?,?)",
           Statement.RETURN_GENERATED_KEYS);
       pstmt.setString(1, unid);
       pstmt.setString(2, notesId.getReplicaId());
@@ -357,8 +357,8 @@ class NotesDocumentManager {
         LOGGER.log(Level.FINE, "Start unique ID#{0} is found", startUnid);
       }
       PreparedStatement pstmt = conn.prepareStatement(
-          "select unid, replicaid, server, host, protocol from " +
-              indexedTableName + " order by unid",
+          "select unid, replicaid, server, host, protocol from "
+          + indexedTableName + " order by unid",
           ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
       ResultSet rs = pstmt.executeQuery();
       if (isExisted) {
@@ -470,8 +470,8 @@ class NotesDocumentManager {
       rs.close();
       pstmt.close();
     } catch (SQLException e) {
-      LOGGER.log(Level.FINE, "Failed to lookup " + unid +
-          " in " + indexedTableName + " table", e);
+      LOGGER.log(Level.FINE, "Failed to lookup " + unid
+          + " in " + indexedTableName + " table", e);
       throw new RepositoryException(e);
     }
     LOGGER.exiting(CLASS_NAME, METHOD);
@@ -546,9 +546,9 @@ class NotesDocumentManager {
     try {
       //Delete readers
       PreparedStatement pstmt = conn.prepareStatement(
-          "delete from " + readersTableName +
-          " where docid = (select docid from " + indexedTableName +
-          " where unid = ? and replicaid = ?)");
+          "delete from " + readersTableName
+          + " where docid = (select docid from " + indexedTableName
+          + " where unid = ? and replicaid = ?)");
       pstmt.setString(1, unid);
       pstmt.setString(2, replicaid);
       pstmt.executeUpdate();
@@ -556,9 +556,9 @@ class NotesDocumentManager {
 
       //Delete attachments
       pstmt = conn.prepareStatement(
-          "delete from " + attachmentsTableName +
-          " where docid = (select docid from " + indexedTableName +
-          " where unid = ? and replicaid = ?)");
+          "delete from " + attachmentsTableName
+          + " where docid = (select docid from " + indexedTableName
+          + " where unid = ? and replicaid = ?)");
       pstmt.setString(1, unid);
       pstmt.setString(2, replicaid);
       pstmt.executeUpdate();

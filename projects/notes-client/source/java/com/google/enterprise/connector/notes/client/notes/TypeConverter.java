@@ -45,8 +45,8 @@ class TypeConverter {
       } else if (notesValue instanceof Double) {
         connectorValues.add(notesValue);
       } else {
-        throw new NotesConnectorExceptionImpl("Unexpected notes data type: " +
-            notesValue.getClass().getName());
+        throw new NotesConnectorExceptionImpl("Unexpected notes data type: "
+            + notesValue.getClass().getName());
       }
     }
     return connectorValues;
@@ -102,8 +102,8 @@ class TypeConverter {
       return notesObjects;
     }
     throw new NotesConnectorExceptionImpl(
-        "Unexpected connector object to be converted to a Notes object: " +
-        connectorObject.getClass().getName());
+        "Unexpected connector object to be converted to a Notes object: "
+        + connectorObject.getClass().getName());
   }
 
   /**

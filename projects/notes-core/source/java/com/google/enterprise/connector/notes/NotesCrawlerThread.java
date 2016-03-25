@@ -416,8 +416,8 @@ class NotesCrawlerThread extends Thread {
         String fieldName = v.elementAt(i).toString();
         // Fields beginning with $ are reserved fields in Domino
         // Do not index the Form field ever
-        if ((fieldName.charAt(0) == '$') ||
-            (fieldName.equalsIgnoreCase("form"))) {
+        if ((fieldName.charAt(0) == '$')
+            || (fieldName.equalsIgnoreCase("form"))) {
           continue;
         }
         content.append("\n");
@@ -515,8 +515,8 @@ class NotesCrawlerThread extends Thread {
       loadForm(srcDoc.getItemValueString(NCCONST.ITMFORM));
       if (null == formDoc) {
         LOGGER.log(Level.FINER,
-            "No form definition found.  Using template definition " +
-            "to process document {0}", NotesURL);
+            "No form definition found.  Using template definition "
+            + "to process document {0}", NotesURL);
       }
 
       setDocumentReaderNames(crawlDoc, srcDoc);
@@ -692,8 +692,8 @@ class NotesCrawlerThread extends Thread {
       // Don't send attachments larger than the limit
       if (eo.getFileSize() > ncs.getMaxFileSize()) {
         LOGGER.log(Level.FINER,
-            "Attachment larger than the configured limit and content " +
-            "will not be sent. {0}", AttachmentName);
+            "Attachment larger than the configured limit and content "
+            + "will not be sent. {0}", AttachmentName);
       }
 
       attachDoc = cdb.createDocument();
@@ -731,8 +731,8 @@ class NotesCrawlerThread extends Thread {
       // Only if we have a supported mime type and file size is not exceeding
       // the limit do we send the content, or only metadata and file name will
       // be sent.
-      if ((0 != MimeType.length()) &&
-          eo.getFileSize() <= ncs.getMaxFileSize()) {
+      if (MimeType.length() != 0
+          && eo.getFileSize() <= ncs.getMaxFileSize()) {
         attachDoc.replaceItemValue(NCCONST.ITM_MIMETYPE, MimeType);
         String attachmentPath = getAttachmentFilePath(crawlDoc, attachNameHash);
         eo.extractFile(attachmentPath);
@@ -755,8 +755,8 @@ class NotesCrawlerThread extends Thread {
       return attachNameHash;
     } catch (Exception e) {
       LOGGER.log(Level.SEVERE,
-          "Error pre-fetching attachment: " + AttachmentName +
-          " in document: " + srcDoc.getNotesURL(), e);
+          "Error pre-fetching attachment: " + AttachmentName
+          + " in document: " + srcDoc.getNotesURL(), e);
       Util.recycle(eo);
       if (null != attachDoc) {
         attachDoc.replaceItemValue(NCCONST.NCITM_STATE, NCCONST.STATEERROR);
@@ -841,12 +841,12 @@ class NotesCrawlerThread extends Thread {
             "Spool free space is {0}", spoolDir.getFreeSpace());
         if (spoolDir.getFreeSpace() / 1000000 < 300) {
           LOGGER.log(Level.WARNING,
-              "Insufficient space in spool directory to process " +
-              "new documents.  Need at least 300MB.");
+              "Insufficient space in spool directory to process "
+              + "new documents.  Need at least 300MB.");
           npn.waitForWork();
           LOGGER.log(Level.FINE,
-              "Crawler thread resuming after spool directory had " +
-              "insufficient space.");
+              "Crawler thread resuming after spool directory had "
+              + "insufficient space.");
           continue;
         }
         LOGGER.log(Level.FINEST, "Connecting to crawl queue.");
@@ -885,8 +885,8 @@ class NotesCrawlerThread extends Thread {
               "Too many exceptions.  Crawler thread sleeping.");
           npn.waitForWork();
           LOGGER.log(Level.WARNING,
-              "Crawler thread resuming after too many exceptions " +
-              "were encountered.");
+              "Crawler thread resuming after too many exceptions "
+              + "were encountered.");
         }
       }
     }

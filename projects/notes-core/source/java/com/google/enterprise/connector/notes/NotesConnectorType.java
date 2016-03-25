@@ -78,9 +78,9 @@ public class NotesConnectorType implements ConnectorType {
   private boolean validateConfigPair(String key, String val) {
     if (val == null || val.length() == 0) {
       // Empty passwords are allowed. GSA configuration is optional.
-      if (key.equals("idPassword") ||
-          key.equals("gsaUsername") ||
-          key.equals("gsaPassword")) {
+      if (key.equals("idPassword")
+          || key.equals("gsaUsername")
+          || key.equals("gsaPassword")) {
         return true;
       }
       return false;

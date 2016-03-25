@@ -267,8 +267,8 @@ public class NotesCrawlerThreadTest extends TestCase {
         crawlerThread.templateDoc
         .getItemValueString(NCCONST.TITM_TEMPLATENAME));
     for (NotesCrawlerThread.MetaField mf : crawlerThread.metaFields) {
-      assertTrue(mf.getFieldName().equals("foo") ||
-          mf.getFieldName().equals("bar"));
+      assertTrue(mf.getFieldName().equals("foo")
+          || mf.getFieldName().equals("bar"));
     }
     crawlerThread.loadTemplateDoc("testtemplate2");
     assertEquals("testtemplate2",

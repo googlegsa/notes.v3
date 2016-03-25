@@ -310,8 +310,8 @@ public class NotesDocumentManagerTest extends TestCase {
       docNew.replaceItemValue(NCCONST.ITM_DOCID, 
           "http://" + host + "/" + replicaId + "/0/" + unid.toString());
       docNew.replaceItemValue(NCCONST.ITM_GMETANOTESLINK, 
-          "notes://" + TESTCONST.SERVER_DOMINO + "/__" + replicaId + ".nsf/0/" + 
-          unid.toString() + "?OpenDocument");
+          "notes://" + TESTCONST.SERVER_DOMINO + "/__" + replicaId + ".nsf/0/"
+          + unid.toString() + "?OpenDocument");
       docNew.replaceItemValue(NCCONST.NCITM_UNID, unid.toString());
       docs.add(docNew);
     }
@@ -340,8 +340,8 @@ public class NotesDocumentManagerTest extends TestCase {
         NotesItem.TEXT, "values", "add"));
     docMock.addItem(new NotesItemMock("name", NCCONST.ITM_DOCID, "type", 
         NotesItem.TEXT, "values",
-        "http://" + TESTCONST.SERVER_DOMINO_WEB + TESTCONST.DOMAIN + 
-        "/" + TESTCONST.DBSRC_REPLICAID + "/0/XXXXXXXXXXXXXXXXXXXXXXXXXXXX0000"));
+        "http://" + TESTCONST.SERVER_DOMINO_WEB + TESTCONST.DOMAIN + "/"
+            + TESTCONST.DBSRC_REPLICAID + "/0/XXXXXXXXXXXXXXXXXXXXXXXXXXXX0000"));
     docMock.addItem(new NotesItemMock("name", NCCONST.ITM_ISPUBLIC, "type", 
         NotesItem.TEXT, "values", "true"));
     NotesDateTimeMock dtMock = new NotesDateTimeMock(null);
@@ -372,8 +372,8 @@ public class NotesDocumentManagerTest extends TestCase {
         NotesItem.DATETIMES, "values", dtMock));
     docMock.addItem(new NotesItemMock("name", NCCONST.ITM_GMETANOTESLINK, "type", 
         NotesItem.TEXT, "values",
-        "notes://" + TESTCONST.SERVER_DOMINO + "/__" + TESTCONST.DBSRC_REPLICAID + 
-        ".nsf/0/XXXXXXXXXXXXXXXXXXXXXXXXXXXX0000?OpenDocument"));
+        "notes://" + TESTCONST.SERVER_DOMINO + "/__" + TESTCONST.DBSRC_REPLICAID
+            + ".nsf/0/XXXXXXXXXXXXXXXXXXXXXXXXXXXX0000?OpenDocument"));
     docMock.addItem(new NotesItemMock("name", NCCONST.ITM_GMETAREPLICASERVERS, "type", 
         NotesItem.TEXT, "values", "server1/mtv/us,server2/mtv/us"));
     docMock.addItem(new NotesItemMock("name", NCCONST.ITM_GMETAWRITERNAME, "type", 
@@ -426,8 +426,8 @@ public class NotesDocumentManagerTest extends TestCase {
         NotesItem.TEXT, "values", "add"));
     docMock.addItem(new NotesItemMock("name", NCCONST.ITM_DOCID, "type", 
         NotesItem.TEXT, "values",
-        "http://" + TESTCONST.SERVER_DOMINO_WEB + TESTCONST.DOMAIN + 
-        "/" + TESTCONST.DBSRC_REPLICAID + "/0/XXXXXXXXXXXXXXXXXXXXXXXXXXXX0001"));
+        "http://" + TESTCONST.SERVER_DOMINO_WEB + TESTCONST.DOMAIN + "/"
+            + TESTCONST.DBSRC_REPLICAID + "/0/XXXXXXXXXXXXXXXXXXXXXXXXXXXX0001"));
     docMock.addItem(new NotesItemMock("name", NCCONST.ITM_ISPUBLIC, "type", 
         NotesItem.TEXT, "values", "true"));
     NotesDateTimeMock dtMock = new NotesDateTimeMock(null);
@@ -458,8 +458,8 @@ public class NotesDocumentManagerTest extends TestCase {
         NotesItem.DATETIMES, "values", dtMock));
     docMock.addItem(new NotesItemMock("name", NCCONST.ITM_GMETANOTESLINK, "type", 
         NotesItem.TEXT, "values",
-        "notes://" + TESTCONST.SERVER_DOMINO + "/__" + TESTCONST.DBSRC_REPLICAID + 
-        ".nsf/0/XXXXXXXXXXXXXXXXXXXXXXXXXXXX0001?OpenDocument"));
+        "notes://" + TESTCONST.SERVER_DOMINO + "/__" + TESTCONST.DBSRC_REPLICAID
+            + ".nsf/0/XXXXXXXXXXXXXXXXXXXXXXXXXXXX0001?OpenDocument"));
     docMock.addItem(new NotesItemMock("name", NCCONST.ITM_GMETAREPLICASERVERS, "type", 
         NotesItem.TEXT, "values", "mickey1/mtv/us,server2/mtv/us"));
     docMock.addItem(new NotesItemMock("name", NCCONST.ITM_GMETAWRITERNAME, "type", 

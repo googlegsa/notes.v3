@@ -115,8 +115,8 @@ public class NotesNameMock extends NotesBaseMock implements NotesName {
     int pos1 = commonName.indexOf(" ");
     if (pos1 != -1) {
       int pos2 = commonName.lastIndexOf(" ");
-      shortName = (commonName.substring(0, pos1) + 
-              commonName.substring(pos2 + 1)).toLowerCase();
+      shortName = (commonName.substring(0, pos1)
+          + commonName.substring(pos2 + 1)).toLowerCase();
     } else {
       shortName = commonName.toLowerCase();
     }

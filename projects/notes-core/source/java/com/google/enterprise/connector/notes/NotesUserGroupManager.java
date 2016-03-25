@@ -675,8 +675,8 @@ class NotesUserGroupManager {
           }
           updateGroup(groupDoc, groupName);
         } catch (RepositoryException e) {
-          LOGGER.log(Level.WARNING, "Failed to update group cache" +
-              (groupName != null ? " for " + groupName : ""), e);
+          LOGGER.log(Level.WARNING, "Failed to update group cache"
+              + (groupName != null ? " for " + groupName : ""), e);
         } finally {
           Util.recycle(groupDoc);
         }
@@ -1039,8 +1039,8 @@ class NotesUserGroupManager {
                   new Object[] { user, user.getGroups() });
             }
           } catch (Exception e) {
-            LOGGER.log(Level.WARNING, "Failed to update user cache" +
-                (notesName != null ? " for " + notesName : ""), e);
+            LOGGER.log(Level.WARNING, "Failed to update user cache"
+                + (notesName != null ? " for " + notesName : ""), e);
           } finally {
             Util.recycle(personDoc);
           }
@@ -1674,8 +1674,8 @@ class NotesUserGroupManager {
       }
       if (replicaIdsToDelete.size() > 0) {
         LOGGER.log(Level.FINE,
-            "Found role cache data for database(s) that aren't" +
-            " in the connector's crawl list any more: {0}", replicaIdsToDelete);
+            "Found role cache data for database(s) that are not in the "
+            + "connector's crawl list any more: {0}", replicaIdsToDelete);
         conn.setAutoCommit(false);
         try {
           for (String replicaId : replicaIdsToDelete) {
