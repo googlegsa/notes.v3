@@ -414,7 +414,14 @@ class NotesDatabasePoller {
         lastUpdated = (NotesDateTime) lastUpdatedV.firstElement();
         LOGGER.log(Level.FINE, "Last processed time was {0}", lastUpdated);
         searchLastUpdated = ns.createDateTime(lastUpdated.toJavaDate());
-        if (Util.isNotesVersionEightOrOlder(ns.getNotesVersion())) {
+        int replicationFreq = srcdbDoc.getItemValueInteger(
+            NCCONST.DITM_REPLICATIONFREQUENCY);
+        if (replicationFreq > 0) {
+          searchLastUpdated.adjustSecond(-replicationFreq * 60);
+          LOGGER.log(Level.FINE, "Last processed time was adjusted by "
+              + "replication frequency of {0} minutes [{1}]",
+              new Object[] {replicationFreq, searchLastUpdated});
+        } else if (Util.isNotesVersionEightOrOlder(ns.getNotesVersion())) {
           // Adjust -1 second to include documents whose last modified time is
           // equal to the last updated time.
           searchLastUpdated.adjustSecond(-1);

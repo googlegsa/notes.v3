@@ -39,6 +39,7 @@ public class NCCONST {
   public static final String DITM_DBNAME = "DatabaseName";
   public static final String DITM_LASTUPDATE = "LastUpdated";
   public static final String DITM_UPDATEFREQUENCY = "UpdateFrequency";
+  public static final String DITM_REPLICATIONFREQUENCY = "ReplicationFrequency";
   public static final String DITM_TEMPLATE = "Template";
   public static final String DITM_CRAWLENABLED = "Enabled";
   public static final String DITM_STOPPED = "Stopped";
