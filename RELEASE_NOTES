@@ -17,6 +17,8 @@ additional bug fixes. Users of previous releases are encouraged to upgrade.
 
 Issues Fixed Since 3.2.10
 -------------------------
+9000188  - Documents may not be sent to the GSA when they are replicated
+           into the database rather than created directly in the database.
 23228968 - Upgrade Guava to 11.0.2 to match the Adaptor Library. This
            breaks the use of the GSA Admin API, specifically the GData
            client API, and dependent functionality has been removed.
